@@ -505,6 +505,23 @@ verifiable much sooner.
     * => The remaining blocker is the main-loop Z80 sound-init ack ($0030E2→$98xxx).
       BOOT_ASSIST (0FAD/0FC2) lets the V-int stage/render but not the main-loop ack.
       Next: resolve the main-loop sound-init Z80 response (the $00203C wait condition).
+  - **Session 39 (2026-11-26): sound-service ack traced; real blocker = boot wait-for-mode.**
+    * $98A10/$98A1A/$98A30 (bus request/ack/release) is immediate-ack under
+      NO_BUS_HALT (read $A11100=0) ⇒ NOT a spin. func_0030E2 is a bounded
+      channel-list walk (terminator at $31AC) ⇒ not a spin either.
+    * Added env-gated [JOY-TL] (GENESIS_JOY_TL) per-frame joy/mode trace; use
+      --measure-runtime N (uncapped, exits) — --exit-at-frame only works in capture
+      mode, --runtime-uncapped needs --measure-runtime. With --script-start 1600:
+      raw $FF0502=0080 and processed edge $FF050C=0080 at f1601-1602 ⇒ pad+edge
+      pipeline WORKS. But $FF0516 stays 0 ⇒ the title Start branch never runs.
+    * Localized: main boot parks at label_000786 (and schedulers label_0059D2 /
+      label_005CD2) waiting $FF0516!=0; the 4/8/0C writes are all LATER main code, so
+      the FIRST non-zero must come from the V-int boot/title handler, which never
+      writes it ⇒ circular wait. Holding mode=8 via assist let schedulers pass but
+      consumed the Start edge and still no $10 ⇒ reverted (ineffective).
+    * => Next: find the V-int handler that first sets $FF0516 non-zero and its gate
+      (likely a Z80 sound-started flag, e.g. $0FE4), or fix 68K/V-int ordering so the
+      main loop reads the mode before it is cleared.
   - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
     is a separate transition.**
     * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
@@ -513,8 +530,9 @@ verifiable much sooner.
       (`tools/probe-start.ps1`) still left the title ⇒ the mode-8 Start detection /
       joy-RAM update is the next RE gap.
   Next experiments (anticipated, in order):
-  1. Engine: cycle-accurate 68K/Z80 interleave (per-instruction) so the boot
-     sound-init handshake completes; re-test interactive title. (dedicated effort)
+  1. Resolve the boot main-loop wait-for-$FF0516 (label_000786): identify the V-int
+     write that first sets mode non-zero and its Z80 gate (sound-started flag, e.g.
+     $0FE4), or correct 68K/V-int read ordering; re-test Start→game. (dedicated effort)
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle.
   3. M3 RAM map: `player_object`/`level_modes` from gameplay RAM diffs.
   4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
