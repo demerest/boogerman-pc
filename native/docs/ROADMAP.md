@@ -463,6 +463,13 @@ verifiable much sooner.
       `captures-us/adv2/frame_000001.png`, `captures-us/play/frame_000001.png`.
     * Remaining for full playability: Start@1900 did not yet leave the title
       (input/title-transition gap) — next step. Boot is ~1500f (~25s); speed later.
+  - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
+    is a separate transition.**
+    * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
+      handlers (after JSRs), so the title (mode 8) is reached without Start. Start
+      must trigger a further mode change in the mode-8 routine; held Start via TCP
+      (`tools/probe-start.ps1`) still left the title ⇒ the mode-8 Start detection /
+      joy-RAM update is the next RE gap.
   - **Session 33 (2026-11-26): Start gate localized to $FF05B4 + joy-bit tests.**
     * Joy RAM = $FF0502 (held) / $FF0504 (pressed); under held Start $FF0502=0x0080
       (Start sampled correctly). Title mode stays 8. `tools/probe-joy.ps1` added.
@@ -538,13 +545,6 @@ verifiable much sooner.
     * => Next: make the V-int clear $FF0516 after servicing (find where routine 8 should
       write 0), or assist the main/V-int mode handoff, so main resumes to the title
       dispatcher and Start/A -> func_0063DE (mode=$10).
-  - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
-    is a separate transition.**
-    * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
-      handlers (after JSRs), so the title (mode 8) is reached without Start. Start
-      must trigger a further mode change in the mode-8 routine; held Start via TCP
-      (`tools/probe-start.ps1`) still left the title ⇒ the mode-8 Start detection /
-      joy-RAM update is the next RE gap.
   Next experiments (anticipated, in order):
   1. Resolve the boot main-loop wait-for-$FF0516 (label_000786): identify the V-int
      write that first sets mode non-zero and its Z80 gate (sound-started flag, e.g.
