@@ -131,14 +131,33 @@ verifiable much sooner.
       wrote elsewhere ⇒ **A2 (destination) diverges inside the region
       routine**. Web at frame 3 hasn't reached the routine yet (buffers
       zero there too) — phase-matched comparison still needed.
+  - **Session 5 (2026-11-25) corrections:**
+    * The "$FF0484 message buffer empty ⇒ conversion wrote elsewhere"
+      hypothesis was WRONG for both sides: the boot fill-loop
+      (`dbra d6`, d6=$3FFF → 16384 longs = one full 64 KB work-RAM wrap)
+      zeroes ALL work RAM in web AND native; empty buffers at $472-$4B2
+      are expected at every web frame scanned (6/10/16/24/40).
+    * Web f3/f6 register snapshots are POST-boot (web boot completes in
+      ~1 frame; native boot with the ack patch takes ~3): web f3
+      PC=$26C-readings and f6 PC=$E3E are gameplay-init phases, not the
+      boot movem moment. Phase-matched comparison needs web frames 1-2.
+    * `GENESIS_BUS_ACK_CYCLES=0` (stock immediate grant) + PAL timing
+      STILL halts at $436 ⇒ the ack patch is not the cause; the divergence
+      is in the region-routine translation or bus/VDP modeling,
+      independent of bus-grant timing.
   Next experiments (in order):
-  1. Web frame-scan: `web/test/ram-dump.html?frames=N` for N in 5..40; find
-     first N with non-zero `$FF0472-$FF04B4` (region routine output).
-  2. Native `rdb_range FF0400-FF0500` + `rdb_dump` at halt: see where the
-     conversion writes actually landed; diff against web's N-frame RAM.
-  3. Trace A2 provenance in the region routine ($3DC-$436) against ROM;
-     fix the diverging instruction/semantics in the engine patch; regen,
-     rebuild, re-validate boot → title → gameplay; then M3+.
+  1. Web frames 1-2 register snapshots (`ram-dump.html?frames=1/2`) vs
+     native boot registers at the fill point (A6/D5/D6/A5) — first
+     phase-matched register comparison; identify the diverging instruction
+     (lea/movem at $220-$228 prime suspect).
+  2. If registers match at boot, diff the region-routine branch outcomes
+     via web RAM writes ring-equivalent (web has no ring; use frame-stepped
+     RAM diffs at frames 1..4) vs native `rdb_dump`.
+  3. Fix the diverging semantics in the engine patch; regen, rebuild,
+     re-validate boot → title → gameplay; then M3+.
+  4. Optional easier path (user offer): a US/NTSC dump takes different
+     region-check branches and stock NTSC timing; would need a second game
+     profile + full regen (identity/CRC/RAM map). EU web port unaffected.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites
