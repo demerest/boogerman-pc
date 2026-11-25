@@ -303,6 +303,20 @@ verifiable much sooner.
     * Remaining for M3/M4: boot is ~40 s to title (timing fidelity — interleave
       the long boot V-int handler / raise Z80 share so it matches the oracle's
       ~100-frame boot), audio correctness, then route validation & Deck build.
+  - **Session 17 (2026-11-25): M3 RAM-map re-verified; route validation blocked
+    on interactive-state fidelity.**
+    * US `[ram_layout]` confirmed to inherit EU: `$FF0288` vint_runcount
+      (`$004E14`), `$FF0516` vint_routine/game_mode (mode index 0/4/8/10/12…).
+      `game_mode` set to `$FF0516` in both game.toml; RAM_MAP.md gained a US
+      section. `player_object`/`plc_pending`/`level_modes` still TODO (need
+      post-Start gameplay RAM diffs).
+    * Route validation (`--script-start 3600 --script-right 3700`, 6000 frames)
+      still shows the title: the rendered title is a boot-stage frame, not yet
+      the live interactive title loop, so Start is ignored. Interactive
+      playability (M4) needs the boot to reach the real title state-machine —
+      same timing-fidelity root as boot speed.
+    * Added service-sync Z80 overclock scaling (GENESIS_Z80_OVERCLOCK now also
+      scales the in-handler sync); tested — does not by itself fix boot rate.
   Next experiments (in order):
   1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
      by interleaving the long boot V-int handler / correcting the Z80 share;
