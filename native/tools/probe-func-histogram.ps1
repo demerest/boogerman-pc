@@ -1,8 +1,9 @@
-﻿param([int]$WarmMs = 3000, [int]$Samples = 80, [int]$Overclock = -1, [switch]$BootAssist)
+﻿param([int]$WarmMs = 3000, [int]$Samples = 80, [int]$Overclock = -1, [switch]$BootAssist, [switch]$FullSync)
 $ErrorActionPreference = 'Stop'
 $env:GENESIS_Z80_NO_BUS_HALT = '1'
 if ($Overclock -ge 1) { $env:GENESIS_Z80_OVERCLOCK = "$Overclock" }
 if ($BootAssist) { $env:GENESIS_BOOT_ASSIST = '1' }
+if ($FullSync) { $env:GENESIS_Z80_FULL_SYNC = '1' }
 $env:GENESIS_WATCHDOG_INSN = '400000000'; $env:GENESIS_WATCHDOG_BUS = '100000000'
 $root = 'S:\home\dev\boogerman-pc'
 $exe = "$root\native\build\Release\BoogermanRecomp_us.exe"

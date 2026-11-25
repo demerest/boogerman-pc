@@ -430,10 +430,17 @@ verifiable much sooner.
       FRAMEWORK-level cycle-accurate 68K/Z80 interleave (run the Z80 concurrently
       per 68K instruction during the boot handler), a dedicated engine effort.
       Path (b) remains documented; the web port is the playable deliverable meanwhile.
+  - **Session 28 (2026-11-25): full-sync + overclock also insufficient.**
+    * Added `GENESIS_Z80_FULL_SYNC` (sync Z80 on every 68K bus access in the main
+      loop too) and tested with overclock 64. Histogram still pinned at
+      `$098A30`/`$0981FC`. Live Z80: idle main loop, shadow BC=0 (DAC never started),
+      bus_requested=1. Wait pointer `$FF051A`=`$A00FAC`.
+    * => No Z80 scheduling knob resolves it; the 68K sound-init state machine and
+      the Z80 handshake require a cycle-accurate concurrent scheduler (per-instruction
+      interleave), a dedicated engine rework. M2 render-title + M3 RAM map stand.
   Next experiments (anticipated, in order):
-  1. Engine: cycle-accurate 68K/Z80 interleave during long boot handlers (run Z80
-     per 68K instruction, not per bus access / per line) so the DAC/ack completes
-     within the 68K wait; re-test interactive title. (dedicated engine effort)
+  1. Engine: cycle-accurate 68K/Z80 interleave (per-instruction) so the boot
+     sound-init handshake completes; re-test interactive title. (dedicated effort)
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle.
   3. M3 RAM map: `player_object`/`level_modes` from gameplay RAM diffs.
   4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.

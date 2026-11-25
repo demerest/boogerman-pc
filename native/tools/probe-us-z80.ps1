@@ -1,6 +1,7 @@
-﻿param([int]$DelayMs = 1000, [switch]$NoBusHalt)
+﻿param([int]$DelayMs = 1000, [switch]$NoBusHalt, [switch]$FullSync)
 $ErrorActionPreference = 'Stop'
 if ($NoBusHalt) { $env:GENESIS_Z80_NO_BUS_HALT = '1' }
+if ($FullSync) { $env:GENESIS_Z80_FULL_SYNC = '1' }
 $env:GENESIS_WATCHDOG_INSN = '400000000'; $env:GENESIS_WATCHDOG_BUS = '100000000'
 $root = 'S:\home\dev\boogerman-pc'
 $exe  = "$root\native\build\Release\BoogermanRecomp_us.exe"
@@ -46,6 +47,9 @@ try {
     $w.WriteLine('{"id":10,"cmd":"read_memory","addr":"0xFF069A","size":2}')
     $resp10 = $r.ReadLine()
     [System.IO.File]::WriteAllText("$out\68k-ram-ff069a.json", $resp10)
+    $w.WriteLine('{"id":11,"cmd":"read_memory","addr":"0xFF051A","size":4}')
+    $resp11 = $r.ReadLine()
+    [System.IO.File]::WriteAllText("$out\68k-ram-ff051a.json", $resp11)
     "probe ok: state=$($resp.Length) ram=$($resp2.Length) 68k=$($resp4.Length) dump=$resp3"
     $c.Close()
 } catch {

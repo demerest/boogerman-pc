@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..4f9157d 100644
+index 4eee55c..9b50e9e 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -225,6 +225,31 @@ void (*g_fm_write_trace_fn )(uint32_t address,      uint8_t value, uint32_t targ
@@ -110,15 +110,16 @@ index 4eee55c..4f9157d 100644
 -}
  static inline void z80_sync_for_68k_access(uint32_t a, unsigned bytes)
  {
-     if (!s_in_vblank_service) return;
+-    if (!s_in_vblank_service) return;
 -    if (z80_domain_addr(a) || (bytes > 2 && z80_domain_addr(a + 2u)))
 -        machine_z80_sync_to(g_audio_cycle_counter * 7u + g_68k_stamp_rebase);
-+    /* Boogerman engine patch: advance the Z80 on EVERY 68K bus access during
-+     * atomic service, not just Z80-domain ones. On HW the two CPUs run
-+     * concurrently; a boot sound-init handler that polls a Z80 flag while the
-+     * Z80 processes a command needs the Z80 to accrue its hardware share of
-+     * cycles across the handler's RAM/loop traffic, else the handshake
-+     * deadlocks (IRQ-DEBT). Halt-on-busreq semantics still apply in sync_to. */
++    /* Boogerman engine patch: GENESIS_Z80_FULL_SYNC extends the concurrent
++     * Z80 sync to EVERY 68K bus access in the MAIN loop too (not just atomic
++     * service), so a boot sound-init wait that polls a Z80 flag lets the Z80
++     * accrue its hardware share and complete the DAC/ack (s27). Default off. */
++    static int full = -1;
++    if (full < 0) full = getenv("GENESIS_Z80_FULL_SYNC") != NULL;
++    if (!s_in_vblank_service && !full) return;
 +    (void)a; (void)bytes;
 +    machine_z80_sync_to(g_audio_cycle_counter * 7u + g_68k_stamp_rebase);
  }
