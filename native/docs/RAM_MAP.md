@@ -33,8 +33,8 @@ Note: IRQ1-7 vectors live at $64-$7C (vector number × 4), not $44-$5C.
 | vint_runcount | $FF0288 | word, +1/VBlank | $004E14 |
 | vint_routine | $FF0516 | word index | $004DF4 read / $004E00 clear |
 | initial_ssp / vbla_stack / intr_stack | $FF0200 | — | vector $0; reset code re-sets SP ($0002xx in func_000210) |
-| game_mode | TODO | — | not yet identified |
-| player_object | TODO | — | not yet identified |
+| game_mode | $FF0516 | word mode index | same as vint_routine; values 0/4/8/10/12… select the VBlank routine (US confirmed via generated `$000786/$0007C2/$004DF4` reads and `$0007xx` writes) |
+| player_object | TODO | — | not yet identified (needs gameplay-phase RE) |
 
 Runner reads vint_runcount as a **longword**; Boogerman's counter is a word.
 At $FF0288 the long read is `(counter<<16) | word($FF028A)`. Current uses in
@@ -53,3 +53,15 @@ revisit (candidate: find a true longword counter, or adapter-side shim).
 
 - Size 3,145,728 bytes; header checksum $DFAE (verified);
   full-ROM CRC32 **DBC4340C**; SHA-1 4fd33eeaf1e804d005793a6e1185122fd7e9a751.
+
+## US (NTSC) re-verification (M3, 2026-11-25)
+
+- Vectors: SSP=$00FF0200, reset PC=$000210, IRQ4=$006BDE, IRQ6=$004DF0.
+  CRC32 **1A7A2BEC**, SHA-1 bb1d23ca4c48d37bf3170d320cc30bfbc2acdfff, checksum $8BD9.
+- The US VBlank handler is the same `$004DF0` code: `$004E14 ADDQ.W #1,$FF0288`
+  (vint_runcount) and `$004DF4` read / `$004E00` clear of `$FF0516` (vint_routine /
+  game_mode). So the EU `[ram_layout]` inherits correctly to US.
+- `$FF0516` mode index takes 0/4/8/10/12…; it is the game-mode word (set
+  `game_mode` in both game.toml).
+- `player_object`, `plc_pending`, `level_modes` remain TODO: they require
+  gameplay-phase (post-Start) RAM diffs, i.e. M4 route validation.

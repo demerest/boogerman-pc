@@ -13,7 +13,7 @@
 output_prefix = "boogerman_us"
 
 [ram_layout]
-game_mode      = 0x000000   # TODO: RE — game mode byte/word address
+game_mode      = 0x00FF0516 # word mode index (0/4/8/10/12…); selects VBlank routine
 vint_runcount  = 0x00FF0288 # word +1 per VBlank ($004E14 addq.w #1,$FF0288)
 vint_routine   = 0x00FF0516 # word: VBlank dispatch index (ptr table at +$20002)
 plc_pending    = 0x000000   # TODO: RE — pattern-load cue count (if any)
