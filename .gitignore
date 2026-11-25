@@ -11,6 +11,10 @@ web/rom/boogerman.gen.js
 # Static-recompilation output is derived from the ROM code: build-time only.
 native/generated/
 native/build/
+# Regenerable recompiler/toolchain build intermediates (not source).
+native/build-recomp/
+native/tools/*.exe
+native/tools/*.obj
 # Game screenshots / frame captures are derived copyrighted imagery.
 native/captures/
 native/captures-interp/

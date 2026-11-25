@@ -1,5 +1,0 @@
-S:/home/dev/boogerman-pc/native/build-recomp/CMakeFiles/GenesisRecomp.dir
-S:/home/dev/boogerman-pc/native/build-recomp/CMakeFiles/M68kStepRecomp.dir
-S:/home/dev/boogerman-pc/native/build-recomp/CMakeFiles/M68kSpanRecomp.dir
-S:/home/dev/boogerman-pc/native/build-recomp/CMakeFiles/ALL_BUILD.dir
-S:/home/dev/boogerman-pc/native/build-recomp/CMakeFiles/ZERO_CHECK.dir
