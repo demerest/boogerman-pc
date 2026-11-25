@@ -328,6 +328,21 @@ verifiable much sooner.
     * => Boot-speed fidelity is a multi-stage cycle-alignment task (cosim vs
       oracle per stage), not a single knob. M2 render-title + M3 RAM map stand;
       interactive title (M4) still gated on reaching the live title state.
+  - **Session 19 (2026-11-25): per-stage cosim timelines captured.**
+    * Added env-gated `[BOOT-TL]` (per V-int: frame, vint_count, pre-handler
+      mode `$FF0516`, handler cycles). NOTE: read mode BEFORE the handler
+      (it clears `$FF0516`); headless runs need `--capture-out` to advance.
+    * Native (internal V-ints): mode0@~18 → mode4@~700 → mode8@~1400, then
+      stays 8. Web (gx frames): mode0@vc43 → mode8@vc83. So native needs ~17×
+      more V-ints to reach the title mode; each stage ~10× slower.
+    * Handler cycles are small (~5.7k) and H-int counters ($FF069A) advance at
+      ~oracle rate, so the lag is in the MAIN-LOOP boot state advancement per
+      V-int (the detect `$FF0216/18` accrues ~1.7× slower and mode transitions
+      ~10× slower), not the V-int handler nor H-int rate.
+    * => Next: cosim the main-loop boot routine (the `$1A36/$1A9A` detect and
+      the mode-transition code) cycle-by-cycle vs the oracle to find why it
+      accrues less per V-int (likely a wait-on-flag that the native scheduler
+      satisfies less often).
   Next experiments (in order):
   1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
      by interleaving the long boot V-int handler / correcting the Z80 share;

@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..cf16089 100644
+index 4eee55c..4f9157d 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -225,6 +225,31 @@ void (*g_fm_write_trace_fn )(uint32_t address,      uint8_t value, uint32_t targ
@@ -69,7 +69,37 @@ index 4eee55c..cf16089 100644
          uint32_t now = g_audio_cycle_counter;
          if (s_main_cpu_divisor > 1 && !s_irq_in_progress && now > s_budget_cyc_seen) {
              uint32_t elapsed = now - s_budget_cyc_seen;
-@@ -1842,16 +1873,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -984,6 +1015,7 @@ static void own_deliver_vint(GVDP *vdp)
+     uint8_t vbla_routine_at_entry =
+         glue_peek8(g_game_layout.vint_routine_addr & 0xFFFFFF);
+ #endif
++    unsigned md_pre = (g_ram[0x516] << 8) | g_ram[0x517]; /* mode before clear */
+     if (genesis_force_interp()) {
+         /* Interpret the V-int handler body from the level-6 autovector; delivery
+          * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
+@@ -993,6 +1025,21 @@ static void own_deliver_vint(GVDP *vdp)
+     s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
+     if (s_irq_cycle_debt)
+         s_irq_cycle_debt_level = 6;
++    /* TEMP DEBUG (Boogerman M3 cosim): env-gated boot timeline. Logs one line
++     * per V-int: frame, vint_count($FF0288), mode($FF0516), handler cycles.
++     * Compare against the web oracle timeline to align boot stages. */
++    {
++        static int tl_on = -1;
++        if (tl_on < 0) tl_on = getenv("GENESIS_BOOT_TIMELINE") != NULL;
++        if (tl_on) {
++            extern unsigned long g_snd_frame;
++            unsigned vc = (g_ram[0x288] << 8) | g_ram[0x289];
++            /* mode BEFORE the handler consumes/clears $FF0516 */
++            unsigned md = md_pre;
++            fprintf(stderr, "[BOOT-TL] f=%lu vc=%u mode=%u hc=%u\n",
++                    g_snd_frame, vc, md, (unsigned)(g_audio_cycle_counter - cyc_before));
++        }
++    }
+ #ifdef GEN_DEV_TRACE
+     /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
+      * debt freezes the main loop for multiple wall frames (and with it the
+@@ -1842,16 +1889,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
