@@ -343,6 +343,17 @@ verifiable much sooner.
       the mode-transition code) cycle-by-cycle vs the oracle to find why it
       accrues less per V-int (likely a wait-on-flag that the native scheduler
       satisfies less often).
+  - **Session 20 (2026-11-25): main-loop cosim — WaitForVBlank NOT detected.**
+    * `GENESIS_YIELD_LOG=1` produced an EMPTY yield log over the boot: the
+      game fiber never calls `glue_yield_for_vblank`, i.e. the codegen's
+      WaitForVBla pattern (Sonic-style poll of vint_runcount) does not match
+      Boogerman. So the fiber never parks; the park/interleave/pacing machinery
+      that gives oracle cadence never engages, and boot runs on budget-yields
+      alone → ~17× slow main-loop advancement.
+    * Candidate vblank-wait: `$00616E` reads `$FF0288` but tests bit4 (`&$10`),
+      not a counter-change, so it isn't auto-detected. A per-game
+      WaitForVBlank/main-loop hook (spec `resume_main_loop_pc` /
+      `dispatch_main_loop_pc` or a codegen pattern) is the concrete fix.
   Next experiments (in order):
   1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
      by interleaving the long boot V-int handler / correcting the Z80 share;
