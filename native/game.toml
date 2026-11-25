@@ -1,0 +1,29 @@
+# game.toml — Boogerman: A Pick and Flick Adventure (EU, PAL)
+# Sega Mega Drive, 1994, Interplay / Unexpected Development
+# 3 MB (24 Mbit) ROM, no SRAM, no mapper
+# Dump: "Boogerman (E) [!].gen"  header checksum DFAE (verified)
+# Serial: GM T-125066-00   Region: E
+# Reset vectors: SSP=$00FF0200  PC=$00000210
+#
+# Status: EXPLORING — first codegen pass. ram_layout addresses other than
+# initial_ssp are placeholders (0) until RE establishes them; the runner
+# needs real values before playable validation (see docs/ROADMAP.md).
+
+[game]
+output_prefix = "boogerman"
+
+[ram_layout]
+game_mode      = 0x000000   # TODO: RE — game mode byte/word address
+vint_runcount  = 0x00FF0288 # word +1 per VBlank ($004E14 addq.w #1,$FF0288)
+vint_routine   = 0x00FF0516 # word: VBlank dispatch index (ptr table at +$20002)
+plc_pending    = 0x000000   # TODO: RE — pattern-load cue count (if any)
+initial_ssp    = 0x00FF0200 # from reset vector $0 (reset code re-sets SP here)
+vbla_stack     = 0x00FF0200 # VBlank MOVEM uses the current SP (no switch seen)
+intr_stack     = 0x00FF0200
+player_object  = 0x000000   # TODO: RE — object table base
+level_modes    = []         # TODO: RE — gameplay mode values
+
+[functions]
+# $010001 is an odd-address auto-discovery artifact (data mid-instruction);
+# real code at $010000 is reached via JSR from elsewhere.
+blacklist = [0x010001]

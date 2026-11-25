@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>ram dump</title></head>
+<body>
+<div id="out">waiting</div>
+<script src="../vendor/gpgx/gpgx.web.js"></script>
+<script src="../vendor/gpgx/gpgx.wasm.js"></script>
+<script src="../rom/boogerman.gen.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/hooks.js"></script>
+<script src="../js/patches.js"></script>
+<script src="../js/shaders.js"></script>
+<script src="../js/audio.js"></script>
+<script src="../js/input.js"></script>
+<script src="../js/video.js"></script>
+<script src="../js/cheats.js"></script>
+<script src="../js/states.js"></script>
+<script src="../js/mods.js"></script>
+<script src="../js/core.js"></script>
+<script>
+(async function () {
+  try {
+    await BP.core.init({ silent: true });
+    BP.core.loadGame(BP.util.b64ToBytes(window.BP_ROM_B64), 'boogerman.gen');
+    const target = parseInt(new URLSearchParams(location.search).get('frames') || '180', 10);
+    let n = 0;
+    function step() {
+      BP.core.run();
+      if (++n >= target) {
+        const ram = BP.core.ram();
+        let regs = '';
+        const rd = BP.core.romdev;
+        if (rd && rd.getreg) {
+          for (let i = 0; i < 24; i++) {
+            try { regs += i + ':' + (rd.getreg(i) >>> 0).toString(16) + ' '; }
+            catch (e) { regs += i + ':err '; }
+          }
+        }
+        document.getElementById('out').textContent =
+          'RAMDUMP ' + BP.util.bytesToB64(ram) +
+          ' COUNTER ' + BP.core.ramRead16(0x288).toString(16) +
+          ' MARKER ' + BP.core.ramRead16(0x200).toString(16) +
+          ' REGS ' + regs;
+        document.title = 'RAMDUMP DONE';
+        return;
+      }
+      setTimeout(step, 0);
+    }
+    setTimeout(step, 0);
+  } catch (e) {
+    document.getElementById('out').textContent = 'ERR ' + e.message;
+  }
+})();
+</script>
+</body>
+</html>

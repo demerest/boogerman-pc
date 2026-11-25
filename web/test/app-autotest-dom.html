@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>AUTOTEST PASS</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header id="bp-header">
+  <div id="bp-brand">
+    <span class="bp-logo">BOOGERMAN<span class="bp-logo-sub">PC</span></span>
+    <span id="bp-core-ver" class="bp-hint">Genesis Plus GX v1.7.4 162c343</span>
+  </div>
+  <div id="bp-stats">
+    <span class="bp-chip" id="bp-stat-region">PAL</span>
+    <span class="bp-chip" id="bp-stat-res">256×192</span>
+    <span class="bp-chip" id="bp-stat-fps">0.0 fps</span>
+    <span class="bp-chip" id="bp-stat-frame">f0</span>
+    <span class="bp-chip" id="bp-stat-audio">off</span>
+  </div>
+  <div id="bp-actions">
+    <button id="bp-pause-btn" title="P">Pause</button>
+    <button id="bp-ff-btn" title="Fast forward">FF</button>
+    <button id="bp-reset-btn" title="Reset console">Reset</button>
+    <button id="bp-shot-btn" title="F9">Shot</button>
+    <button id="bp-full-btn" title="Fullscreen">Full</button>
+    <button id="bp-help-btn" title="H">?</button>
+    <button id="bp-panel-toggle" title="Toggle panel">☰</button>
+  </div>
+</header>
+
+<main id="bp-main">
+  <div id="bp-stage">
+    <canvas id="bp-canvas" width="914" height="577" style="width: 914px; height: 577px;"></canvas>
+    <canvas id="bp-overlay" width="320" height="224" style="width: 914px; height: 577px;"></canvas>
+
+    <div id="bp-boot" class="hidden">
+      <div class="bp-boot-inner">
+        <h1>BOOGERMAN<span>PC</span></h1>
+        <p class="bp-boot-sub">A Pick and Flick Adventure — enhancement port framework</p>
+        <button id="bp-boot-btn">▶ BOOT CARTRIDGE</button>
+        <p class="bp-hint">Click to boot (unlocks audio). Your own cartridge dump runs locally — nothing is uploaded.</p>
+        <div class="bp-boot-keys">
+          <span>Arrows = D-pad</span><span>Z/X/C = A/B/C</span><span>A/S/D = X/Y/Z</span>
+          <span>Enter = Start</span><span>RShift = Mode</span><span>H = help</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="bp-error" class="hidden"></div>
+    <div id="bp-autotest-status">AUTOTEST PASS {"ok":true,"err":"","frames":180,"videoFrames":180,"nullVideo":0,"audioSamples":159713,"region":"PAL","fps":49.7014591857706,"sampleRate":44100,"baseWidth":320,"baseHeight":224,"ramSize":65536,"stateSize":1036288,"pixelFormat":2}</div>
+
+    <div id="bp-touch" class="hidden">
+      <div class="bp-touch-dpad">
+        <button data-retro="4" class="bp-t-up">▲</button>
+        <button data-retro="6" class="bp-t-left">◀</button>
+        <button data-retro="7" class="bp-t-right">▶</button>
+        <button data-retro="5" class="bp-t-down">▼</button>
+      </div>
+      <div class="bp-touch-face">
+        <button data-retro="10" class="bp-t-small">X</button>
+        <button data-retro="9" class="bp-t-small">Y</button>
+        <button data-retro="11" class="bp-t-small">Z</button>
+        <button data-retro="1" class="bp-t-big">A</button>
+        <button data-retro="0" class="bp-t-big">B</button>
+        <button data-retro="8" class="bp-t-big">C</button>
+      </div>
+      <div class="bp-touch-sys">
+        <button data-retro="2">MODE</button>
+        <button data-retro="3">START</button>
+      </div>
+    </div>
+  </div>
+
+  <aside id="bp-aside">
+    <nav id="bp-tabs">
+      <button class="bp-tab active" data-tab="video">Video</button>
+      <button class="bp-tab" data-tab="input">Input</button>
+      <button class="bp-tab" data-tab="cheats">Cheats</button>
+      <button class="bp-tab" data-tab="states">States</button>
+      <button class="bp-tab" data-tab="mods">Mods</button>
+      <button class="bp-tab" data-tab="system">System</button>
+      <button class="bp-tab" data-tab="dev">Dev</button>
+    </nav>
+
+    <section id="panel-video" class="bp-panel active">
+      <h2>Scaling</h2>
+      <label class="bp-option-row"><span>Mode</span>
+        <select id="bp-scale">
+          <option value="fit">Fit (aspect-correct)</option>
+          <option value="integer">Integer scale</option>
+          <option value="stretch">Stretch</option>
+        </select>
+      </label>
+      <h2>Shader chain</h2>
+      <div class="bp-inline">
+        <select id="bp-shader-add"><option value="sharp-bilinear">Sharp bilinear (crisp upscale)</option><option value="scanlines">Scanlines</option><option value="crt">CRT (curvature + mask + vignette)</option><option value="lcd">LCD grid (handheld look)</option></select>
+        <button id="bp-shader-add-btn">Add pass</button>
+      </div>
+      <div id="bp-shader-chain"><div class="bp-card"><div class="bp-card-head"><strong>Sharp bilinear (crisp upscale)</strong><button title="Move up">↑</button><button title="Move down">↓</button><button title="Remove">×</button></div></div></div>
+      <h2>Color grade</h2>
+      <div id="bp-grade"><label class="bp-slider"><span>Brightness</span><input type="range" min="-0.5" max="0.5" step="0.01" value="0"><output>0</output></label><label class="bp-slider"><span>Contrast</span><input type="range" min="0.5" max="1.5" step="0.01" value="1"><output>1</output></label><label class="bp-slider"><span>Saturation</span><input type="range" min="0" max="2" step="0.01" value="1"><output>1</output></label></div>
+    </section>
+
+    <section id="panel-input" class="bp-panel">
+      <h2>Keyboard</h2>
+      <label class="bp-option-row"><span>Preset</span><select id="bp-input-preset"><option value="arrows-zxc">Arrows + Z/X/C (default)</option><option value="wasd-jkl">WASD + J/K/L</option><option value="custom">Custom</option></select></label>
+      <div id="bp-input-map"><div class="bp-input-row"><span>D-Up</span><button class="bp-key">Up</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>D-Down</span><button class="bp-key">Down</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>D-Left</span><button class="bp-key">Left</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>D-Right</span><button class="bp-key">Right</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>A</span><button class="bp-key">Z</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>B</span><button class="bp-key">X</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>C</span><button class="bp-key">C</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>X</span><button class="bp-key">A</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>Y</span><button class="bp-key">S</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>Z</span><button class="bp-key">D</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>Start</span><button class="bp-key">Enter</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div><div class="bp-input-row"><span>Mode</span><button class="bp-key">RShift</button><label class="bp-turbo"><input type="checkbox"> turbo</label></div></div>
+      <h2>Controller</h2>
+      <label class="bp-option-row"><span>6-button pad</span><input type="checkbox" id="bp-6btn"></label>
+      <p class="bp-hint">Gamepad (standard layout): X=A, A=B, B=C, Y=X, LB=Y, RB=Z, Start/Back = Start/Mode. First connected pad maps to port 1.</p>
+    </section>
+
+    <section id="panel-cheats" class="bp-panel">
+      <h2>Add cheat</h2>
+      <div class="bp-inline">
+        <input id="bp-cheat-code" placeholder="XXXX-XXXX or AAAAAA:DDDD" spellcheck="false">
+        <input id="bp-cheat-label" placeholder="label (optional)">
+        <button id="bp-cheat-add-btn">Add</button>
+      </div>
+      <div id="bp-cheat-list"><div class="bp-cheat-row"><input type="checkbox"><div><strong>AT4T-AA86</strong> <span class="bp-hint">[EU Game Genie pack] Infinite lives</span><br><span class="bp-hint">addr 0x0035DC data 0x6004</span></div><button>×</button></div><div class="bp-cheat-row"><input type="checkbox"><div><strong>AA5T-AAEA</strong> <span class="bp-hint">[EU Game Genie pack] Infinite energy (EU)</span><br><span class="bp-hint">addr 0x003780 data 0x0000</span></div><button>×</button></div><div class="bp-cheat-row"><input type="checkbox"><div><strong>EZLT-CAFR</strong> <span class="bp-hint">[EU Game Genie pack] Start new game with 25 lives</span><br><span class="bp-hint">addr 0x0155AE data 0x0025</span></div><button>×</button></div><div class="bp-cheat-row"><input type="checkbox"><div><strong>BFLT-CAFR</strong> <span class="bp-hint">[EU Game Genie pack] Start new game with 9 lives</span><br><span class="bp-hint">addr 0x0155AE data 0x0009</span></div><button>×</button></div><div class="bp-cheat-row"><input type="checkbox"><div><strong>AD2A-AAFR</strong> <span class="bp-hint">[EU Game Genie pack] Infinite boogers</span><br><span class="bp-hint">addr 0x00F0AE data 0x0000</span></div><button>×</button></div><div class="bp-cheat-row"><input type="checkbox"><div><strong>AD2T-AAFT</strong> <span class="bp-hint">[EU Game Genie pack] Infinite loogies (after milk)</span><br><span class="bp-hint">addr 0x00F1B0 data 0x0000</span></div><button>×</button></div><div class="bp-cheat-row"><input type="checkbox"><div><strong>ZCKA-ACH6</strong> <span class="bp-hint">[EU Game Genie pack] High jump</span><br><span class="bp-hint">addr 0x0092FC data 0x01A8</span></div><button>×</button></div></div>
+      <p class="bp-hint">Codes are decoded and applied by the core itself. Game Genie codes are region-specific — this dump is the EU version.</p>
+    </section>
+
+    <section id="panel-states" class="bp-panel">
+      <h2>Save states</h2>
+      <div id="bp-states"><div class="bp-state-card selected"><div class="bp-state-thumb">EMPTY</div><div class="bp-state-num">Slot 1</div><div class="bp-state-btns"><button>Save</button><button disabled="">Load</button><button title="Export .state" disabled="">⤓</button><button title="Clear" disabled="">×</button></div></div><div class="bp-state-card"><div class="bp-state-thumb">EMPTY</div><div class="bp-state-num">Slot 2</div><div class="bp-state-btns"><button>Save</button><button disabled="">Load</button><button title="Export .state" disabled="">⤓</button><button title="Clear" disabled="">×</button></div></div><div class="bp-state-card"><div class="bp-state-thumb">EMPTY</div><div class="bp-state-num">Slot 3</div><div class="bp-state-btns"><button>Save</button><button disabled="">Load</button><button title="Export .state" disabled="">⤓</button><button title="Clear" disabled="">×</button></div></div><div class="bp-state-card"><div class="bp-state-thumb">EMPTY</div><div class="bp-state-num">Slot 4</div><div class="bp-state-btns"><button>Save</button><button disabled="">Load</button><button title="Export .state" disabled="">⤓</button><button title="Clear" disabled="">×</button></div></div><div class="bp-state-card"><div class="bp-state-thumb">EMPTY</div><div class="bp-state-num">Slot 5</div><div class="bp-state-btns"><button>Save</button><button disabled="">Load</button><button title="Export .state" disabled="">⤓</button><button title="Clear" disabled="">×</button></div></div><div class="bp-state-card"><div class="bp-state-thumb">EMPTY</div><div class="bp-state-num">Slot 6</div><div class="bp-state-btns"><button>Save</button><button disabled="">Load</button><button title="Export .state" disabled="">⤓</button><button title="Clear" disabled="">×</button></div></div><div class="bp-state-card"><div class="bp-state-thumb">EMPTY</div><div class="bp-state-num">Slot 7</div><div class="bp-state-btns"><button>Save</button><button disabled="">Load</button><button title="Export .state" disabled="">⤓</button><button title="Clear" disabled="">×</button></div></div><div class="bp-state-card"><div class="bp-state-thumb">EMPTY</div><div class="bp-state-num">Slot 8</div><div class="bp-state-btns"><button>Save</button><button disabled="">Load</button><button title="Export .state" disabled="">⤓</button><button title="Clear" disabled="">×</button></div></div></div>
+      <div class="bp-inline">
+        <label class="bp-file-btn">Import .state<input type="file" id="bp-state-import" accept=".state" hidden=""></label>
+      </div>
+      <p class="bp-hint">F5 = save selected slot, F8 = load selected slot. Click a card to select. States are core snapshots (RAM + hardware), exportable as files.</p>
+    </section>
+
+    <section id="panel-mods" class="bp-panel">
+      <h2>Enhancement mods</h2>
+      <div id="bp-mod-list"><div class="bp-mod-row"><input type="checkbox"><div><strong>Overlay demo (frame HUD)</strong> <span class="bp-hint">script</span><br><span class="bp-hint">Example script mod: draws frame counter, session clock and a live RAM word on the overlay canvas. Template for gameplay enhancements.</span></div></div><div class="bp-mod-row"><input type="checkbox"><div><strong>EU Game Genie pack</strong> <span class="bp-hint">cheats</span><br><span class="bp-hint">Community-sourced Game Genie codes for the European release. Unverified - toggle individually in the Cheats tab. Adds codes to the cheat list; does not enable them.</span></div></div></div>
+      <div class="bp-inline">
+        <label class="bp-file-btn">Load mod file<input type="file" id="bp-mod-file" accept=".js,.json,.ips,.bps" hidden=""></label>
+        <button id="bp-mod-reboot" class="hidden">Apply patches &amp; reboot</button>
+      </div>
+      <p class="bp-hint">Drop .js / .json / .ips / .bps files anywhere on the page. ROM patches apply at boot; scripts, shaders and cheats apply live. See mods/README.md for the format.</p>
+    </section>
+
+    <section id="panel-system" class="bp-panel">
+      <h2>Audio</h2>
+      <label class="bp-slider"><span>Volume</span><input type="range" id="bp-volume" min="0" max="1" step="0.01"><output></output></label>
+      <label class="bp-option-row"><span>Mute (M)</span><input type="checkbox" id="bp-mute"></label>
+      <h2>Cartridge</h2>
+      <div class="bp-inline">
+        <label class="bp-file-btn">Load other ROM<input type="file" id="bp-rom-file" accept=".gen,.md,.bin,.smd,.sms,.gg" hidden=""></label>
+      </div>
+      <p class="bp-hint">Session-only; the embedded dump stays the default. SRAM saves (if a game uses them) persist automatically.</p>
+      <h2>Core options (live)</h2>
+      <div id="bp-core-options"><label class="bp-option-row"><span title="genesis_plus_gx_add_on">CD add-on (MD mode) (Requires Restart)</span><select><option value="auto">auto</option><option value="sega/mega cd">sega/mega cd</option><option value="megasd">megasd</option><option value="none">none</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_addr_error">68K Address Error</span><select><option value="enabled">enabled</option><option value="disabled">disabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_aspect_ratio">Core-Provided Aspect Ratio</span><select><option value="auto">auto</option><option value="NTSC PAR">NTSC PAR</option><option value="PAL PAR">PAL PAR</option><option value="4:3">4:3</option><option value="Uncorrected">Uncorrected</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_audio_eq_high">EQ High</span><select><option value="100">100</option><option value="0">0</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option><option value="60">60</option><option value="65">65</option><option value="70">70</option><option value="75">75</option><option value="80">80</option><option value="85">85</option><option value="90">90</option><option value="95">95</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_audio_eq_low">EQ Low</span><select><option value="100">100</option><option value="0">0</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option><option value="60">60</option><option value="65">65</option><option value="70">70</option><option value="75">75</option><option value="80">80</option><option value="85">85</option><option value="90">90</option><option value="95">95</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_audio_eq_mid">EQ Mid</span><select><option value="100">100</option><option value="0">0</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option><option value="60">60</option><option value="65">65</option><option value="70">70</option><option value="75">75</option><option value="80">80</option><option value="85">85</option><option value="90">90</option><option value="95">95</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_audio_filter">Audio Filter</span><select><option value="disabled">disabled</option><option value="low-pass">low-pass</option><option value="EQ">EQ</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_bios">System Boot ROM</span><select><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_blargg_ntsc_filter">Blargg NTSC Filter</span><select><option value="disabled">disabled</option><option value="monochrome">monochrome</option><option value="composite">composite</option><option value="svideo">svideo</option><option value="rgb">rgb</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_cart_bram">CD Backup Cart BRAM (Requires Restart)</span><select><option value="per cart">per cart</option><option value="per game">per game</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_cart_size">CD Backup Cart BRAM Size (Requires Restart)</span><select><option value="4meg">4meg</option><option value="disabled">disabled</option><option value="128k">128k</option><option value="256k">256k</option><option value="512k">512k</option><option value="1meg">1meg</option><option value="2meg">2meg</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_cd_latency">CD Access Time</span><select><option value="enabled">enabled</option><option value="disabled">disabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_cd_precache">CD Image Cache</span><select><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_cdda_volume">CD-DA Volume</span><select><option value="100">100</option><option value="0">0</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option><option value="60">60</option><option value="65">65</option><option value="70">70</option><option value="75">75</option><option value="80">80</option><option value="85">85</option><option value="90">90</option><option value="95">95</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_enhanced_vscroll">Enhanced per-tile vertical scroll</span><select><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_enhanced_vscroll_limit">Enhanced per-tile vertical scroll limit</span><select><option value="8">8</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_fm_preamp">FM Preamp Level</span><select><option value="100">100</option><option value="0">0</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option><option value="60">60</option><option value="65">65</option><option value="70">70</option><option value="75">75</option><option value="80">80</option><option value="85">85</option><option value="90">90</option><option value="95">95</option><option value="105">105</option><option value="110">110</option><option value="115">115</option><option value="120">120</option><option value="125">125</option><option value="130">130</option><option value="135">135</option><option value="140">140</option><option value="145">145</option><option value="150">150</option><option value="155">155</option><option value="160">160</option><option value="165">165</option><option value="170">170</option><option value="175">175</option><option value="180">180</option><option value="185">185</option><option value="190">190</option><option value="195">195</option><option value="200">200</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_force_dtack">System Lock-Ups</span><select><option value="enabled">enabled</option><option value="disabled">disabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_frameskip">Frameskip</span><select><option value="disabled">disabled</option><option value="auto">auto</option><option value="manual">manual</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_frameskip_threshold">Frameskip Threshold (%)</span><select><option value="33">33</option><option value="15">15</option><option value="18">18</option><option value="21">21</option><option value="24">24</option><option value="27">27</option><option value="30">30</option><option value="36">36</option><option value="39">39</option><option value="42">42</option><option value="45">45</option><option value="48">48</option><option value="51">51</option><option value="54">54</option><option value="57">57</option><option value="60">60</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_gg_extra">Game Gear Extended Screen</span><select><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_gun_cursor">Show Light Gun Crosshair</span><select><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_gun_input">Light Gun Input</span><select><option value="lightgun">lightgun</option><option value="touchscreen">touchscreen</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_invert_mouse">Invert Mouse Y-Axis</span><select><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_lcd_filter">LCD Ghosting Filter</span><select><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_left_border">Hide Master System Side Borders</span><select><option value="disabled">disabled</option><option value="left border">left border</option><option value="left &amp; right borders">left &amp; right borders</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_lock_on">Cartridge Lock-On</span><select><option value="disabled">disabled</option><option value="game genie">game genie</option><option value="action replay (pro)">action replay (pro)</option><option value="sonic &amp; knuckles">sonic &amp; knuckles</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_lowpass_range">Low-Pass Filter %</span><select><option value="60">60</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option><option value="65">65</option><option value="70">70</option><option value="75">75</option><option value="80">80</option><option value="85">85</option><option value="90">90</option><option value="95">95</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_md_channel_0_volume">Mega Drive/Genesis FM Channel 0 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_md_channel_1_volume">Mega Drive/Genesis FM Channel 1 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_md_channel_2_volume">Mega Drive/Genesis FM Channel 2 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_md_channel_3_volume">Mega Drive/Genesis FM Channel 3 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_md_channel_4_volume">Mega Drive/Genesis FM Channel 4 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_md_channel_5_volume">Mega Drive/Genesis FM Channel 5 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_no_sprite_limit">Remove Per-Line Sprite Limit</span><select><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_overclock">CPU Speed</span><select><option value="100">100</option><option value="125">125</option><option value="150">150</option><option value="175">175</option><option value="200">200</option><option value="225">225</option><option value="250">250</option><option value="275">275</option><option value="300">300</option><option value="325">325</option><option value="350">350</option><option value="375">375</option><option value="400">400</option><option value="425">425</option><option value="450">450</option><option value="475">475</option><option value="500">500</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_overscan">Borders</span><select><option value="disabled">disabled</option><option value="top/bottom">top/bottom</option><option value="left/right">left/right</option><option value="full">full</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_pcm_volume">PCM Volume</span><select><option value="100">100</option><option value="0">0</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option><option value="60">60</option><option value="65">65</option><option value="70">70</option><option value="75">75</option><option value="80">80</option><option value="85">85</option><option value="90">90</option><option value="95">95</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_psg_channel_0_volume">PSG Tone Channel 0 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_psg_channel_1_volume">PSG Tone Channel 1 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_psg_channel_2_volume">PSG Tone Channel 2 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_psg_channel_3_volume">PSG Noise Channel 3 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_psg_preamp">PSG Preamp Level</span><select><option value="150">150</option><option value="0">0</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option><option value="60">60</option><option value="65">65</option><option value="70">70</option><option value="75">75</option><option value="80">80</option><option value="85">85</option><option value="90">90</option><option value="95">95</option><option value="100">100</option><option value="105">105</option><option value="110">110</option><option value="115">115</option><option value="120">120</option><option value="125">125</option><option value="130">130</option><option value="135">135</option><option value="140">140</option><option value="145">145</option><option value="155">155</option><option value="160">160</option><option value="165">165</option><option value="170">170</option><option value="175">175</option><option value="180">180</option><option value="185">185</option><option value="190">190</option><option value="195">195</option><option value="200">200</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_region_detect">System Region</span><select><option value="auto">auto</option><option value="ntsc-u">ntsc-u</option><option value="pal">pal</option><option value="ntsc-j">ntsc-j</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_render">Interlaced Mode 2 Output</span><select><option value="single field">single field</option><option value="double field">double field</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_0_volume">Master System FM (YM2413) Channel 0 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_1_volume">Master System FM (YM2413) Channel 1 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_2_volume">Master System FM (YM2413) Channel 2 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_3_volume">Master System FM (YM2413) Channel 3 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_4_volume">Master System FM (YM2413) Channel 4 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_5_volume">Master System FM (YM2413) Channel 5 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_6_volume">Master System FM (YM2413) Channel 6 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_7_volume">Master System FM (YM2413) Channel 7 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sms_fm_channel_8_volume">Master System FM (YM2413) Channel 8 Volume %</span><select><option value="100">100</option><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_sound_output">Sound Output</span><select><option value="stereo">stereo</option><option value="mono">mono</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_system_bram">CD System BRAM (Requires Restart)</span><select><option value="per bios">per bios</option><option value="per game">per game</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_system_hw">System Hardware</span><select><option value="auto">auto</option><option value="sg-1000">sg-1000</option><option value="sg-1000 II">sg-1000 II</option><option value="sg-1000 II + ram ext.">sg-1000 II + ram ext.</option><option value="mark-III">mark-III</option><option value="master system">master system</option><option value="master system II">master system II</option><option value="game gear">game gear</option><option value="mega drive / genesis">mega drive / genesis</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_vdp_mode">Force VDP Mode</span><select><option value="auto">auto</option><option value="60hz">60hz</option><option value="50hz">50hz</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_ym2413">Master System FM (YM2413)</span><select><option value="auto">auto</option><option value="disabled">disabled</option><option value="enabled">enabled</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_ym2413_core">Master System FM (YM2413) Core</span><select><option value="mame">mame</option><option value="nuked">nuked</option></select></label><label class="bp-option-row"><span title="genesis_plus_gx_ym2612">Mega Drive/Genesis FM</span><select><option value="mame (ym2612)">mame (ym2612)</option><option value="mame (asic ym3438)">mame (asic ym3438)</option><option value="mame (enhanced ym3438)">mame (enhanced ym3438)</option><option value="nuked (ym2612)">nuked (ym2612)</option><option value="nuked (ym3438)">nuked (ym3438)</option></select></label></div>
+    </section>
+
+    <section id="panel-dev" class="bp-panel">
+      <h2>Work RAM (68000, 64KB @ 0xFF0000)</h2>
+      <div class="bp-inline">
+        <button id="bp-dev-page-prev">←</button>
+        <input id="bp-dev-page-input" size="6" spellcheck="false">
+        <button id="bp-dev-page-next">→</button>
+        <label class="bp-hint"><input type="checkbox" id="bp-dev-refresh"> live</label>
+      </div>
+      <pre id="bp-dev-hex" class="bp-hex"></pre>
+      <h2>Watch</h2>
+      <div class="bp-inline">
+        <input id="bp-dev-watch-addr" value="FF0000" size="8" spellcheck="false">
+        <select id="bp-dev-watch-size"><option value="8">8-bit</option><option value="16" selected="">16-bit</option><option value="32">32-bit</option></select>
+        <span id="bp-dev-watch-value" class="bp-chip">-</span>
+      </div>
+      <h2>Poke</h2>
+      <div class="bp-inline">
+        <input id="bp-dev-poke-addr" placeholder="addr" size="8" spellcheck="false">
+        <input id="bp-dev-poke-value" placeholder="value" size="8" spellcheck="false">
+        <select id="bp-dev-poke-size"><option value="8">8</option><option value="16" selected="">16</option><option value="32">32</option></select>
+        <button id="bp-dev-poke-btn">Write</button>
+      </div>
+      <h2>Debugger extensions</h2>
+      <p id="bp-dev-romdev" class="bp-hint">romdev debugger extensions PRESENT (23 functions: setreg, getreg, vramwatch_set, vramwatch_get, dmawatch_set, dmawatch_get, watchpoint_set, watchpoint_get, ...). Experimental - see PORTING.md.</p>
+    </section>
+  </aside>
+</main>
+
+<footer id="bp-footer">
+  <span>P pause · F5/F8 save/load · F9 screenshot · M mute · H help · . frame-advance</span>
+  <span class="bp-hint">Personal port of your own cartridge dump. Not for redistribution.</span>
+</footer>
+
+<div id="bp-help" class="hidden">
+  <div class="bp-help-inner">
+    <h2>Controls</h2>
+    <table>
+      <tbody><tr><td>Arrows</td><td>D-pad</td></tr>
+      <tr><td>Z / X / C</td><td>MD A / B / C</td></tr>
+      <tr><td>A / S / D</td><td>MD X / Y / Z (6-button)</td></tr>
+      <tr><td>Enter</td><td>Start</td></tr>
+      <tr><td>Right Shift</td><td>Mode</td></tr>
+      <tr><td>P</td><td>Pause / resume</td></tr>
+      <tr><td>F5 / F8</td><td>Save / load selected state slot</td></tr>
+      <tr><td>F9</td><td>Screenshot</td></tr>
+      <tr><td>M</td><td>Mute</td></tr>
+      <tr><td>.</td><td>Frame advance (while paused)</td></tr>
+      <tr><td>H / Esc</td><td>This help / close</td></tr>
+    </tbody></table>
+    <p class="bp-hint">Everything is remappable in the Input tab. Drop ROMs, patches (.ips/.bps), mods (.js/.json) and states (.state) onto the page.</p>
+    <button onclick="document.getElementById('bp-help').classList.add('hidden')">Close</button>
+  </div>
+</div>
+
+<!-- core (browser-adapted glue + embedded wasm) -->
+<script src="vendor/gpgx/gpgx.web.js"></script>
+<script src="vendor/gpgx/gpgx.wasm.js"></script>
+<!-- embedded cartridge dump -->
+<script src="rom/boogerman.gen.js"></script>
+<!-- port framework -->
+<script src="js/util.js"></script>
+<script src="js/hooks.js"></script>
+<script src="js/patches.js"></script>
+<script src="js/shaders.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/video.js"></script>
+<script src="js/cheats.js"></script>
+<script src="js/states.js"></script>
+<script src="js/mods.js"></script>
+<script src="js/core.js"></script>
+<!-- built-in example mods -->
+<script src="mods/overlay-demo.js"></script>
+<script src="mods/eu-cheats.js"></script>
+<!-- app -->
+<script src="js/main.js"></script>
+
+
+</body></html>

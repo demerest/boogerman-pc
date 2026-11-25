@@ -1,0 +1,14 @@
+{
+  "$schema": "https://recomp.fyi/schema/v1.json",
+  "game": "Boogerman: A Pick and Flick Adventure",
+  "system": "Genesis",
+  "type": "recomp",
+  "toolchain": "segagenesisrecomp",
+  "status": "exploring",
+  "project": "BoogermanRecomp",
+  "original": {
+    "region": "Europe",
+    "serial": "GM T-125066-00",
+    "sha1": "4fd33eeaf1e804d005793a6e1185122fd7e9a751"
+  }
+}

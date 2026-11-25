@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>BP harness</title>
+<style>
+  body { background: #111; color: #ddd; font: 12px monospace; margin: 12px; }
+  #test-stage { width: 640px; height: 480px; position: relative; background: #000; }
+  #test-canvas { image-rendering: pixelated; }
+  #test-overlay { position: absolute; pointer-events: none; }
+  #results div { padding: 1px 0; }
+</style>
+</head>
+<body>
+<div id="test-stage">
+  <canvas id="test-canvas" width="320" height="224"></canvas>
+  <canvas id="test-overlay" width="320" height="224"></canvas>
+</div>
+<div style="display:flex;gap:8px;margin:8px 0;">
+  <div><div class="bp-hint" style="color:#888">reported pitch</div><canvas id="data-canvas" width="320" height="192" style="image-rendering:pixelated;background:#000"></canvas></div>
+  <div><div class="bp-hint" style="color:#888">tight pitch</div><canvas id="data-canvas2" width="320" height="192" style="image-rendering:pixelated;background:#000"></canvas></div>
+</div>
+<div id="results"></div>
+
+<script src="../vendor/gpgx/gpgx.web.js"></script>
+<script src="../vendor/gpgx/gpgx.wasm.js"></script>
+<script src="../rom/boogerman.gen.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/hooks.js"></script>
+<script src="../js/patches.js"></script>
+<script src="../js/shaders.js"></script>
+<script src="../js/audio.js"></script>
+<script src="../js/input.js"></script>
+<script src="../js/video.js"></script>
+<script src="../js/cheats.js"></script>
+<script src="../js/states.js"></script>
+<script src="../js/mods.js"></script>
+<script src="../js/core.js"></script>
+<script src="../mods/overlay-demo.js"></script>
+<script src="../mods/eu-cheats.js"></script>
+
+<script>
+const consoleBuf = [];
+['log', 'warn', 'error'].forEach(k => {
+  const orig = console[k].bind(console);
+  console[k] = (...a) => { consoleBuf.push(k + ': ' + a.map(x => (x && x.stack) ? x.stack : String(x)).join(' ')); orig(...a); };
+});
+const R = [];
+function log(name, ok, detail) {
+  R.push({ name, ok, detail });
+  const d = document.createElement('div');
+  d.textContent = (ok ? 'PASS ' : 'FAIL ') + name + (detail ? ' :: ' + detail : '');
+  d.style.color = ok ? '#7ac74f' : '#e86a47';
+  document.getElementById('results').appendChild(d);
+}
+function assert(name, cond, detail) { log(name, !!cond, detail); }
+
+function bpsVarint(x) {
+  const out = [];
+  for (;;) {
+    const b = x & 0x7F;
+    x = Math.floor(x / 128);
+    if (x === 0) { out.push(b | 0x80); break; }
+    out.push(b);
+  }
+  return out;
+}
+function buildBPS(source, target, actions) {
+  const body = [0x42, 0x50, 0x53, 0x31].concat(
+    bpsVarint(source.length), bpsVarint(target.length), bpsVarint(0), actions);
+  const bodyArr = new Uint8Array(body);
+  const full = new Uint8Array(body.length + 12);
+  full.set(bodyArr);
+  const dv = new DataView(full.buffer);
+  dv.setUint32(body.length, BP.patches.crc32(source), true);
+  dv.setUint32(body.length + 4, BP.patches.crc32(target), true);
+  dv.setUint32(body.length + 8, BP.patches.crc32(bodyArr), true);
+  return full;
+}
+
+async function main() {
+  /* ---------- unit: CRC32 ---------- */
+  assert('crc32 vector', BP.patches.crc32(new TextEncoder().encode('123456789')) === 0xCBF43926);
+
+  /* ---------- unit: IPS ---------- */
+  const rom8 = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
+  const ips = new Uint8Array([0x50, 0x41, 0x54, 0x43, 0x48, 0, 0, 2, 0, 3, 9, 9, 9, 0x45, 0x4F, 0x46]);
+  const p1 = BP.patches.applyIPS(rom8, ips);
+  assert('ips basic', p1[2] === 9 && p1[4] === 9 && p1.length === 8 && p1[5] === 6);
+  const rle = new Uint8Array([0x50, 0x41, 0x54, 0x43, 0x48, 0, 0, 1, 0, 0, 0, 4, 0xAA, 0x45, 0x4F, 0x46]);
+  const p2 = BP.patches.applyIPS(rom8, rle);
+  assert('ips rle', p2[1] === 0xAA && p2[4] === 0xAA && p2[5] === 6);
+  const grow = new Uint8Array([0x50, 0x41, 0x54, 0x43, 0x48, 0, 0, 10, 0, 2, 7, 7, 0x45, 0x4F, 0x46]);
+  const p3 = BP.patches.applyIPS(rom8, grow);
+  assert('ips grow', p3.length === 12 && p3[10] === 7 && p3[0] === 1);
+  const trunc = new Uint8Array([0x50, 0x41, 0x54, 0x43, 0x48, 0x45, 0x4F, 0x46, 0, 0, 4]);
+  const p4 = BP.patches.applyIPS(rom8, trunc);
+  assert('ips truncate', p4.length === 4);
+
+  /* ---------- unit: BPS ---------- */
+  const target = new Uint8Array([1, 2, 9, 9, 5, 6, 7, 8]);
+  const bps1 = buildBPS(rom8, target, [((8 - 1) * 4 + 1) | 0x80].concat(Array.from(target)));
+  const b1 = BP.patches.applyBPS(rom8, bps1);
+  assert('bps targetread', b1.length === 8 && b1[2] === 9 && b1[3] === 9 && b1[7] === 8);
+  const bps2 = buildBPS(rom8, rom8, [((8 - 1) * 4 + 0) | 0x80]);
+  const b2 = BP.patches.applyBPS(rom8, bps2);
+  assert('bps sourceread', b2.length === 8 && b2[0] === 1 && b2[7] === 8);
+  let bpsRejected = false;
+  try { BP.patches.applyBPS(new Uint8Array([9, 9]), bps1); } catch (e) { bpsRejected = true; }
+  assert('bps rejects wrong source', bpsRejected);
+
+  /* ---------- unit: Game Genie / PAR ---------- */
+  const gg = BP.cheats.decodeGG('AT4T-AA86');
+  assert('gg decode shape', gg && gg.address <= 0xFFFFFF && gg.data <= 0xFFFF, JSON.stringify(gg));
+  assert('gg rejects invalid letters', BP.cheats.validate('IIII-IIII') === null);
+  assert('gg accepts valid', !!BP.cheats.validate('AT4T-AA86'));
+  assert('par accepts valid', !!BP.cheats.validate('FF0000:0009'));
+  assert('par rejects short', BP.cheats.validate('FF00:09') === null);
+
+  /* ---------- core boot ---------- */
+  const info = await BP.core.init({ silent: true });
+  assert('core init', !!info.module);
+  assert('sysinfo name', /Genesis Plus GX/i.test(info.sysInfo.name), info.sysInfo.name + ' ' + info.sysInfo.version);
+  assert('addFunction available', typeof info.module.addFunction === 'function');
+  assert('romdev extensions present', !!BP.core.romdev, BP.core.romdev ? Object.keys(BP.core.romdev).length + ' functions' : 'none');
+
+  /* ---------- load the cartridge ---------- */
+  const romBytes = BP.util.b64ToBytes(window.BP_ROM_B64);
+  assert('rom size 3MB', romBytes.length === 3145728, String(romBytes.length));
+  const av = BP.core.loadGame(romBytes, 'Boogerman (E) [!].gen');
+  assert('game loaded', BP.core.loaded);
+  assert('PAL fps ~49.7', av.fps > 49 && av.fps < 50.5, 'fps=' + av.fps.toFixed(4));
+  assert('sample rate 44100', av.sampleRate === 44100, String(av.sampleRate));
+  assert('geometry sane', av.baseWidth > 0 && av.baseHeight > 0 && av.maxWidth >= 320 && av.maxHeight >= 192,
+    'base=' + av.baseWidth + 'x' + av.baseHeight + ' max=' + av.maxWidth + 'x' + av.maxHeight);
+  assert('region PAL', BP.core.region === 'PAL');
+  assert('work RAM 64KB', BP.core.ram() && BP.core.ram().length === 0x10000);
+  assert('no SRAM on this cart', BP.core.sramSize() === 0, String(BP.core.sramSize()));
+
+  function bitmapNonZero() {
+    const lv = BP.core.lastVideo;
+    if (!lv.ptr) return -1;
+    const U8 = BP.core.heapU8();
+    let n = 0;
+    const end = lv.ptr + lv.height * lv.pitch;
+    for (let i = lv.ptr; i < end; i += 2) if (U8[i] | U8[i + 1]) n++;
+    return n;
+  }
+  for (let i = 0; i < 60; i++) BP.core.run();
+  log('dbg bitmap nonzero @60f', true, String(bitmapNonZero()) + ' dims=' + BP.core.lastVideo.width + 'x' + BP.core.lastVideo.height);
+
+  /* ---------- run 150 frames (setTimeout-driven: virtual-time friendly) ---------- */
+  await new Promise(resolve => {
+    let n = 0;
+    function step() {
+      BP.core.run();
+      if (++n >= 150) return resolve();
+      setTimeout(step, 0);
+    }
+    setTimeout(step, 0);
+  });
+  const st = BP.core.stats;
+  assert('150+ frames ran', st.framesRun >= 150, 'frames=' + st.framesRun);
+  assert('video callback fired', st.videoFrames > 100, 'video=' + st.videoFrames + ' dupe=' + st.nullVideo);
+  assert('audio callback fired', st.audioSamples > 10000, 'samples=' + st.audioSamples);
+  assert('pixel format valid', [0, 1, 2].includes(BP.core.pixelFormat), 'fmt=' + BP.core.pixelFormat);
+
+  const ram = BP.core.ram();
+  let nonzero = 0;
+  for (let i = 0; i < ram.length; i++) if (ram[i]) nonzero++;
+  assert('work RAM active', nonzero > 100, 'nonzero bytes=' + nonzero);
+
+  const savedWord = BP.core.ramRead16(0x100);
+  const savedByte = BP.core.ramRead8(0x200);
+  BP.core.ramWrite16(0x100, 0xBEEF);
+  assert('RAM write/read 16', BP.core.ramRead16(0x100) === 0xBEEF);
+  BP.core.ramWrite16(0x100, savedWord);
+  BP.core.ramWrite8(0x200, 0x42);
+  assert('RAM write/read 8', BP.core.ramRead8(0x200) === 0x42);
+  BP.core.ramWrite8(0x200, savedByte);
+
+  /* ---------- save states ---------- */
+  const ssz = BP.core.stateSize();
+  assert('state size sane', ssz > 1000, 'size=' + ssz);
+  const state = BP.core.saveState();
+  assert('serialize', state && state.length === ssz);
+  for (let i = 0; i < 30; i++) BP.core.run();
+  assert('unserialize', BP.core.loadState(state));
+  const state2 = BP.core.saveState();
+  let same = state2 && state2.length === state.length;
+  if (same) for (let i = 0; i < state.length; i++) if (state[i] !== state2[i]) { same = false; break; }
+  assert('state roundtrip deterministic', same);
+
+  /* ---------- cheats through the core ---------- */
+  BP.core.cheatSet(0, true, 'AT4T-AA86');
+  BP.core.run();
+  BP.core.cheatSet(0, false, 'AT4T-AA86');
+  BP.core.cheatReset();
+  BP.core.run();
+  assert('cheat set/reset runs', true);
+  /* a GG code patches ROM bytes; reboot so no patched-code side effects leak
+   * into the rendering checks below */
+  BP.core.reset();
+  for (let i = 0; i < 30; i++) BP.core.run();
+
+  /* ---------- core options ---------- */
+  const vars = BP.core.variables;
+  assert('core options received', Object.keys(vars).length > 10, 'count=' + Object.keys(vars).length);
+  assert('vdp_mode option exists', !!vars['genesis_plus_gx_vdp_mode']);
+  assert('no_sprite_limit option exists', !!vars['genesis_plus_gx_no_sprite_limit']);
+  const nsl = vars['genesis_plus_gx_no_sprite_limit'];
+  const okOpt = BP.core.setOption('genesis_plus_gx_no_sprite_limit', nsl.values[nsl.values.length - 1]);
+  assert('set option live', okOpt, 'values=' + nsl.values.join('|'));
+  BP.core.run();
+  BP.core.setOption('genesis_plus_gx_no_sprite_limit', nsl.values[0]);
+
+  /* ---------- video pipeline ---------- */
+  /* run to ~12s of emulated time so we are past the boot logos */
+  await new Promise(resolve => {
+    let n = 0;
+    function step2() {
+      BP.core.run();
+      if (++n >= 450) return resolve();
+      setTimeout(step2, 0);
+    }
+    setTimeout(step2, 0);
+  });
+  log('info: frame dims at 12s', true, JSON.stringify(BP.core.lastVideo) + ' av.base=' + BP.core.av.baseWidth + 'x' + BP.core.av.baseHeight);
+  BP.video.init(document.getElementById('test-canvas'), document.getElementById('test-overlay'), document.getElementById('test-stage'));
+  BP.core.run();
+  BP.video.present();
+  assert('video size tracked', BP.video.size.w > 0, JSON.stringify(BP.video.size));
+  const gl = BP.video.gl;
+  const cv = document.getElementById('test-canvas');
+  const W = cv.width, H = cv.height;
+  const px = new Uint8Array(W * H * 4);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  let lit = 0, sumR = 0, sumG = 0, sumB = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i] + px[i + 1] + px[i + 2] > 30) lit++;
+    sumR += px[i]; sumG += px[i + 1]; sumB += px[i + 2];
+  }
+  const total = W * H;
+  assert('framebuffer lit (whole frame)', lit > total * 0.02,
+    'lit=' + lit + '/' + total + ' avgRGB=' + (sumR / total).toFixed(1) + ',' + (sumG / total).toFixed(1) + ',' + (sumB / total).toFixed(1));
+  /* diagnostics (read-only: no FBO attaches or texture rebinds mid-session) */
+  const dbg = BP.video._dbg;
+  log('dbg layout', true, JSON.stringify({
+    cw: dbg.container.clientWidth, ch: dbg.container.clientHeight,
+    aspect: BP.core.av.aspect, canvas: [cv.width, cv.height],
+    display: BP.video.displaySize, scale: BP.video.scaleMode,
+    src: [dbg.srcW, dbg.srcH], glErr: gl.getError()
+  }));
+  (function () {
+    const lv = BP.core.lastVideo;
+    const U8 = BP.core.heapU8();
+    let bnzActive = 0, maxB = 0;
+    for (let y = 0; y < lv.height; y++) {
+      const row = lv.ptr + y * lv.pitch;
+      for (let x = 0; x < lv.width; x++) {
+        const v = U8[row + x * 2] | (U8[row + x * 2 + 1] << 8);
+        if (v) bnzActive++;
+        if (U8[row + x * 2] > maxB) maxB = U8[row + x * 2];
+        if (U8[row + x * 2 + 1] > maxB) maxB = U8[row + x * 2 + 1];
+      }
+    }
+    log('dbg bitmap active-window', true, 'nonzero=' + bnzActive + ' maxByte=' + maxB);
+    const d0 = BP.video._dbg;
+    let snz = 0, smax = 0;
+    for (let i = 0; i < d0.scratch.length; i += 4) {
+      if (d0.scratch[i] | d0.scratch[i + 1] | d0.scratch[i + 2]) snz++;
+      const m = Math.max(d0.scratch[i], d0.scratch[i + 1], d0.scratch[i + 2]);
+      if (m > smax) smax = m;
+    }
+    log('dbg scratch global', true, 'nonzero=' + snz + ' max=' + smax + ' len=' + d0.scratch.length);
+    function dump2D(canvasId, pitch) {
+      const c = document.getElementById(canvasId);
+      c.width = lv.width; c.height = lv.height;
+      const ctx = c.getContext('2d');
+      const img = ctx.createImageData(lv.width, lv.height);
+      const D = img.data;
+      for (let y = 0; y < lv.height; y++) {
+        let s = lv.ptr + y * pitch;
+        let d = y * lv.width * 4;
+        for (let x = 0; x < lv.width; x++) {
+          const v = U8[s] | (U8[s + 1] << 8); s += 2;
+          const r = (v >> 11) & 31, g = (v >> 5) & 63, b = v & 31;
+          D[d] = (r << 3) | (r >> 2);
+          D[d + 1] = (g << 2) | (g >> 4);
+          D[d + 2] = (b << 3) | (b >> 2);
+          D[d + 3] = 255;
+          d += 4;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+    dump2D('data-canvas', lv.pitch);
+    dump2D('data-canvas2', lv.width * 2);
+  })();
+
+  BP.shaders.setChain([{ name: 'crt', params: {} }, { name: 'scanlines', params: {} }]);
+  BP.core.run();
+  BP.video.present();
+  assert('crt+scanlines chain renders', true);
+  BP.shaders.setChain([{ name: 'sharp-bilinear', params: {} }]);
+  BP.core.run();
+  BP.video.present();
+  assert('sharp-bilinear renders', true);
+
+  /* ---------- mod system ---------- */
+  assert('mods registered', BP.mods.all.length >= 2, BP.mods.all.map(m => m.id).join(','));
+  const before = BP.cheats.list.length;
+  BP.mods.syncCheats();
+  assert('mod cheats synced', BP.cheats.list.length >= before + 5, 'cheats=' + BP.cheats.list.length);
+
+  /* ---------- audio graph (headless autoplay flag allows context start) ---------- */
+  BP.audio.start(44100);
+  const tone = new Int16Array(882 * 2);
+  for (let i = 0; i < tone.length; i++) tone[i] = (i % 2 ? 4000 : -4000);
+  BP.audio.push(tone, 882);
+  assert('audio context running + scheduled', BP.audio.running && BP.audio.pushedFrames >= 882,
+    'running=' + BP.audio.running + ' pushed=' + BP.audio.pushedFrames);
+
+  /* ---------- summary ---------- */
+  const fails = R.filter(r => !r.ok);
+  const sum = document.createElement('div');
+  sum.id = 'summary';
+  sum.style.fontWeight = 'bold';
+  sum.style.color = fails.length ? '#e86a47' : '#7ac74f';
+  sum.textContent = 'SUMMARY: ' + (R.length - fails.length) + '/' + R.length + ' passed' +
+    (fails.length ? ' FAILURES: ' + fails.map(f => f.name).join(', ') : ' ALL PASS');
+  document.getElementById('results').appendChild(sum);
+  document.title = fails.length ? 'HARNESS FAIL' : 'HARNESS PASS';
+  log('console tail', true, consoleBuf.slice(-30).join(' | '));
+
+  /* keep a repaint loop alive so headless screenshots composite the canvas */
+  function repaint() {
+    try {
+      if (BP.video && BP.video.size.w) { BP.core.run(); BP.video.present(); }
+    } catch (e) { /* keep looping */ }
+    requestAnimationFrame(repaint);
+  }
+  requestAnimationFrame(repaint);
+}
+
+main().catch(e => {
+  log('EXCEPTION', false, (e && e.stack) || String(e));
+  log('CONSOLE TAIL', false, consoleBuf.slice(-25).join(' | '));
+  document.title = 'HARNESS FAIL';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Boogerman PC - Enhancement Port</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header id="bp-header">
+  <div id="bp-brand">
+    <span class="bp-logo">BOOGERMAN<span class="bp-logo-sub">PC</span></span>
+    <span id="bp-core-ver" class="bp-hint"></span>
+  </div>
+  <div id="bp-stats">
+    <span class="bp-chip" id="bp-stat-region">-</span>
+    <span class="bp-chip" id="bp-stat-res">-</span>
+    <span class="bp-chip" id="bp-stat-fps">-</span>
+    <span class="bp-chip" id="bp-stat-frame">-</span>
+    <span class="bp-chip" id="bp-stat-audio">-</span>
+  </div>
+  <div id="bp-actions">
+    <button id="bp-pause-btn" title="P">Pause</button>
+    <button id="bp-ff-btn" title="Fast forward">FF</button>
+    <button id="bp-reset-btn" title="Reset console">Reset</button>
+    <button id="bp-shot-btn" title="F9">Shot</button>
+    <button id="bp-full-btn" title="Fullscreen">Full</button>
+    <button id="bp-help-btn" title="H">?</button>
+    <button id="bp-panel-toggle" title="Toggle panel">&#9776;</button>
+  </div>
+</header>
+
+<main id="bp-main">
+  <div id="bp-stage">
+    <canvas id="bp-canvas" width="320" height="224"></canvas>
+    <canvas id="bp-overlay" width="320" height="224"></canvas>
+
+    <div id="bp-boot" class="hidden">
+      <div class="bp-boot-inner">
+        <h1>BOOGERMAN<span>PC</span></h1>
+        <p class="bp-boot-sub">A Pick and Flick Adventure &mdash; enhancement port framework</p>
+        <button id="bp-boot-btn">&#9654; BOOT CARTRIDGE</button>
+        <p class="bp-hint">Click to boot (unlocks audio). Your own cartridge dump runs locally &mdash; nothing is uploaded.</p>
+        <div class="bp-boot-keys">
+          <span>Arrows = D-pad</span><span>Z/X/C = A/B/C</span><span>A/S/D = X/Y/Z</span>
+          <span>Enter = Start</span><span>RShift = Mode</span><span>H = help</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="bp-error" class="hidden"></div>
+    <div id="bp-autotest-status"></div>
+
+    <div id="bp-touch" class="hidden">
+      <div class="bp-touch-dpad">
+        <button data-retro="4" class="bp-t-up">&#9650;</button>
+        <button data-retro="6" class="bp-t-left">&#9664;</button>
+        <button data-retro="7" class="bp-t-right">&#9654;</button>
+        <button data-retro="5" class="bp-t-down">&#9660;</button>
+      </div>
+      <div class="bp-touch-face">
+        <button data-retro="10" class="bp-t-small">X</button>
+        <button data-retro="9" class="bp-t-small">Y</button>
+        <button data-retro="11" class="bp-t-small">Z</button>
+        <button data-retro="1" class="bp-t-big">A</button>
+        <button data-retro="0" class="bp-t-big">B</button>
+        <button data-retro="8" class="bp-t-big">C</button>
+      </div>
+      <div class="bp-touch-sys">
+        <button data-retro="2">MODE</button>
+        <button data-retro="3">START</button>
+      </div>
+    </div>
+  </div>
+
+  <aside id="bp-aside">
+    <nav id="bp-tabs">
+      <button class="bp-tab active" data-tab="video">Video</button>
+      <button class="bp-tab" data-tab="input">Input</button>
+      <button class="bp-tab" data-tab="cheats">Cheats</button>
+      <button class="bp-tab" data-tab="states">States</button>
+      <button class="bp-tab" data-tab="mods">Mods</button>
+      <button class="bp-tab" data-tab="system">System</button>
+      <button class="bp-tab" data-tab="dev">Dev</button>
+    </nav>
+
+    <section id="panel-video" class="bp-panel active">
+      <h2>Scaling</h2>
+      <label class="bp-option-row"><span>Mode</span>
+        <select id="bp-scale">
+          <option value="fit">Fit (aspect-correct)</option>
+          <option value="integer">Integer scale</option>
+          <option value="stretch">Stretch</option>
+        </select>
+      </label>
+      <h2>Shader chain</h2>
+      <div class="bp-inline">
+        <select id="bp-shader-add"></select>
+        <button id="bp-shader-add-btn">Add pass</button>
+      </div>
+      <div id="bp-shader-chain"></div>
+      <h2>Color grade</h2>
+      <div id="bp-grade"></div>
+    </section>
+
+    <section id="panel-input" class="bp-panel">
+      <h2>Keyboard</h2>
+      <label class="bp-option-row"><span>Preset</span><select id="bp-input-preset"></select></label>
+      <div id="bp-input-map"></div>
+      <h2>Controller</h2>
+      <label class="bp-option-row"><span>6-button pad</span><input type="checkbox" id="bp-6btn"></label>
+      <p class="bp-hint">Gamepad (standard layout): X=A, A=B, B=C, Y=X, LB=Y, RB=Z, Start/Back = Start/Mode. First connected pad maps to port 1.</p>
+    </section>
+
+    <section id="panel-cheats" class="bp-panel">
+      <h2>Add cheat</h2>
+      <div class="bp-inline">
+        <input id="bp-cheat-code" placeholder="XXXX-XXXX or AAAAAA:DDDD" spellcheck="false">
+        <input id="bp-cheat-label" placeholder="label (optional)">
+        <button id="bp-cheat-add-btn">Add</button>
+      </div>
+      <div id="bp-cheat-list"></div>
+      <p class="bp-hint">Codes are decoded and applied by the core itself. Game Genie codes are region-specific &mdash; this dump is the EU version.</p>
+    </section>
+
+    <section id="panel-states" class="bp-panel">
+      <h2>Save states</h2>
+      <div id="bp-states"></div>
+      <div class="bp-inline">
+        <label class="bp-file-btn">Import .state<input type="file" id="bp-state-import" accept=".state" hidden></label>
+      </div>
+      <p class="bp-hint">F5 = save selected slot, F8 = load selected slot. Click a card to select. States are core snapshots (RAM + hardware), exportable as files.</p>
+    </section>
+
+    <section id="panel-mods" class="bp-panel">
+      <h2>Enhancement mods</h2>
+      <div id="bp-mod-list"></div>
+      <div class="bp-inline">
+        <label class="bp-file-btn">Load mod file<input type="file" id="bp-mod-file" accept=".js,.json,.ips,.bps" hidden></label>
+        <button id="bp-mod-reboot" class="hidden">Apply patches &amp; reboot</button>
+      </div>
+      <p class="bp-hint">Drop .js / .json / .ips / .bps files anywhere on the page. ROM patches apply at boot; scripts, shaders and cheats apply live. See mods/README.md for the format.</p>
+    </section>
+
+    <section id="panel-system" class="bp-panel">
+      <h2>Audio</h2>
+      <label class="bp-slider"><span>Volume</span><input type="range" id="bp-volume" min="0" max="1" step="0.01"><output></output></label>
+      <label class="bp-option-row"><span>Mute (M)</span><input type="checkbox" id="bp-mute"></label>
+      <h2>Cartridge</h2>
+      <div class="bp-inline">
+        <label class="bp-file-btn">Load other ROM<input type="file" id="bp-rom-file" accept=".gen,.md,.bin,.smd,.sms,.gg" hidden></label>
+      </div>
+      <p class="bp-hint">Session-only; the embedded dump stays the default. SRAM saves (if a game uses them) persist automatically.</p>
+      <h2>Core options (live)</h2>
+      <div id="bp-core-options"></div>
+    </section>
+
+    <section id="panel-dev" class="bp-panel">
+      <h2>Work RAM (68000, 64KB @ 0xFF0000)</h2>
+      <div class="bp-inline">
+        <button id="bp-dev-page-prev">&larr;</button>
+        <input id="bp-dev-page-input" size="6" spellcheck="false">
+        <button id="bp-dev-page-next">&rarr;</button>
+        <label class="bp-hint"><input type="checkbox" id="bp-dev-refresh"> live</label>
+      </div>
+      <pre id="bp-dev-hex" class="bp-hex"></pre>
+      <h2>Watch</h2>
+      <div class="bp-inline">
+        <input id="bp-dev-watch-addr" value="FF0000" size="8" spellcheck="false">
+        <select id="bp-dev-watch-size"><option value="8">8-bit</option><option value="16" selected>16-bit</option><option value="32">32-bit</option></select>
+        <span id="bp-dev-watch-value" class="bp-chip">-</span>
+      </div>
+      <h2>Poke</h2>
+      <div class="bp-inline">
+        <input id="bp-dev-poke-addr" placeholder="addr" size="8" spellcheck="false">
+        <input id="bp-dev-poke-value" placeholder="value" size="8" spellcheck="false">
+        <select id="bp-dev-poke-size"><option value="8">8</option><option value="16" selected>16</option><option value="32">32</option></select>
+        <button id="bp-dev-poke-btn">Write</button>
+      </div>
+      <h2>Debugger extensions</h2>
+      <p id="bp-dev-romdev" class="bp-hint"></p>
+    </section>
+  </aside>
+</main>
+
+<footer id="bp-footer">
+  <span>P pause &middot; F5/F8 save/load &middot; F9 screenshot &middot; M mute &middot; H help &middot; . frame-advance</span>
+  <span class="bp-hint">Personal port of your own cartridge dump. Not for redistribution.</span>
+</footer>
+
+<div id="bp-help" class="hidden">
+  <div class="bp-help-inner">
+    <h2>Controls</h2>
+    <table>
+      <tr><td>Arrows</td><td>D-pad</td></tr>
+      <tr><td>Z / X / C</td><td>MD A / B / C</td></tr>
+      <tr><td>A / S / D</td><td>MD X / Y / Z (6-button)</td></tr>
+      <tr><td>Enter</td><td>Start</td></tr>
+      <tr><td>Right Shift</td><td>Mode</td></tr>
+      <tr><td>P</td><td>Pause / resume</td></tr>
+      <tr><td>F5 / F8</td><td>Save / load selected state slot</td></tr>
+      <tr><td>F9</td><td>Screenshot</td></tr>
+      <tr><td>M</td><td>Mute</td></tr>
+      <tr><td>.</td><td>Frame advance (while paused)</td></tr>
+      <tr><td>H / Esc</td><td>This help / close</td></tr>
+    </table>
+    <p class="bp-hint">Everything is remappable in the Input tab. Drop ROMs, patches (.ips/.bps), mods (.js/.json) and states (.state) onto the page.</p>
+    <button onclick="document.getElementById('bp-help').classList.add('hidden')">Close</button>
+  </div>
+</div>
+
+<!-- core (browser-adapted glue + embedded wasm) -->
+<script src="vendor/gpgx/gpgx.web.js"></script>
+<script src="vendor/gpgx/gpgx.wasm.js"></script>
+<!-- embedded cartridge dump -->
+<script src="rom/boogerman.gen.js"></script>
+<!-- port framework -->
+<script src="js/util.js"></script>
+<script src="js/hooks.js"></script>
+<script src="js/patches.js"></script>
+<script src="js/shaders.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/video.js"></script>
+<script src="js/cheats.js"></script>
+<script src="js/states.js"></script>
+<script src="js/mods.js"></script>
+<script src="js/core.js"></script>
+<!-- built-in example mods -->
+<script src="mods/overlay-demo.js"></script>
+<script src="mods/eu-cheats.js"></script>
+<!-- app -->
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# --- Copyrighted cartridge material: NEVER commit ---
+# The owned dump, any other dumps, and derived/embedded copies.
+*.gen
+*.smd
+*.sms
+*.gg
+*.md.bin
+*.state
+*.srm
+web/rom/boogerman.gen.js
+# Static-recompilation output is derived from the ROM code: build-time only.
+native/generated/
+native/build/
+# Game screenshots / frame captures are derived copyrighted imagery.
+native/captures/
+native/captures-interp/
+# Local debug dumps and downloaded binaries (provenance in native/tools/README.md).
+native/tools/recompiler/
+native/tools/recompiler.zip
+native/tools/boot-*
+native/tools/ram-*
+# Third-party reference checkout (URL documented in native/README.md).
+native/reference-top-gear-2/
+
+# --- Credentials / secrets ---
+.env
+*.pem
+*.key
+tokens.json
+auth-config.json
+
+# --- OS / editor noise ---
+Thumbs.db
+Desktop.ini
+.vs/
+*.user

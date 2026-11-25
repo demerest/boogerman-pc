@@ -1,0 +1,12 @@
+# Boogerman headless capture input script (runner input_script.c format).
+# Route: cold boot -> title -> Start -> first level idle.
+# Format: <frame> [P<n>:]BUTTONS   ('-' releases; combos with '+')
+600 -
+620 START
+640 -
+1500 -
+1520 RIGHT
+1700 -
+1720 A
+1760 -
+2400 -
