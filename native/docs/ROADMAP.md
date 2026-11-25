@@ -453,6 +453,16 @@ verifiable much sooner.
     * => Next: reconcile z80_busreq_word (ack) with NO_BUS_HALT so the 68K's
       request/ack/release handshake completes; the ack window / busreq reporting is
       the last mismatch. M2 render-title + M3 RAM map stand; web remains playable.
+  - **Session 31 (2026-11-25): TITLE REACHED in interactive mode (M2 complete).**
+    * The missing link was the Z80 vblank flag `$0FAD=$FE` + DAC request `$0FC2`,
+      which the stalled 68K never issues. BOOT_ASSIST now supplies them each V-int
+      (glue.c), breaking the circular handshake. Combined with LOCKSTEP + FULL_SYNC
+      + NO_BUS_HALT + immediate-ack, the boot advances mode 0→4→8 and renders the
+      authentic BOOGERMAN title (logo/START/©1994 Interplay/Sega) by ~1500-1750f.
+    * Launchers (US/EU .bat) now set the full working combo. Evidence:
+      `captures-us/adv2/frame_000001.png`, `captures-us/play/frame_000001.png`.
+    * Remaining for full playability: Start@1900 did not yet leave the title
+      (input/title-transition gap) — next step. Boot is ~1500f (~25s); speed later.
   Next experiments (anticipated, in order):
   1. Engine: cycle-accurate 68K/Z80 interleave (per-instruction) so the boot
      sound-init handshake completes; re-test interactive title. (dedicated effort)
