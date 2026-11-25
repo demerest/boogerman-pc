@@ -463,6 +463,13 @@ verifiable much sooner.
       `captures-us/adv2/frame_000001.png`, `captures-us/play/frame_000001.png`.
     * Remaining for full playability: Start@1900 did not yet leave the title
       (input/title-transition gap) — next step. Boot is ~1500f (~25s); speed later.
+  - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
+    is a separate transition.**
+    * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
+      handlers (after JSRs), so the title (mode 8) is reached without Start. Start
+      must trigger a further mode change in the mode-8 routine; held Start via TCP
+      (`tools/probe-start.ps1`) still left the title ⇒ the mode-8 Start detection /
+      joy-RAM update is the next RE gap.
   Next experiments (anticipated, in order):
   1. Engine: cycle-accurate 68K/Z80 interleave (per-instruction) so the boot
      sound-init handshake completes; re-test interactive title. (dedicated effort)
