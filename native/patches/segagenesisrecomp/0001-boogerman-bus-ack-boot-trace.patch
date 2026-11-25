@@ -267,7 +267,7 @@ index 0054723..f55774a 100644
      /* YM2612 timer/status state. Audio register writes are rendered later by
       * the cycle-stamped mixer, but the emulated CPUs must observe timer flags
 diff --git a/runner/video/genesis_machine.c b/runner/video/genesis_machine.c
-index 9718e2f..be68f8f 100644
+index 9718e2f..8b08654 100644
 --- a/runner/video/genesis_machine.c
 +++ b/runner/video/genesis_machine.c
 @@ -15,9 +15,14 @@
@@ -310,7 +310,7 @@ index 9718e2f..be68f8f 100644
      const char *tag;                 /* BUS only: REQ / RESET_OFF / REQ-READack */
  } SndEvt;
  #define SND_RING_N 65536u
-@@ -64,6 +71,7 @@ static SndEvt *snd_evt(uint8_t type) {
+@@ -64,12 +71,29 @@ static SndEvt *snd_evt(uint8_t type) {
      e->master = g_machine.master_cycle;
      e->pcz = (uint16_t)g_machine.z80.pc;
      e->addr = 0; e->v1 = e->v2 = e->flags = 0; e->tag = 0;
@@ -318,7 +318,37 @@ index 9718e2f..be68f8f 100644
      return e;
  }
  
-@@ -107,8 +115,9 @@ void snd_trace_dump(const char *path)
++/* TEMP DEBUG (Boogerman M3): env-gated mailbox trace. Logs every 68K/Z80 write
++ * to the sound-command mailbox offsets so the deposit/consume/ack ordering can
++ * be read directly. Off by default; rare writes, immediate print is safe. */
++static int mbox_on = -1;
++static void mbox_trace(uint16_t off, uint8_t oldv, uint8_t newv, int is_z80)
++{
++    if (mbox_on < 0) mbox_on = getenv("GENESIS_MBOX_TRACE") != NULL;
++    if (!mbox_on) return;
++    off &= 0x1FFFu;
++    if (off != 0x0FAC && off != 0x0FAD && off != 0x0FE4 && off != 0x0FE5 &&
++        off != 0x0FC2 && off != 0x0FAF) return;
++    fprintf(stderr, "[MBOX] f=%lu sl=%u %s z80[$%04X] $%02X->$%02X pcz=$%04X\n",
++            g_snd_frame, g_snd_line, is_z80 ? "Z80W" : "68KW", off, oldv, newv,
++            (unsigned)g_machine.z80.pc);
++}
+ void snd_trace_68k_write(uint16_t off, uint8_t oldv, uint8_t newv,
+                          int busreq, int reset_off)
+ {
++    mbox_trace(off, oldv, newv, 0);
+     if (!g_snd_trace || g_snd_frame < SND_TRACE_START_FRAME) return;
+     off &= 0x1FFFu;
+     g_sndwatch[off] = 1;
+@@ -79,6 +103,7 @@ void snd_trace_68k_write(uint16_t off, uint8_t oldv, uint8_t newv,
+ }
+ void snd_trace_z80(uint16_t off, uint8_t val, int is_write)
+ {
++    if (is_write) mbox_trace(off, 0, val, 1);
+     if (!g_snd_trace || !is_write) return;     /* writes only (clears/sets) */
+     SndEvt *e = snd_evt(SND_Z80W);
+     e->addr = (uint16_t)(off & 0x1FFFu); e->v1 = val;
+@@ -107,8 +132,9 @@ void snd_trace_dump(const char *path)
              fprintf(f, "f=%u sl=%u mc=%llu Z80W   pcz=$%04X z80[$%04X]=$%02X\n",
                      e->frame, e->line, (unsigned long long)e->master, e->pcz, e->addr, e->v1); break;
          case SND_VASSERT:
@@ -330,7 +360,7 @@ index 9718e2f..be68f8f 100644
          case SND_VACCEPT:
              fprintf(f, "f=%u sl=%u mc=%llu VINT-ACCEPT pcz=$%04X\n",
                      e->frame, e->line, (unsigned long long)e->master, e->pcz); break;
-@@ -379,8 +388,8 @@ void machine_set_pad_type(int port, int six_button)
+@@ -379,8 +405,8 @@ void machine_set_pad_type(int port, int six_button)
      if (port >= 0 && port < 2) g_machine.bus.pad_type[port] = six_button ? 1 : 0;
  }
  
@@ -341,7 +371,7 @@ index 9718e2f..be68f8f 100644
  #define MASTER_PER_LINE 3420u
  #define M68K_PER_LINE   488u
  #define Z80_PER_LINE    228u
-@@ -443,6 +452,12 @@ static uint64_t s_z80_progress = 0;
+@@ -443,12 +469,24 @@ static uint64_t s_z80_progress = 0;
  /* [Z80-SYNC] always-on counters (see machine_z80_sync_to). */
  static uint64_t s_z80_sync_calls, s_z80_sync_runs, s_z80_sync_cycles,
                  s_z80_sync_halted, s_z80_sync_halted_cycles, s_z80_sync_capped;
@@ -354,7 +384,20 @@ index 9718e2f..be68f8f 100644
  
  /* Z80 can execute now: not held in reset and the 68K does not own its bus.
   * Applies a reset pulse the 68K made while it was halted. */
-@@ -464,6 +479,40 @@ static int z80_ready(GenesisMachine *m)
++static int z80_no_bus_halt = -1;
+ static int z80_ready(GenesisMachine *m)
+ {
+-    if (!m->bus.z80_reset_off || m->bus.z80_busreq) return 0;   /* Z80 halted */
++    if (z80_no_bus_halt < 0)
++        z80_no_bus_halt = getenv("GENESIS_Z80_NO_BUS_HALT") != NULL;
++    /* Boogerman test knob: let the polling-driven Z80 run even while the 68K
++     * holds busreq (models the Z80 finishing internal-RAM work during brief
++     * arbitration). Default off (correct halt-on-busreq). */
++    if (!m->bus.z80_reset_off || (m->bus.z80_busreq && !z80_no_bus_halt)) return 0;
+     /* The 68K pulsed the Z80 reset line while halted — restart the core at
+      * $0000 now that it's released, so it runs the freshly-uploaded driver
+      * from its entry point (not from a stale, pre-upload PC). */
+@@ -464,6 +502,40 @@ static int z80_ready(GenesisMachine *m)
      return 1;
  }
  
@@ -395,7 +438,7 @@ index 9718e2f..be68f8f 100644
  /* Execute Z80 instructions from line-relative cycle `done` until it reaches
   * `target`; returns the cycle reached (>= target: the last instruction may
   * overshoot). Each instruction's chip writes stamp at its start cycle. */
-@@ -484,6 +533,7 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
+@@ -484,6 +556,7 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
          done+=z80_recomp_step_one();
  #else
          unsigned long c0 = m->z80.cyc;
@@ -403,7 +446,7 @@ index 9718e2f..be68f8f 100644
          z80_step(&m->z80);     /* one instruction, then interrupt processing */
          done += (uint32_t)(m->z80.cyc - c0);
  #endif
-@@ -523,6 +573,19 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
+@@ -523,6 +596,19 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
   * cannot see. Only a multi-frame handler (Sonic 1's SEGA PCM V-int) can reach
   * that; it is counted, and glue.c's bounded no-progress fallback covers a
   * poll that waits on a capped Z80. */
@@ -423,7 +466,7 @@ index 9718e2f..be68f8f 100644
  void machine_z80_sync_to(uint32_t master_now)
  {
      GenesisMachine *m = &g_machine;
-@@ -531,22 +594,53 @@ void machine_z80_sync_to(uint32_t master_now)
+@@ -531,22 +617,53 @@ void machine_z80_sync_to(uint32_t master_now)
       * The next assertion still ahead of the Z80's line is this frame's when
       * that point has not been reached yet, else the next frame's. */
      const uint32_t irq_at = ((uint32_t)gvdp_screen_height(&m->vdp) + 1u) * MASTER_PER_LINE;
@@ -482,7 +525,7 @@ index 9718e2f..be68f8f 100644
          return;
      }
      if (clamped) s_z80_sync_capped++;   /* a running Z80 stopped short of the 68K */
-@@ -554,6 +648,8 @@ void machine_z80_sync_to(uint32_t master_now)
+@@ -554,6 +671,8 @@ void machine_z80_sync_to(uint32_t master_now)
      m->z80_cycle_debt = done - s_z80_line_target;
      s_z80_sync_runs++;
      s_z80_sync_cycles += done - have;
@@ -491,7 +534,7 @@ index 9718e2f..be68f8f 100644
  }
  
  uint64_t machine_z80_progress(void) { return s_z80_progress; }
-@@ -567,6 +663,17 @@ void machine_z80_sync_stats(uint64_t out[6])
+@@ -567,6 +686,17 @@ void machine_z80_sync_stats(uint64_t out[6])
  
  static void step_z80(GenesisMachine *m, uint32_t target)
  {
@@ -509,7 +552,7 @@ index 9718e2f..be68f8f 100644
      if (!z80_ready(m)) return;
      int pend_before =
  #ifdef GENESIS_Z80_RECOMP
-@@ -641,6 +748,7 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+@@ -641,6 +771,7 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
          s_line_base = (uint32_t)line * MASTER_PER_LINE;
          s_z80_off   = 0;   /* 68K writes during the chunk below land at the line start */
          s_z80_line_target = 0;   /* Z80 sits at line-relative z80_cycle_debt */
@@ -517,7 +560,7 @@ index 9718e2f..be68f8f 100644
  
          /* Advance the recompiled 68K ~one scanline (it parks at WaitForVBlank). */
          glue_run_game_chunk(M68K_PER_LINE);
-@@ -679,11 +787,14 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+@@ -679,11 +810,14 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
  #endif
              }
  #endif

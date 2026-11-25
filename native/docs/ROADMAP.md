@@ -207,11 +207,24 @@ verifiable much sooner.
       display stays black and the title is never reached. The Z80 command-ack
       (`$A00FE4`) / DAC-drain handshake still doesn't complete in step with
       the 68K. This is per-game 68K↔Z80 sound-driver protocol RE (M3).
+  - **Session 9 (2026-11-25): mailbox protocol decoded; 68K boot wait is the
+    divergence (not Z80 concurrency).**
+    * Added env-gated `[MBOX]` trace (every 68K/Z80 write to `$0FAC/$0FAD/
+      $0FE4/$0FE5/$0FC2/$0FAF`) and `GENESIS_Z80_NO_BUS_HALT` test knob.
+    * Protocol: the 68K builds its wait pointer `$FF051A` = `$A00000 +
+      (z80[$0005]<<8 | z80[$0004])` (`$98134-$98148`); with the driver image
+      that is `$A00FAC`. `func_098D24` waits `(A6)==0`. The Z80 DOES clear
+      `$0FAC` after every deposit (mailbox trace), so that wait completes.
+    * But the Z80 NEVER writes the "started/ack" flag (`$0FE4`), and `$0FAD`
+      never receives `$FE` (68K writes 0), so the boot sound-init loop repeats
+      forever and `cvblank_fires=0` → display stays black. `NO_BUS_HALT` does
+      not help ⇒ the divergence is in the 68K boot's awaited value / the
+      Z80's started-flag path, i.e. 68K-side boot RE (M3), not CPU scheduling.
   Next experiments (in order):
-  1. Sound-driver protocol: trace the 68K command deposits (`$A00FAC`) vs the
-     Z80's consume/ack (`$0FAC`→0, `$A00FE4`→0) across frames against the web
-     oracle; find why the ack never lands (DAC drain ordering / bank window).
-     Compare superzazu vs gx Z80 for the `$174C` DAC + `$1230` init path.
+  1. 68K boot sound-init RE: find the exact "started" flag the boot loop waits
+     for after the `$0FAC` ack, and why the Z80 never sets it (compare web
+     oracle Z80 RAM / `$0FAD`/$`0FE4` at the same phase). Check the `$0FAD=$FE`
+     vblank-flag writer.
   2. Once US boots to title: input-script route validation (Start → level),
      audio check, then M3 (RAM map re-verify for US), M4 polish/Deck.
   3. EU remains open at the region-check divergence (session 5 probes).
