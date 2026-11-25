@@ -420,10 +420,23 @@ verifiable much sooner.
       z80[$0004/5]) / sequence differs from real HW.
     * Path (b) (documented boot accommodation) remains the backup to reach the
       interactive title without full 68K sequence fidelity.
+  - **Session 27 (2026-11-25): path-(b) assists insufficient; framework interleave needed.**
+    * Implemented path-(b) accommodations (env `GENESIS_BOOT_ASSIST`): supply
+      `$0FC2=1`/`$0FAD=$FE` on cmd-consume; lengthen `$FF0520` timeout; clear
+      `$FF054C` retry. NONE moves the histogram off `$098A30` (inner bus-arbitration
+      wait on the DAC ack). The Z80 DAC drain is too slow under the native
+      per-line/per-bus-access scheduler, so the ack never lands within the wait.
+    * => Per-game knobs are exhausted. Interactive native boot requires a
+      FRAMEWORK-level cycle-accurate 68K/Z80 interleave (run the Z80 concurrently
+      per 68K instruction during the boot handler), a dedicated engine effort.
+      Path (b) remains documented; the web port is the playable deliverable meanwhile.
   Next experiments (anticipated, in order):
-  1. Fix the native 68K boot sequence so it issues cmd-04 / `$0FC2` after cmd-01
-     (compare the 68K sound-init command sequence & wait-pointer vs real HW), OR
-     apply path (b) boot accommodation (backup) to reach the interactive title.
+  1. Engine: cycle-accurate 68K/Z80 interleave during long boot handlers (run Z80
+     per 68K instruction, not per bus access / per line) so the DAC/ack completes
+     within the 68K wait; re-test interactive title. (dedicated engine effort)
+  2. Once interactive: input-script route validation (Start → level 1) vs web oracle.
+  3. M3 RAM map: `player_object`/`level_modes` from gameplay RAM diffs.
+  4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
