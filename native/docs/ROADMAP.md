@@ -162,17 +162,42 @@ verifiable much sooner.
     * Ack patch made **service-aware** (grant immediately inside
       `g_native_register_budget.in_vblank_service`, latency only in
       scheduled chunks) — removed the infinite service spin.
+  - **Session 7 (2026-11-25): Z80 concurrency model fixed; US boot 20→110.**
+    * Root cause of the frame-20 IRQ-DEBT: the scheduler slices the Z80 per
+      scanline and (inside atomic V-int service) only advanced it on
+      Z80-domain bus accesses, so a boot sound-init handler that polls a Z80
+      flag starved the Z80. Fixes (engine patch `0001-…patch`):
+      - bus-request edge syncs the Z80 across the release window
+        (`genesis_bus.c`); `GENESIS_Z80_BUS_QUANTUM` models the
+        finish-current-instruction latency (default 0).
+      - `machine_z80_sync_to` asserts EVERY periodic Z80 vblank IRQ the
+        requested time crosses (multi-frame atomic handler), replacing the
+        one-frame cap (`s_z80_irq_frame`).
+      - `z80_sync_for_68k_access` (glue.c) advances the Z80 on EVERY 68K bus
+        access during service (true CPU parallelism), not just Z80-domain.
+      - bus-ack default window 70000→1500 master (real HW grant is a few µs;
+        70000 inflated every poll and starved the Z80).
+    * Verified the uploaded Z80 driver image is byte-identical to ROM
+      `$98D54..+$1400` (only runtime data differs) — upload is NOT corrupt.
+      The driver is fully polling-driven (iff1 stays 0; the only `ei` is the
+      `$0038` stub), so interrupts are not the blocker.
+    * With these, US boot passes the early handshakes and reaches ~frame 110
+      (was 20). Remaining blocker: a later command-ack loop (`$98D2A` waits
+      `$A00FE4`==0) that no timing config completes — a superzazu-vs-driver
+      interaction in the FM-init/DAC loop (`$0D2F-$0D7F`, `$174C`), i.e.
+      genuine per-game Z80 RE (M3), not starvation.
+    * Debug tooling: `tools/run-us-trace.ps1` (frames/quantum/interleave/
+      sync-trace knobs), `tools/probe-us-z80.ps1` (live `z80_state` /
+      `read_z80_ram` / `snd_dump`). Env-gated `[Z80-TRACE]` ring kept (off by
+      default); unconditional probes stripped.
   Next experiments (in order):
-  1. Z80 handshake: compare web-oracle Z80 PC/RAM at the same boot phase
-     (web `ram-dump` + romdev regs) vs native `z80_state`; determine whether
-     the driver's ready byte at `$A00FAC` is written before busreq on real
-     HW, and whether the framework halts the Z80 too early on busreq.
-  2. Inspect US boot bus-ring order of `$A11100/$A11200` writes vs the
-     driver's expected handshake; check if the no-progress fallback's $00
-     answer is wrong for this driver (should perhaps let the Z80 advance).
-  3. Once US boots to title: input-script route validation (Start → level),
+  1. Z80 core validation: single-step the `$0D2F-$0D7F` FM-init / `$174C` DAC
+     loop in superzazu vs a known-good Z80 core (gx oracle) to find the
+     instruction/flag that fails to terminate; consider the runtime Z80
+     backend or static Z80 recomp if superzazu is at fault.
+  2. Once US boots to title: input-script route validation (Start → level),
      audio check, then M3 (RAM map re-verify for US), M4 polish/Deck.
-  4. EU remains open at the region-check divergence (session 5 probes).
+  3. EU remains open at the region-check divergence (session 5 probes).
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites
