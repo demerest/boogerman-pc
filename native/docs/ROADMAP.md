@@ -463,6 +463,13 @@ verifiable much sooner.
       `captures-us/adv2/frame_000001.png`, `captures-us/play/frame_000001.png`.
     * Remaining for full playability: Start@1900 did not yet leave the title
       (input/title-transition gap) — next step. Boot is ~1500f (~25s); speed later.
+  - **Session 33 (2026-11-26): Start gate localized to $FF05B4 + joy-bit tests.**
+    * Joy RAM = $FF0502 (held) / $FF0504 (pressed); under held Start $FF0502=0x0080
+      (Start sampled correctly). Title mode stays 8. `tools/probe-joy.ps1` added.
+    * Title Start accept requires 0 < $FF05B4 < 0x66 (attract timer); it stalls at 0
+      natively. BOOT_ASSIST now holds $FF05B4=0x30 (glue.c) to open the gate; held
+      Start still left the title ⇒ the joy-bit7 → game-init ($6424, mode=$10) branch
+      is the remaining trace. The $61xx branch is a level-select (bits0/1), not Start.
   - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
     is a separate transition.**
     * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
