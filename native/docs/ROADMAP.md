@@ -45,7 +45,8 @@ verifiable much sooner.
   (frame captures + input scripts can be compared against it).
 - **M1 ✓** Framework setup + first codegen (numbers above). Prebuilt
   recompiler v0.1.3 SHA256-verified; framework + submodules cloned.
-- **M2 — native boot. BUILD DONE, BOOT RENDERS, STALLS AT PAL SCREEN.**
+- **M2 — native boot. DONE (2026-11-25, session 16): BOTH EU and US reach the
+  authentic title screen natively** (with the boot accommodations below).
   VS2022 Build Tools + Windows 10 SDK 22621 installed (winget; the VS
   `setup.exe modify` path failed with 5007, standalone SDK winget package
   worked). SDL2 2.28.5 VC devel is **vendored by the framework** at
@@ -285,14 +286,28 @@ verifiable much sooner.
       handler: interleave long V-int service (deliver H-ints between chunks)
       instead of running it atomically. `GENESIS_INTERLEAVE_IRQ` currently only
       applies when parked at WaitForVBlank, not to the boot poll-loop handler.
+  - **Session 16 (2026-11-25): M2 DONE — both EU and US reach the title.**
+    * The session-15 "counters ~half" was a PHASE mismatch (native frame 96 vs
+      web frame 120). Normalized per-frame, native V-int/H-int counters advance
+      at the SAME rate as the oracle — the boot is just SLOWER, not broken.
+    * A 3000-frame run with `GENESIS_Z80_NO_BUS_HALT=1` + watchdog headroom
+      (400M/100M) renders the authentic title screen on BOTH profiles
+      (`captures-us/long/frame_000003.png`, `captures/long/frame_000003.png`):
+      "BOOGERMAN — A PICK AND FLICK ADVENTURE", START, ©1994 Interplay/Sega.
+    * The earlier 900-frame runs were simply too short; the detect converges
+      slowly (~2000+ frames) because the Z80/handshake runs below hardware rate
+      during the atomic boot handler. NO_BUS_HALT lets the polling Z80 finish.
+    * Launchers (`BoogermanRecomp-US.bat` / `-EU.bat`) now set NO_BUS_HALT +
+      watchdog headroom so a double-click reaches the title. Added knobs:
+      `GENESIS_VINT_YIELD`, `GENESIS_Z80_OVERCLOCK` (tested; not required).
+    * Remaining for M3/M4: boot is ~40 s to title (timing fidelity — interleave
+      the long boot V-int handler / raise Z80 share so it matches the oracle's
+      ~100-frame boot), audio correctness, then route validation & Deck build.
   Next experiments (in order):
-  1. Rework V-int service to interleave when the handler exceeds a budget:
-     yield back to the scanline scheduler so H-ints (level 4) and the raster
-     counters advance during a long boot handler (extend the interleave path
-     beyond the WaitForVBlank-parked case). Re-run detect; expect convergence
-     to 40/32 and `vint_routine` to advance to the game loop.
-  2. Once boot reaches title: input-script route validation (Start → level),
-     audio check, then M3 (RAM map re-verify), M4 polish/Deck.
+  1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
+     by interleaving the long boot V-int handler / correcting the Z80 share;
+     verify audio; then input-script route validation (Start → level).
+  2. M3 RAM map re-verify for US/EU; M4 polish; M5 Linux/Steam Deck build.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites

@@ -37,6 +37,15 @@ try {
     $w.WriteLine('{"id":7,"cmd":"read_memory","addr":"0xFF0210","size":16}')
     $resp7 = $r.ReadLine()
     [System.IO.File]::WriteAllText("$out\68k-ram-ff0210.json", $resp7)
+    $w.WriteLine('{"id":8,"cmd":"read_memory","addr":"0xFF0288","size":2}')
+    $resp8 = $r.ReadLine()
+    [System.IO.File]::WriteAllText("$out\68k-ram-ff0288.json", $resp8)
+    $w.WriteLine('{"id":9,"cmd":"read_memory","addr":"0xFF06D2","size":2}')
+    $resp9 = $r.ReadLine()
+    [System.IO.File]::WriteAllText("$out\68k-ram-ff06d2.json", $resp9)
+    $w.WriteLine('{"id":10,"cmd":"read_memory","addr":"0xFF069A","size":2}')
+    $resp10 = $r.ReadLine()
+    [System.IO.File]::WriteAllText("$out\68k-ram-ff069a.json", $resp10)
     "probe ok: state=$($resp.Length) ram=$($resp2.Length) 68k=$($resp4.Length) dump=$resp3"
     $c.Close()
 } catch {

@@ -1,6 +1,8 @@
 ﻿param([int]$Frames = 40, [switch]$SyncTrace, [switch]$InterleaveIrq, [int]$Quantum = -1, [switch]$InsnTrace,
-      [long]$WatchdogInsn = -1, [long]$WatchdogBus = -1, [switch]$MboxTrace, [switch]$NoBusHalt, [switch]$BootAssist)
+      [long]$WatchdogInsn = -1, [long]$WatchdogBus = -1, [switch]$MboxTrace, [switch]$NoBusHalt, [switch]$BootAssist, [switch]$VintYield, [int]$Overclock = -1)
 $ErrorActionPreference = 'Stop'
+if ($Overclock -ge 1) { $env:GENESIS_Z80_OVERCLOCK = "$Overclock" }
+if ($VintYield) { $env:GENESIS_VINT_YIELD = '1' }
 if ($BootAssist) { $env:GENESIS_BOOT_ASSIST = '1' }
 if ($MboxTrace) { $env:GENESIS_MBOX_TRACE = '1' }
 if ($NoBusHalt) { $env:GENESIS_Z80_NO_BUS_HALT = '1' }

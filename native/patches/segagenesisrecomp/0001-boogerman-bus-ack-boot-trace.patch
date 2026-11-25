@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..21a26bb 100644
+index 4eee55c..cf16089 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -225,6 +225,31 @@ void (*g_fm_write_trace_fn )(uint32_t address,      uint8_t value, uint32_t targ
@@ -52,7 +52,24 @@ index 4eee55c..21a26bb 100644
          return;
  
      char reason[128];
-@@ -1842,16 +1867,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -828,9 +853,15 @@ void glue_run_game_chunk(uint32_t cycles)
+  * queue-read where hardware places it after (the S3 giant-ring entry-sound
+  * kill). */
+ uint64_t g_chunk_yield_count = 0;
++/* Boogerman engine patch: allow the (long, boot sound-init) V-int handler to
++ * yield on budget so the scanline scheduler advances the Z80/raster between
++ * handler chunks instead of running it atomically and starving H-int counters.
++ * Env GENESIS_VINT_YIELD, default off. */
++static int vint_yield_on = -1;
+ static void check_cycle_budget(void)
+ {
+-    if (s_interleave_active && !s_in_vblank_service) {
++    if (vint_yield_on < 0) vint_yield_on = getenv("GENESIS_VINT_YIELD") != NULL;
++    if (s_interleave_active && (!s_in_vblank_service || vint_yield_on)) {
+         uint32_t now = g_audio_cycle_counter;
+         if (s_main_cpu_divisor > 1 && !s_irq_in_progress && now > s_budget_cyc_seen) {
+             uint32_t elapsed = now - s_budget_cyc_seen;
+@@ -1842,16 +1873,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -301,7 +318,7 @@ index 0054723..f55774a 100644
      /* YM2612 timer/status state. Audio register writes are rendered later by
       * the cycle-stamped mixer, but the emulated CPUs must observe timer flags
 diff --git a/runner/video/genesis_machine.c b/runner/video/genesis_machine.c
-index 9718e2f..8b08654 100644
+index 9718e2f..1fc7e22 100644
 --- a/runner/video/genesis_machine.c
 +++ b/runner/video/genesis_machine.c
 @@ -15,9 +15,14 @@
@@ -594,7 +611,30 @@ index 9718e2f..8b08654 100644
  
          /* Advance the recompiled 68K ~one scanline (it parks at WaitForVBlank). */
          glue_run_game_chunk(M68K_PER_LINE);
-@@ -679,11 +810,14 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+@@ -652,9 +783,19 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+         glue_own_vint_service_latched(&m->vdp);
+         glue_own_hint_service_latched(&m->vdp);
+ 
+-        /* Step the Z80 (SMPS driver) for its share of the line. */
+-        step_z80(m, Z80_PER_LINE);
+-        s_z80_line_target = Z80_PER_LINE;   /* halted or not, the line's time passed */
++        /* Step the Z80 (SMPS driver) for its share of the line.
++         * Boogerman BOOT-ASSIST: GENESIS_Z80_OVERCLOCK (default 1) multiplies the
++         * per-line Z80 budget so a polling-driven boot driver finishes its
++         * FM/DAC init between V-ints instead of being starved by bus arbitration.
++         * Audio timing fidelity is deferred to M3/M4. */
++        {
++            static uint32_t oc;
++            if (!oc) { const char *e = getenv("GENESIS_Z80_OVERCLOCK");
++                       oc = e ? (uint32_t)strtoul(e, 0, 10) : 0; if (!oc) oc = 1; }
++            uint32_t zt = Z80_PER_LINE * oc;
++            step_z80(m, zt);
++            s_z80_line_target = zt;   /* halted or not, the line's time passed */
++        }
+ 
+         /* Deliver interrupts to the 68K (and the Z80 at vblank). */
+         if (irq & GVDP_IRQ_VBLANK) {
+@@ -679,11 +820,14 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
  #endif
              }
  #endif
