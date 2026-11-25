@@ -559,6 +559,18 @@ verifiable much sooner.
     * => Next: make the processed joy edge fresh before func_005960's $598E gate (run
       func_005898 / edge compute at frame start), and set the title-init flags via the
       real init path, so Start/A reaches func_0063DE (mode=$10).
+  - **Session 42 (2026-11-26): full gate chain mapped; input-frame ordering is the last blocker.**
+    * func_005960 gate order: $FF05D4==0xF → $FF0A65 bit0 → $FF02BA!=0 → $FF0284&9 →
+      $598E edge&0x80 (Start) → $599A wait mode==0 → func_006F82; A-path via $59E8 &0x10
+      → func_006060 → &0x90 → func_0063DE. Start accept also needs 0<$FF05B4<0x66.
+    * Tried: frame-start func_005898 (fresh edge) + flag assist (5D4/A65/2BA/284) +
+      attract-timer hold 0x30. Attract timer runs and flags open, but seen stays 8:
+      the frame-start joy samples the pad one frame early (input frame counter updates
+      at V-int), so $598E still sees a stale edge. Raw A=0x40 also ≠ processed A mask 0x10.
+    * => The remaining gap is input/scheduler frame ordering (pad sample vs main-loop
+      read), not a RAM value. All assist chains reverted; known-good title build restored.
+      Next: align s_current_frame_for_input / pad sampling so the pressed edge is present
+      when func_005960 reads it, or drive the title dispatcher directly once at title.
   Next experiments (anticipated, in order):
   1. Resolve the boot main-loop wait-for-$FF0516 (label_000786): identify the V-int
      write that first sets mode non-zero and its Z80 gate (sound-started flag, e.g.
