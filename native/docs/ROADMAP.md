@@ -236,12 +236,24 @@ verifiable much sooner.
     * Boot loop after the `$0FAC` ack: `$98D52→$98AC6→$98ACA→$98AE0→$98AF4→
       $98A30→$983CE→$981F0` (re-send command). The awaited "started" flag is
       downstream of the `$0FAD` seed.
+  - **Session 12 (2026-11-25): boot sound-init timeout-retry protocol fully
+    mapped; ack never written by Z80.**
+    * `$98AC6`: 68K deposits cmd `01` to `(A6)`=`$A00FAC`. `$98ACA`: reads ack
+      at `(A6+56)`=`$A00FE4` → `$FF05BE`. `$98AD4`: reads `$A10001` bit6 (PAL);
+      US (NTSC) increments timeout counter D0, EU skips. `$98AE0`: D0 vs
+      `$FF0520` (timeout) → `$98AF4` release/retry. `$98ABA`: `$FF054C` nonzero
+      → re-deposit. So the boot waits for the Z80 to clear `$A00FE4`.
+    * The Z80 NEVER writes `$A00FE4` (=IY`$0F3C`+`$A8`); no `(iy+$A8)` opcode
+      exists and no `ei` anywhere (polling-driven). Channel init `$1230`
+      terminates (no YM-busy spin). The music-start/ack path simply never
+      completes in superzazu. This is the hard M3 core.
   Next experiments (in order):
-  1. Find the 68K code that seeds `$0FAD` (and the `c==4` command) during boot
-     sound-init; determine the correct nonzero seed / sequence the Z80 needs to
-     reach `$0C95`. Requires 68K-side RE of `$98AC6…$981F0` + the Z80 `$0C71`
-     routine; web oracle exposes only 68K RAM (no Z80), so use native mailbox
-     trace + disassembly.
+  1. Obtain a REFERENCE Z80 execution trace (build the gx/known-good Z80 core
+     standalone, or a cycle-accurate emulator run of the same ROM) and diff
+     against superzazu on the cmd-01 path (`$10A7→$11BE→$1230`, `$0C71`,
+     `$174C`) to find the divergent instruction/flag that prevents the
+     `$A00FE4` ack. Web oracle exposes only 68K RAM, so a native-side reference
+     Z80 is required.
   2. Once boot reaches title: input-script route validation (Start → level),
      audio check, then M3 (RAM map re-verify), M4 polish/Deck.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
