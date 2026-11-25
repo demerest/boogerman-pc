@@ -571,10 +571,18 @@ verifiable much sooner.
       read), not a RAM value. All assist chains reverted; known-good title build restored.
       Next: align s_current_frame_for_input / pad sampling so the pressed edge is present
       when func_005960 reads it, or drive the title dispatcher directly once at title.
+  - **Session 43 (2026-11-26): dispatcher-drive attempt; edge lags press ~2 frames — scheduler input alignment needed.**
+    * Drove func_005898+func_005960 each frame at title (+flag/timer assist). Processed
+      edge appears ~2 frames AFTER the scripted press (edge=0080 at 1602 for a 1600-1601
+      press), so the dispatcher never sees a coincident press; seen stays 8.
+    * => The pad-sample / frame-counter / main-loop read ordering is the true last blocker.
+      It is a scheduler/input-timing fix (dedicated effort), not a RAM assist. All
+      assist/drive chains reverted; known-good title build restored. M2 (native authentic
+      title, EU+US) stands; Start→game remains open.
   Next experiments (anticipated, in order):
-  1. Resolve the boot main-loop wait-for-$FF0516 (label_000786): identify the V-int
-     write that first sets mode non-zero and its Z80 gate (sound-started flag, e.g.
-     $0FE4), or correct 68K/V-int read ordering; re-test Start→game. (dedicated effort)
+  1. Fix scheduler input alignment so the processed pressed-edge is present when the
+     title dispatcher func_005960 reads it ($598E), and re-call the dispatcher each frame
+     at title; re-test Start/A → func_0063DE (mode=$10). (dedicated effort)
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle.
   3. M3 RAM map: `player_object`/`level_modes` from gameplay RAM diffs.
   4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
