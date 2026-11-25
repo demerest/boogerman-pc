@@ -490,6 +490,13 @@ verifiable much sooner.
       the title must sample it that frame. Remaining: verify the part11 edge computation
       runs on the press frame and the title samples $FF050C in mode 8 (ordering/gate).
     * M2 (native renders authentic title) stands; boot ~1500f. Start→game is the last gap.
+  - **Session 37 (2026-11-26): Start-guard hypothesis — main-loop Start poll parked.**
+    * Title renders via the mode-8 V-int routine, but the Start poll is in the MAIN
+      loop, which parks at WaitForVBlank. Spec resume/dispatch_main_loop_pc=0, so the
+      main-loop resume may not run at the title ⇒ Start never polled. Joy mirrors/edge
+      assists don't help because the poll itself isn't executing. Next: wire the
+      Boogerman main-loop/WaitForVBlank resume (spec or codegen vblank_yield_addr) so the
+      title main loop runs and samples Start each frame.
   - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
     is a separate transition.**
     * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
