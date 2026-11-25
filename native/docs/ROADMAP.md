@@ -366,6 +366,18 @@ verifiable much sooner.
     * => Wiring the hook requires locating Boogerman's embedded vblank wait
       (e.g. a function/PC histogram at the live title state), a focused RE task.
       Until then M4 interactivity remains gated; M2 render-title + M3 RAM map stand.
+  - **Session 22 (2026-11-25): histogram pins a 68K↔Z80 protocol deadlock.**
+    * Added `tools/probe-func-histogram.ps1` (samples rdb func at title). Peak =
+      `$098A30`/`$0981FC` (sound-init bus handshake), NOT a title main loop — the
+      rendered title is a boot-stage background; the game never leaves sound-init.
+    * Overclock 64 does NOT move the peak ⇒ not Z80-speed-bound. Live Z80 state:
+      PC=$101A (main loop idle, waiting for a command at `$0FAC`), reset_held=0,
+      bus_requested=1. So the Z80 consumed cmd-01 and returned to idle, but the
+      68K still waits for the `$0FE4` ack ⇒ deadlock.
+    * The ack is written only by the DAC-stop routine (`$1788`) when the DAC
+      drains; that tick never runs because the Z80 is idle and iff1=0 (no IRQ
+      tick). => The cmd-01 handler must write the ack itself; focused sound-
+      driver RE (why `$11BE/$1230` doesn't reach the ack) is the next step.
   Next experiments (in order):
   1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
      by interleaving the long boot V-int handler / correcting the Z80 share;
