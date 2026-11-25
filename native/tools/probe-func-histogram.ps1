@@ -1,7 +1,8 @@
-﻿param([int]$WarmMs = 3000, [int]$Samples = 80, [int]$Overclock = -1, [switch]$BootAssist, [switch]$FullSync, [switch]$Accurate)
+﻿param([int]$WarmMs = 3000, [int]$Samples = 80, [int]$Overclock = -1, [switch]$BootAssist, [switch]$FullSync, [switch]$Accurate, [int]$Quantum = -1)
 $ErrorActionPreference = 'Stop'
 $env:GENESIS_Z80_NO_BUS_HALT = '1'
 if ($Overclock -ge 1) { $env:GENESIS_Z80_OVERCLOCK = "$Overclock" }
+if ($Quantum -ge 0) { $env:GENESIS_Z80_BUS_QUANTUM = "$Quantum" }
 if ($BootAssist) { $env:GENESIS_BOOT_ASSIST = '1' }
 if ($FullSync) { $env:GENESIS_Z80_FULL_SYNC = '1' }
 $pacing = if ($Accurate) { ' --pacing=accurate' } else { '' }
