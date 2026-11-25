@@ -438,6 +438,11 @@ verifiable much sooner.
     * => No Z80 scheduling knob resolves it; the 68K sound-init state machine and
       the Z80 handshake require a cycle-accurate concurrent scheduler (per-instruction
       interleave), a dedicated engine rework. M2 render-title + M3 RAM map stand.
+    * Also tested `--pacing=accurate` (CYCLE_ACCURATE wall-frame V-int guarantee) +
+      full-sync: still pinned at `$098A30`. The 68K deposits cmd-01 under busreq and
+      waits `$0FAC==0`; the Z80 (halted under busreq) never consumes within the wait.
+      The release/consume window ordering is the crux — a per-instruction lockstep of
+      the two CPUs during the handshake is the required engine change.
   Next experiments (anticipated, in order):
   1. Engine: cycle-accurate 68K/Z80 interleave (per-instruction) so the boot
      sound-init handshake completes; re-test interactive title. (dedicated effort)
