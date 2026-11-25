@@ -317,6 +317,17 @@ verifiable much sooner.
       same timing-fidelity root as boot speed.
     * Added service-sync Z80 overclock scaling (GENESIS_Z80_OVERCLOCK now also
       scales the in-handler sync); tested — does not by itself fix boot rate.
+  - **Session 18 (2026-11-25): boot-timing fidelity — handler de-giantized;
+    remaining slowness is distributed, not one giant handler.**
+    * With NO_BUS_HALT the boot V-int handler no longer exceeds one frame (no
+      `[IRQ-DEBT]` lines at 300 frames) — the atomic-handler starvation is
+      fixed. H-int/V-int counters ($FF06D2/$FF069A) advance at ~oracle rate.
+    * Yet boot still ~2000 frames: the detect converges ~200 but later boot
+      stages add ~1800 more. `GENESIS_FORCE_INTERP` is SLOWER (black at 950),
+      so the recompiled path + NO_BUS_HALT is the better base.
+    * => Boot-speed fidelity is a multi-stage cycle-alignment task (cosim vs
+      oracle per stage), not a single knob. M2 render-title + M3 RAM map stand;
+      interactive title (M4) still gated on reaching the live title state.
   Next experiments (in order):
   1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
      by interleaving the long boot V-int handler / correcting the Z80 share;
