@@ -354,6 +354,18 @@ verifiable much sooner.
       not a counter-change, so it isn't auto-detected. A per-game
       WaitForVBlank/main-loop hook (spec `resume_main_loop_pc` /
       `dispatch_main_loop_pc` or a codegen pattern) is the concrete fix.
+  - **Session 21 (2026-11-25): yield-hook mechanism confirmed; target non-idiomatic.**
+    * The codegen supports `[game] vblank_yield_addr = <func>` (game_config.c:385,
+      genesis code_generator.c:5282) to emit `glue_yield_for_vblank` for a chosen
+      function; auto-detection only matches the 4-insn idiom
+      (move#sr; tst.b; bne self; rts), which Boogerman lacks.
+    * Inspected candidates: `$616E` (bit4 poll, mode-dispatch), `func_0062E4/AE/B4/BA`
+      (VDP DMA cmd writes), `func_00169C` (OR-flag into `$FF0684`) — none is the
+      WaitForVBlank. The boot main loop is a mode-dispatch chain with tail calls
+      (`func_0018FC…`), so the wait is embedded, not a standalone idiom.
+    * => Wiring the hook requires locating Boogerman's embedded vblank wait
+      (e.g. a function/PC histogram at the live title state), a focused RE task.
+      Until then M4 interactivity remains gated; M2 render-title + M3 RAM map stand.
   Next experiments (in order):
   1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
      by interleaving the long boot V-int handler / correcting the Z80 share;
