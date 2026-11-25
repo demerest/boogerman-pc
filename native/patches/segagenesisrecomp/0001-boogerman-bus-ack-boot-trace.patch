@@ -132,7 +132,7 @@ index 3e146ce..2306f92 100644
  
  /* ---- sections ---------------------------------------------------------------- */
 diff --git a/runner/video/genesis_bus.c b/runner/video/genesis_bus.c
-index bd712d9..bb2a820 100644
+index bd712d9..5107eab 100644
 --- a/runner/video/genesis_bus.c
 +++ b/runner/video/genesis_bus.c
 @@ -8,7 +8,10 @@
@@ -198,7 +198,28 @@ index bd712d9..bb2a820 100644
          case 0x02: return pad_read(b, 0);        /* $A10002/3 P1 data          */
          case 0x04: return pad_read(b, 1);        /* $A10004/5 P2 data          */
          case 0x06: return 0xFF;                  /* $A10006/7 EXP data         */
-@@ -398,7 +437,7 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+@@ -385,6 +424,20 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+              * driver decompression's back-reference copy (MOVE.B (A4,D4.W),
+              * (A5)+) — the S2 silent-audio bug. */
+             unsigned off = a & 0x1FFFu;
++            /* Boogerman BOOT-ASSIST (env GENESIS_BOOT_ASSIST, default off):
++             * during the boot window the 68K polls the Z80 "DAC busy" flag
++             * $0FE4 and times out because the Z80's DAC drain is starved by
++             * bus arbitration. Report it clear to the 68K so boot sound-init
++             * completes and the title is reached (M2). The Z80's own reads are
++             * untouched; audio fidelity is deferred to M3/M4. */
++            {
++                static int assist = -1;
++                if (assist < 0) assist = getenv("GENESIS_BOOT_ASSIST") != NULL;
++                extern unsigned long g_snd_frame;
++                if (assist && (off == 0x0FE4u || off == 0x0FACu) &&
++                    g_snd_frame >= 16 && g_snd_frame < 240 && b->z80_ram[off])
++                    return 0x0000;
++            }
+             return (uint16_t)(((uint16_t)b->z80_ram[off] << 8)
+                               | b->z80_ram[(off + 1u) & 0x1FFFu]);
+         }
+@@ -398,7 +451,7 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
          return 0xFFFFu;                          /* bank/PSG region: open bus  */
      }
      if (a >= 0xA10000u && a < 0xA10020u) return io_read(b, a);      /* I/O      */
@@ -207,7 +228,7 @@ index bd712d9..bb2a820 100644
          snd_trace_busreq("REQ-READack", ack ? 1 : 0); return ack; }  /* [SND-TRACE] */
      if (a == 0xA11200u) return (uint16_t)(b->z80_reset_off ? 0x0100 : 0x0000);
      return 0xFFFFu;
-@@ -437,7 +476,7 @@ uint16_t gbus_peek16(const GenesisBus *b, uint32_t a)
+@@ -437,7 +490,7 @@ uint16_t gbus_peek16(const GenesisBus *b, uint32_t a)
          return 0xFFFFu;
      }
      if (a >= 0xA10000u && a < 0xA10020u) return io_read(b, a);
@@ -216,7 +237,7 @@ index bd712d9..bb2a820 100644
      if (a == 0xA11200u) return (uint16_t)(b->z80_reset_off ? 0x0100 : 0x0000);
      return 0xFFFFu;
  }
-@@ -496,7 +535,30 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+@@ -496,7 +549,30 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
          return;
      }
      if (a >= 0xA10000u && a < 0xA10020u) { io_write(b, a, (uint8_t)v); return; }
@@ -248,7 +269,7 @@ index bd712d9..bb2a820 100644
          snd_trace_busreq("REQ", b->z80_busreq); return; }                /* [SND-TRACE] */
      if (a == 0xA11200u) { int o = b->z80_reset_off; b->z80_reset_off = (v & 0x0100) ? 1 : 0;
          /* Asserting the reset line (1->0) resets the Z80 core: it must restart
-@@ -505,6 +567,13 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+@@ -505,6 +581,13 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
           * a stale PC after the post-upload reset pulse and ran the driver from
           * garbage — the S2 silent-audio bad-jump. */
          if (o == 1 && b->z80_reset_off == 0) b->z80_reset_pending = 1;

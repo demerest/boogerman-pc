@@ -247,13 +247,25 @@ verifiable much sooner.
       exists and no `ei` anywhere (polling-driven). Channel init `$1230`
       terminates (no YM-busy spin). The music-start/ack path simply never
       completes in superzazu. This is the hard M3 core.
+  - **Session 13 (2026-11-25): NO_BUS_HALT cures Z80 starvation; boot-assist
+    knob added; boot still loops before title (user chose boot-assist path).**
+    * `GENESIS_Z80_NO_BUS_HALT` (z80_ready ignores busreq) raises Z80 throughput
+      ~6× (265k→1.6M cycles/900f) and drops no-progress fallbacks 667→0: the
+      cmd-01/DAC handshake now completes cleanly. This is the correct model for
+      a polling-driven Z80 during brief arbitration.
+    * Added `GENESIS_BOOT_ASSIST` (68K reads of `$0FAC`/`$0FE4` report clear in
+      boot window) — had NO effect (the stuck poll isn't those reads); kept as
+      a documented knob but the effective lever is NO_BUS_HALT.
+    * With NO_BUS_HALT the boot passes sound-init and reaches the checksum
+      stage `$1A9A` (frame ~65) but oscillates back to `$98A30` by frame ~158;
+      display stays black, `cvblank_fires=0`. A deeper boot-state loop remains.
+    * Probe tooling now also dumps `rdb_get_state` + `$FF0500` RAM
+      (`tools/probe-us-z80.ps1 -NoBusHalt`).
   Next experiments (in order):
-  1. Obtain a REFERENCE Z80 execution trace (build the gx/known-good Z80 core
-     standalone, or a cycle-accurate emulator run of the same ROM) and diff
-     against superzazu on the cmd-01 path (`$10A7→$11BE→$1230`, `$0C71`,
-     `$174C`) to find the divergent instruction/flag that prevents the
-     `$A00FE4` ack. Web oracle exposes only 68K RAM, so a native-side reference
-     Z80 is required.
+  1. With NO_BUS_HALT, trace the boot oscillation `$1A9A`(checksum)↔`$98A30`
+     (sound): find the flag that makes boot re-enter sound-init instead of
+     proceeding to display-enable/title. Compare `$FF0216/$FF0218/$FF0A78`
+     checksum values and the sound "started" condition vs web 68K RAM.
   2. Once boot reaches title: input-script route validation (Start → level),
      audio check, then M3 (RAM map re-verify), M4 polish/Deck.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,

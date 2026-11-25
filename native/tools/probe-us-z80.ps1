@@ -1,5 +1,7 @@
-﻿param([int]$DelayMs = 1000)
+﻿param([int]$DelayMs = 1000, [switch]$NoBusHalt)
 $ErrorActionPreference = 'Stop'
+if ($NoBusHalt) { $env:GENESIS_Z80_NO_BUS_HALT = '1' }
+$env:GENESIS_WATCHDOG_INSN = '400000000'; $env:GENESIS_WATCHDOG_BUS = '100000000'
 $root = 'S:\home\dev\boogerman-pc'
 $exe  = "$root\native\build\Release\BoogermanRecomp_us.exe"
 $rom  = "$root\Boogerman (U) [!].gen"
@@ -23,7 +25,13 @@ try {
     [System.IO.File]::WriteAllText("$out\z80-ram-0c00.json", $resp2)
     $w.WriteLine('{"id":3,"cmd":"snd_dump","prefix":"S:\\home\\dev\\boogerman-pc\\native\\captures-us\\boot-"}')
     $resp3 = $r.ReadLine()
-    "probe ok: state=$($resp.Length) bytes ram=$($resp2.Length) bytes dump=$resp3"
+    $w.WriteLine('{"id":4,"cmd":"rdb_get_state"}')
+    $resp4 = $r.ReadLine()
+    [System.IO.File]::WriteAllText("$out\68k-state.json", $resp4)
+    $w.WriteLine('{"id":5,"cmd":"read_memory","addr":16712960,"size":96}')
+    $resp5 = $r.ReadLine()
+    [System.IO.File]::WriteAllText("$out\68k-ram-ff0500.json", $resp5)
+    "probe ok: state=$($resp.Length) ram=$($resp2.Length) 68k=$($resp4.Length) dump=$resp3"
     $c.Close()
 } catch {
     "probe failed: $_"

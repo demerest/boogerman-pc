@@ -1,6 +1,7 @@
 ﻿param([int]$Frames = 40, [switch]$SyncTrace, [switch]$InterleaveIrq, [int]$Quantum = -1, [switch]$InsnTrace,
-      [long]$WatchdogInsn = -1, [long]$WatchdogBus = -1, [switch]$MboxTrace, [switch]$NoBusHalt)
+      [long]$WatchdogInsn = -1, [long]$WatchdogBus = -1, [switch]$MboxTrace, [switch]$NoBusHalt, [switch]$BootAssist)
 $ErrorActionPreference = 'Stop'
+if ($BootAssist) { $env:GENESIS_BOOT_ASSIST = '1' }
 if ($MboxTrace) { $env:GENESIS_MBOX_TRACE = '1' }
 if ($NoBusHalt) { $env:GENESIS_Z80_NO_BUS_HALT = '1' }
 if ($SyncTrace) { $env:GENESIS_Z80_SYNC_TRACE = '1' }
