@@ -227,11 +227,21 @@ verifiable much sooner.
     * EU now boots PAST the region screen into the SAME sound-init handshake
       as US (trail `$98D2A…$981F0`, no `$436` halt). Both profiles converge on
       the single remaining blocker: the sound-driver "started" flag.
+  - **Session 11 (2026-11-25): started-flag localized to the $0FAD handshake.**
+    * The Z80 writes `$0FAD=$FE` at `$0C95`, but ONLY under the guard
+      `c==4` AND `($0FAD)!=0` (`ld a,($0FAD); or a; jr z,$0CC0`). The 68K
+      initializes `$0FAD=0`, so the Z80 never sets `$FE` and the boot's
+      "started" condition never holds. This is a 68K↔Z80 command-path
+      handshake (the `$0FAD` seed value / `c==4` command), not vblank timing.
+    * Boot loop after the `$0FAC` ack: `$98D52→$98AC6→$98ACA→$98AE0→$98AF4→
+      $98A30→$983CE→$981F0` (re-send command). The awaited "started" flag is
+      downstream of the `$0FAD` seed.
   Next experiments (in order):
-  1. Shared sound-driver started-flag RE (blocks BOTH EU and US): find the
-     exact flag the boot loop waits for after the `$0FAC` ack and why the Z80
-     never sets it; check the `$0FAD=$FE` vblank-flag writer. Web oracle exposes
-     only 68K RAM, so compare `$FF051A`/`$FF0516`/game_mode progression.
+  1. Find the 68K code that seeds `$0FAD` (and the `c==4` command) during boot
+     sound-init; determine the correct nonzero seed / sequence the Z80 needs to
+     reach `$0C95`. Requires 68K-side RE of `$98AC6…$981F0` + the Z80 `$0C71`
+     routine; web oracle exposes only 68K RAM (no Z80), so use native mailbox
+     trace + disassembly.
   2. Once boot reaches title: input-script route validation (Start → level),
      audio check, then M3 (RAM map re-verify), M4 polish/Deck.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
