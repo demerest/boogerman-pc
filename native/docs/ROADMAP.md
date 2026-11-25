@@ -270,11 +270,27 @@ verifiable much sooner.
       the Z80 mailbox (which NO_BUS_HALT already fixed).
     * Probe `read_memory` needs `addr` as a hex STRING and returns `hex` (fixed
       `tools/probe-us-z80.ps1`); now dumps `$FF0500/$FF0A70/$FF0210`.
+  - **Session 15 (2026-11-25): oracle diff pins root cause — atomic V-int
+    handler starves H-int counters.**
+    * Added `tools/web-ram-probe.ps1` (headless-Chrome web 68K RAM dump; NOTE
+      web `ram()` is LITTLE-endian, regex must skip `<title>RAMDUMP DONE`).
+    * Web (oracle) by frame 120: `vint_routine=8` (game running), `$FF0218=32`
+      (detect converged), counters `$FF06D2≈36`, `$FF069A≈288`. Native at the
+      same phase: `$FF0216/18=21/14` (not converged), counters ~half.
+    * `$FF06D2/$FF069A` are incremented by the game's H-int/V-int handlers. The
+      native boot V-int handler runs ATOMICALLY (giant, Z80-bound), so level-4
+      H-ints never fire during it and the counters stay low → detect fails.
+      VDP H-int counter model (reg10) itself is correct.
+    * => The engine must not starve H-ints/main-loop during a long boot V-int
+      handler: interleave long V-int service (deliver H-ints between chunks)
+      instead of running it atomically. `GENESIS_INTERLEAVE_IRQ` currently only
+      applies when parked at WaitForVBlank, not to the boot poll-loop handler.
   Next experiments (in order):
-  1. Match the game's raster-timing detect: determine what D1/D2 count (V-ints /
-     raster lines between flags) and tune `g_vblank_threshold` / V-int line /
-     pacer so measured == expected (40/32). Compare against web oracle 68K RAM
-     `$FF0216/$FF0218/$FF0A78` at the same boot phase.
+  1. Rework V-int service to interleave when the handler exceeds a budget:
+     yield back to the scanline scheduler so H-ints (level 4) and the raster
+     counters advance during a long boot handler (extend the interleave path
+     beyond the WaitForVBlank-parked case). Re-run detect; expect convergence
+     to 40/32 and `vint_routine` to advance to the game loop.
   2. Once boot reaches title: input-script route validation (Start → level),
      audio check, then M3 (RAM map re-verify), M4 polish/Deck.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
