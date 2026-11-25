@@ -398,11 +398,28 @@ verifiable much sooner.
       (`$0FC2`/`$16E0`) and the vblank tick (`$10B4`, needs `$0FAD=$FE`) never fire.
       => Find what starts the DAC on real HW (the 68K's next command after init, or
       the Z80 init's ack path) — the missing link in the boot handshake.
-  Next experiments (in order):
-  1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
-     by interleaving the long boot V-int handler / correcting the Z80 share;
-     verify audio; then input-script route validation (Start → level).
-  2. M3 RAM map re-verify for US/EU; M4 polish; M5 Linux/Steam Deck build.
+  - **Session 25 (2026-11-25): `$0FE4` write scan — no post-init ack exists.**
+    * Scanned the driver for `ld ($0FE4),a`: only `$16E0` (set `$FF`, DAC start) and
+      `$1788` (clear, DAC stop). There is NO "ack after cmd-01 init" write. So the
+      68K's boot wait cannot be satisfied by init alone; it expects the DAC/music
+      tick to run (which needs `$0FC2`/`$0FAD` set), and those triggers never fire
+      natively. `$0FC2` is only CLEARED by the Z80 (`$1740`); it is SET by the 68K
+      (via `$A00FC2`), which never happens because the 68K is stuck earlier.
+    * => The boot is a circular 68K↔Z80 startup that resolves on real HW via correct
+      concurrent timing; native scheduling breaks the cycle. Two viable paths:
+      (a) reference-Z80 cosim to find the exact divergent step, or (b) a documented
+      per-game boot accommodation that breaks the cycle (skip the boot sound wait).
+  Next experiments (anticipated, in order):
+  1. Break the boot cycle (pick one):
+     a. Reference-Z80 cosim: run the uploaded driver image in a known-good Z80 core
+        with a faithful bus stub; diff vs superzazu on cmd-01/boot to find the missing
+        ready/ack or the mis-scheduled trigger. (dedicated RE effort)
+     b. Per-game boot accommodation: bypass the boot sound-init wait (documented,
+        env-gated) so the game reaches the interactive title; audio fidelity deferred.
+  2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
+     verify scrolling/collision/transitions; audio check.
+  3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
+  4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites
