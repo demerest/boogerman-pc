@@ -112,24 +112,33 @@ verifiable much sooner.
       the movem save at `$250`; the divergence lives in the `$244-$294`
       save/restore window (decoder or movem semantics suspect; interpreter
       shares the decoder, which is why it crashes identically).
+  - **Session 4 (2026-11-25) corrections:**
+    * PAL timing engine patch landed: header region byte ($1F0) selects
+      312-line raster + 49.7015 Hz pacer + PAL VBlank threshold
+      (`g_genesis_pal`, genesis_machine.c/h, main.c). Verified live:
+      `[region] header=E -> PAL timing`, pacer 49.7015.
+    * **The "PC=0 exception loop" theory was WRONG**: `get_registers`/
+      `rdb_get_state` PC is untracked in native builds; `crash_trail` shows
+      656k blocks all at **$000436** — the guest halts in the region-check
+      failure path (`bra.s *`), exactly as first concluded.
+    * **Tier-4 `rdb_insn_break`/`rdb_step_insn` park the ORACLE only**, not
+      native execution — all "break never fired ⇒ code never executes"
+      conclusions were artifacts. Use `rdb_dump` bus ring + `crash_trail`
+      for native truth.
+    * Bus ring at halt: last writes are JSR pushes from `$3DC`/`$420` into
+      func_000438 (conversion) ⇒ region routine DOES execute; but the
+      message buffer at `$FF0484` is all zero at halt ⇒ the conversion
+      wrote elsewhere ⇒ **A2 (destination) diverges inside the region
+      routine**. Web at frame 3 hasn't reached the routine yet (buffers
+      zero there too) — phase-matched comparison still needed.
   Next experiments (in order):
-  1. **Region/pacer mismatch (new clue 2026-11-25):** runner logs
-     `[pacer] target frame rate: 59.9401 fps` for the PAL dump — find the
-     runner's region detection (main.c / game.toml) and force PAL; a PAL
-     game paced at NTSC mis-times every VBlank-counted boot wait.
-  2. Break-setting race understood: boot completes in milliseconds, so
-     breaks set after startup never fire (earlier "never executes"
-     conclusions were artifacts of this race). Added
-     `GENESIS_BUS_ACK_CYCLES` env knob (engine patch) to slow boot for
-     probes; windowed run with the knob died early — investigate crash vs
-     SDL/direct3d11 in this session; prefer headless capture runs.
-  3. Movem semantics verified CORRECT against ROM (`4C9D`=.W, `4CDD`=.L,
-     `4CD6`=(a6) no increment); the prebuilt-v0.1.3-vs-source theory was
-     disproven (source-built recompiler emits identical, correct code).
-     Rebuild now uses the source-built recompiler
-     (`native/build-recomp/Release/GenesisRecomp.exe`).
-  4. Then: same-frame stack/save-area diff native vs web oracle; fix the
-     remaining boot divergence; re-validate boot → title → gameplay; M3+.
+  1. Web frame-scan: `web/test/ram-dump.html?frames=N` for N in 5..40; find
+     first N with non-zero `$FF0472-$FF04B4` (region routine output).
+  2. Native `rdb_range FF0400-FF0500` + `rdb_dump` at halt: see where the
+     conversion writes actually landed; diff against web's N-frame RAM.
+  3. Trace A2 provenance in the region routine ($3DC-$436) against ROM;
+     fix the diverging instruction/semantics in the engine patch; regen,
+     rebuild, re-validate boot → title → gameplay; then M3+.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites
