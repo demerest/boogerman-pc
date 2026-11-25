@@ -1,0 +1,825 @@
+diff --git a/runner/glue.c b/runner/glue.c
+index 4eee55c..9e6c1d9 100644
+--- a/runner/glue.c
++++ b/runner/glue.c
+@@ -225,6 +225,31 @@ void (*g_fm_write_trace_fn )(uint32_t address,      uint8_t value, uint32_t targ
+ void (*g_mem_write_trace_fn)(uint32_t byte_address, uint8_t value, uint32_t target_cycle) = NULL;
+ 
+ #define INSN_WATCHDOG_LIMIT GENESIS_NATIVE_WATCHDOG_LIMIT
++/* Boogerman engine patch: env-tunable watchdog headroom. A legitimate boot
++ * sound-init V-int handler can run many millions of native insns while the
++ * Z80 drains its DAC / FM tables; the fixed dev limit aborts it prematurely.
++ * GENESIS_WATCHDOG_INSN / GENESIS_WATCHDOG_BUS raise the thresholds (0=keep
++ * compile-time default). */
++static uint64_t watchdog_insn_limit(void)
++{
++    static uint64_t v;
++    if (!v) {
++        const char *e = getenv("GENESIS_WATCHDOG_INSN");
++        v = e ? strtoull(e, 0, 10) : 0;
++        if (!v) v = INSN_WATCHDOG_LIMIT;
++    }
++    return v;
++}
++static uint32_t watchdog_bus_limit(void)
++{
++    static uint32_t v;
++    if (!v) {
++        const char *e = getenv("GENESIS_WATCHDOG_BUS");
++        v = e ? (uint32_t)strtoul(e, 0, 10) : 0;
++        if (!v) v = WATCHDOG_LIMIT;
++    }
++    return v;
++}
+ GenesisNativeRegisterBudget g_native_register_budget={0,0,0,1,0,0};
+ #define s_insn_watchdog_base g_native_register_budget.watchdog_base
+ #define s_interleave_active g_native_register_budget.interleave_active
+@@ -242,7 +267,7 @@ static void instruction_watchdog_reset(void)
+ 
+ static void instruction_watchdog_check(void)
+ {
+-    if (g_native_insn_count - s_insn_watchdog_base < INSN_WATCHDOG_LIMIT)
++    if (g_native_insn_count - s_insn_watchdog_base < watchdog_insn_limit())
+         return;
+ 
+     char reason[160];
+@@ -329,7 +354,7 @@ static void dump_bus_ring(void)
+ static void watchdog_check(uint32_t addr, int is_write, uint32_t val)
+ {
+     (void)val;
+-    if (++s_watchdog_counter != WATCHDOG_LIMIT)
++    if (++s_watchdog_counter != watchdog_bus_limit())
+         return;
+ 
+     char reason[128];
+@@ -828,9 +853,15 @@ void glue_run_game_chunk(uint32_t cycles)
+  * queue-read where hardware places it after (the S3 giant-ring entry-sound
+  * kill). */
+ uint64_t g_chunk_yield_count = 0;
++/* Boogerman engine patch: allow the (long, boot sound-init) V-int handler to
++ * yield on budget so the scanline scheduler advances the Z80/raster between
++ * handler chunks instead of running it atomically and starving H-int counters.
++ * Env GENESIS_VINT_YIELD, default off. */
++static int vint_yield_on = -1;
+ static void check_cycle_budget(void)
+ {
+-    if (s_interleave_active && !s_in_vblank_service) {
++    if (vint_yield_on < 0) vint_yield_on = getenv("GENESIS_VINT_YIELD") != NULL;
++    if (s_interleave_active && (!s_in_vblank_service || vint_yield_on)) {
+         uint32_t now = g_audio_cycle_counter;
+         if (s_main_cpu_divisor > 1 && !s_irq_in_progress && now > s_budget_cyc_seen) {
+             uint32_t elapsed = now - s_budget_cyc_seen;
+@@ -984,6 +1015,7 @@ static void own_deliver_vint(GVDP *vdp)
+     uint8_t vbla_routine_at_entry =
+         glue_peek8(g_game_layout.vint_routine_addr & 0xFFFFFF);
+ #endif
++    unsigned md_pre = (g_ram[0x516] << 8) | g_ram[0x517]; /* mode before clear */
+     if (genesis_force_interp()) {
+         /* Interpret the V-int handler body from the level-6 autovector; delivery
+          * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
+@@ -993,6 +1025,54 @@ static void own_deliver_vint(GVDP *vdp)
+     s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
+     if (s_irq_cycle_debt)
+         s_irq_cycle_debt_level = 6;
++    /* Boogerman BOOT-ASSIST: the Z80 music/DAC tick needs the vblank flag
++     * $0FAD=$FE (and DAC request $0FC2), which the stalled 68K never issues.
++     * Supply them each V-int during boot to break the circular handshake. */
++    {
++        static int assist = -1;
++        if (assist < 0) assist = getenv("GENESIS_BOOT_ASSIST") != NULL;
++        extern unsigned long g_snd_frame;
++        if (assist && g_snd_frame >= 16 && g_snd_frame < 4000) {
++            extern GenesisMachine g_machine;
++            g_machine.bus.z80_ram[0x0FAD] = 0xFE;
++            g_machine.bus.z80_ram[0x0FC2] = 0x01;
++        }
++    }
++    /* TEMP DEBUG (Boogerman M3 cosim): env-gated boot timeline. Logs one line
++     * per V-int: frame, vint_count($FF0288), mode($FF0516), handler cycles.
++     * Compare against the web oracle timeline to align boot stages. */
++    {
++        static int tl_on = -1;
++        if (tl_on < 0) tl_on = getenv("GENESIS_BOOT_TIMELINE") != NULL;
++        if (tl_on) {
++            extern unsigned long g_snd_frame;
++            unsigned vc = (g_ram[0x288] << 8) | g_ram[0x289];
++            /* mode BEFORE the handler consumes/clears $FF0516 */
++            unsigned md = md_pre;
++            fprintf(stderr, "[BOOT-TL] f=%lu vc=%u mode=%u hc=%u\n",
++                    g_snd_frame, vc, md, (unsigned)(g_audio_cycle_counter - cyc_before));
++        }
++    }
++    /* TEMP DEBUG (Boogerman Start->game): env-gated joy/mode timeline around a
++     * scripted Start press. Shows raw held ($FF0502), processed pressed edge
++     * ($FF050C|$FF050E), mode ($FF0516) and attract timer ($FF05B4). */
++    {
++        static int jt_on = -1;
++        if (jt_on < 0) jt_on = getenv("GENESIS_JOY_TL") != NULL;
++        if (jt_on) {
++            extern unsigned long g_snd_frame;
++            if ((g_snd_frame >= 1580 && g_snd_frame < 1700) ||
++                (g_snd_frame >= 1400 && g_snd_frame < 2400 && (g_snd_frame % 20) == 0)) {
++                unsigned raw = (g_ram[0x502] << 8) | g_ram[0x503];
++                unsigned e1  = (g_ram[0x50C] << 8) | g_ram[0x50D];
++                unsigned e2  = (g_ram[0x50E] << 8) | g_ram[0x50F];
++                unsigned md  = (g_ram[0x516] << 8) | g_ram[0x517];
++                unsigned tm  = (g_ram[0x5B4] << 8) | g_ram[0x5B5];
++                fprintf(stderr, "[JOY-TL] f=%lu raw=%04X edge=%04X mode=%04X tm=%04X\n",
++                        g_snd_frame, raw, e1 | e2, md, tm);
++            }
++        }
++    }
+ #ifdef GEN_DEV_TRACE
+     /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
+      * debt freezes the main loop for multiple wall frames (and with it the
+@@ -1842,16 +1922,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+  * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
+  * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
+  * for all six 68K accessors, so no access shape can bypass it. */
+-static inline int z80_domain_addr(uint32_t a)
+-{
+-    return (a >= 0xA00000u && a < 0xA10000u) ||
+-           (a & 0xFFFFFEu) == 0xA11100u || (a & 0xFFFFFEu) == 0xA11200u;
+-}
+ static inline void z80_sync_for_68k_access(uint32_t a, unsigned bytes)
+ {
+-    if (!s_in_vblank_service) return;
+-    if (z80_domain_addr(a) || (bytes > 2 && z80_domain_addr(a + 2u)))
+-        machine_z80_sync_to(g_audio_cycle_counter * 7u + g_68k_stamp_rebase);
++    /* Boogerman engine patch: GENESIS_Z80_FULL_SYNC extends the concurrent
++     * Z80 sync to EVERY 68K bus access in the MAIN loop too (not just atomic
++     * service), so a boot sound-init wait that polls a Z80 flag lets the Z80
++     * accrue its hardware share and complete the DAC/ack (s27). Default off. */
++    static int full = -1;
++    if (full < 0) full = getenv("GENESIS_Z80_FULL_SYNC") != NULL;
++    if (!s_in_vblank_service && !full) return;
++    (void)a; (void)bytes;
++    machine_z80_sync_to(g_audio_cycle_counter * 7u + g_68k_stamp_rebase);
+ }
+ 
+ /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
+diff --git a/runner/main.c b/runner/main.c
+index 771b446..67f66c8 100644
+--- a/runner/main.c
++++ b/runner/main.c
+@@ -3078,6 +3078,20 @@ int main(int argc, char *argv[])
+         }
+     }
+ 
++    /* Boogerman engine patch: PAL raster timing from the cartridge header
++     * region byte ($1F0). PAL machines run 312-line frames at ~49.70 Hz;
++     * the stock runner is NTSC-only, which mis-times every VBlank-counted
++     * boot wait of a PAL game. */
++    {
++        extern uint32_t g_vblank_threshold;
++        char region = rom_raw_len > 0x1F1 ? (char)rom_raw[0x1F0] : 'U';
++        g_genesis_pal = (region == 'E' || region == 'F' ||
++                         region == 'B' || region == 'H');
++        g_vblank_threshold = g_genesis_pal ? (240u * 488u) : (224u * 488u);
++        fprintf(stderr, "[region] header=%c -> %s timing\n",
++                region, g_genesis_pal ? "PAL" : "NTSC");
++    }
++
+     if(replay_path) {
+ #if RECOMP_LAUNCHER
+         const RecompLauncherCModProvider *p=app_config_video_mods(g_game_spec.video,settings_ini);
+@@ -3418,10 +3432,11 @@ int main(int argc, char *argv[])
+         fprintf(stderr, "[display] interlace_display=%s\n",
+                 s_interlace_display_mode == INTERLACE_DISPLAY_RAW ? "raw" : "tv");
+     }
+-    /* --target-fps wins over debug.ini, which wins over default 59.94. */
++    /* --target-fps wins over debug.ini, which wins over the region default
++     * (PAL 49.7015 / NTSC 59.9401, matching the Genesis Plus GX oracle). */
+     double target_fps = (target_fps_cli > 0.0)     ? target_fps_cli :
+                         (target_fps_from_ini > 0.0) ? target_fps_from_ini :
+-                                                       (60000.0 / 1001.0);  /* NTSC */
++                        (g_genesis_pal ? 49.7015 : (60000.0 / 1001.0));
+     fprintf(stderr, "[pacer] target frame rate: %.4f fps\n", target_fps);
+     int debug_port = debug_port_cli ? debug_port_cli :
+                      (debug_port_from_ini ? debug_port_from_ini :
+diff --git a/runner/rb_state.c b/runner/rb_state.c
+index 3e146ce..2306f92 100644
+--- a/runner/rb_state.c
++++ b/runner/rb_state.c
+@@ -41,8 +41,8 @@ _Static_assert(sizeof(g_ram) == 0x10000, "work RAM size changed");
+ #if UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
+ /* 64-bit layouts (the host pointers inside are scrubbed by machine_rb_save). */
+ _Static_assert(sizeof(GVDP) == 65824, "GVDP changed: review machine_rb_save (pointers) and rb_state");
+-_Static_assert(sizeof(GenesisBus) == 24672, "GenesisBus changed: review machine_rb_save and rb_state");
+-_Static_assert(sizeof(GenesisMachine) == 90584, "GenesisMachine changed: review machine_rb_save and rb_state");
++_Static_assert(sizeof(GenesisBus) == 24688, "GenesisBus changed: review machine_rb_save and rb_state");
++_Static_assert(sizeof(GenesisMachine) == 90600, "GenesisMachine changed: review machine_rb_save and rb_state");
+ #endif
+ 
+ /* ---- sections ---------------------------------------------------------------- */
+diff --git a/runner/video/genesis_bus.c b/runner/video/genesis_bus.c
+index bd712d9..21296d1 100644
+--- a/runner/video/genesis_bus.c
++++ b/runner/video/genesis_bus.c
+@@ -8,7 +8,10 @@
+  */
+ #include "genesis_bus.h"
+ #include "genesis_expansion.h"
++#include "genesis_machine.h"
+ #include "../audio/event_queue.h"
++#include "native_register_budget.h"
++#include <stdlib.h>
+ #include <string.h>
+ 
+ /* Recompiled 68K memory. */
+@@ -65,6 +68,46 @@ extern uint32_t machine_z80_stamp(void);      /* genesis_machine.c, master cycle
+ extern uint32_t g_68k_stamp_rebase;
+ #define STAMP_68K() (g_audio_cycle_counter * 7u + g_68k_stamp_rebase)
+ 
++/* Boogerman engine patch: $A11100 bit0 reads 1 from bus request until the Z80
++ * acknowledges (ack window), then 0 while the 68K owns the bus; 0 when no
++ * request is pending. The previous instant-grant model collapsed boot
++ * bus-arbitration waits and let the driver upload race the Z80.
++ * GENESIS_BUS_ACK_CYCLES overrides the window (debug: slow boot for probes). */
++static uint32_t bus_ack_window(void)
++{
++    static uint32_t cached = 0;
++    if (!cached) {
++        const char *e = getenv("GENESIS_BUS_ACK_CYCLES");
++        /* Real HW grants the bus once the Z80 finishes its current
++         * instruction (a few us). The old 70000-master default (~1.3 ms)
++         * inflated every busreq poll so handshake loops ran too few
++         * iterations and the Z80 starved (Boogerman FM-init never finished
++         * before the first V-int command). */
++        cached = e ? (uint32_t)strtoul(e, 0, 10) : 1500u;
++    }
++    return cached;
++}
++static uint16_t z80_busreq_word(const GenesisBus *b)
++{
++    if (!b->z80_busreq) return 0x0000;
++    /* Inside atomic V-int/H-int service the Z80 cannot advance (it only runs
++     * via machine_z80_sync_to, capped at the wall frame), so an ack window
++     * there would spin the 68K forever (IRQ-DEBT runaway). Grant immediately
++     * in service; apply the latency only in normal scheduled chunks. */
++    if (g_native_register_budget.in_vblank_service) return 0x0000;
++    /* Boogerman LOCKSTEP: with NO_BUS_HALT the Z80 keeps running and yields the
++     * bus promptly, so grant immediately (no ack-window stall) to let the 68K
++     * request/ack/release handshake complete at full speed. */
++    {
++        static int nbh = -1;
++        if (nbh < 0) nbh = getenv("GENESIS_Z80_NO_BUS_HALT") != NULL;
++        if (nbh) return 0x0000;
++    }
++    uint64_t now = (uint64_t)STAMP_68K();
++    int acked = (now - b->z80_busreq_stamp) >= (uint64_t)b->z80_bus_ack_delay;
++    return acked ? 0x0000 : 0x0100;
++}
++
+ /* [SND-TRACE] sound-command lifecycle trace (defined in genesis_machine.c). */
+ extern uint8_t g_sndwatch[0x2000];
+ extern unsigned long g_snd_frame;
+@@ -314,7 +357,11 @@ static uint8_t pad_read(const GenesisBus *b, int port)
+ static uint16_t io_read(const GenesisBus *b, uint32_t a)
+ {
+     switch (a & 0x1E) {
+-        case 0x00: return b->version;            /* $A10000/1 version          */
++        /* Boogerman engine patch: the hardware version register must report
++         * the console region, not a fixed NTSC value. EU (PAL) games read
++         * $A10001 and halt if bit6 (PAL) is clear. 0xC0=overseas PAL,
++         * 0x80=overseas NTSC. Derived from the header region (g_genesis_pal). */
++        case 0x00: return (uint16_t)(g_genesis_pal ? 0xC0 : b->version);
+         case 0x02: return pad_read(b, 0);        /* $A10002/3 P1 data          */
+         case 0x04: return pad_read(b, 1);        /* $A10004/5 P2 data          */
+         case 0x06: return 0xFF;                  /* $A10006/7 EXP data         */
+@@ -367,6 +414,18 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+     if (extra_ram) return (uint16_t)((extra_ram[0] << 8) | extra_ram[1]);
+     if (a >= 0xFF0000u) {                                            /* RAM     */
+         uint16_t o = (uint16_t)(a & 0xFFFFu);
++        /* Boogerman BOOT-ASSIST path (b): lengthen the sound-init wait timeout
++         * ($FF0520) and clear the retry flag ($FF054C) so the 68K does not
++         * re-deposit cmd-01 before the Z80 finishes the DAC/ack (s26). */
++        {
++            static int assist = -1;
++            if (assist < 0) assist = getenv("GENESIS_BOOT_ASSIST") != NULL;
++            extern unsigned long g_snd_frame;
++            if (assist && g_snd_frame >= 16 && g_snd_frame < 4000) {
++                if (o == 0x0520u) return 0xFFFFu;
++                if (o == 0x054Cu) return 0x0000u;
++            }
++        }
+         return (uint16_t)((g_ram[o] << 8) | g_ram[(uint16_t)(o + 1)]);
+     }
+     if (a >= 0xC00000u && a < 0xC00010u) {                          /* VDP      */
+@@ -385,6 +444,20 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+              * driver decompression's back-reference copy (MOVE.B (A4,D4.W),
+              * (A5)+) — the S2 silent-audio bug. */
+             unsigned off = a & 0x1FFFu;
++            /* Boogerman BOOT-ASSIST (env GENESIS_BOOT_ASSIST, default off):
++             * during the boot window the 68K polls the Z80 "DAC busy" flag
++             * $0FE4 and times out because the Z80's DAC drain is starved by
++             * bus arbitration. Report it clear to the 68K so boot sound-init
++             * completes and the title is reached (M2). The Z80's own reads are
++             * untouched; audio fidelity is deferred to M3/M4. */
++            {
++                static int assist = -1;
++                if (assist < 0) assist = getenv("GENESIS_BOOT_ASSIST") != NULL;
++                extern unsigned long g_snd_frame;
++                if (assist && (off == 0x0FE4u || off == 0x0FACu) &&
++                    g_snd_frame >= 16 && g_snd_frame < 4000 && b->z80_ram[off])
++                    return 0x0000;
++            }
+             return (uint16_t)(((uint16_t)b->z80_ram[off] << 8)
+                               | b->z80_ram[(off + 1u) & 0x1FFFu]);
+         }
+@@ -398,7 +471,7 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+         return 0xFFFFu;                          /* bank/PSG region: open bus  */
+     }
+     if (a >= 0xA10000u && a < 0xA10020u) return io_read(b, a);      /* I/O      */
+-    if (a == 0xA11100u) { uint16_t ack = (uint16_t)(b->z80_busreq ? 0x0000 : 0x0100);
++    if (a == 0xA11100u) { uint16_t ack = z80_busreq_word(b);
+         snd_trace_busreq("REQ-READack", ack ? 1 : 0); return ack; }  /* [SND-TRACE] */
+     if (a == 0xA11200u) return (uint16_t)(b->z80_reset_off ? 0x0100 : 0x0000);
+     return 0xFFFFu;
+@@ -437,7 +510,7 @@ uint16_t gbus_peek16(const GenesisBus *b, uint32_t a)
+         return 0xFFFFu;
+     }
+     if (a >= 0xA10000u && a < 0xA10020u) return io_read(b, a);
+-    if (a == 0xA11100u) return (uint16_t)(b->z80_busreq ? 0x0000 : 0x0100);
++    if (a == 0xA11100u) return z80_busreq_word(b);
+     if (a == 0xA11200u) return (uint16_t)(b->z80_reset_off ? 0x0100 : 0x0000);
+     return 0xFFFFu;
+ }
+@@ -496,7 +569,30 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+         return;
+     }
+     if (a >= 0xA10000u && a < 0xA10020u) { io_write(b, a, (uint8_t)v); return; }
+-    if (a == 0xA11100u) { b->z80_busreq = (v & 0x0100) ? 1 : 0;
++    if (a == 0xA11100u) { int o = b->z80_busreq;
++        /* Boogerman engine patch: on the request edge, first bring the Z80 up
++         * to this instant (bus still free, so it executes the release window).
++         * The scheduler slices the Z80 per scanline; a 68K handler that
++         * requests/releases the bus in a poll loop (Boogerman's V-int sound
++         * tick waits for the Z80 to consume a command byte) would otherwise
++         * never let the Z80 run between releases and spin forever.
++         * GENESIS_Z80_BUS_QUANTUM adds master cycles to that sync: on HW the
++         * Z80 finishes its current instruction after a request before
++         * yielding; the quantum models that finish time for long instructions
++         * (per-game tuning, default 0). */
++        if (!o && (v & 0x0100)) {
++            static uint32_t quantum = UINT32_MAX;
++            if (quantum == UINT32_MAX) {
++                const char *e = getenv("GENESIS_Z80_BUS_QUANTUM");
++                quantum = e ? (uint32_t)strtoul(e, 0, 10) : 0u;
++            }
++            machine_z80_sync_to((uint32_t)STAMP_68K() + quantum);
++        }
++        b->z80_busreq = (v & 0x0100) ? 1 : 0;
++        if (!o && b->z80_busreq) {
++            b->z80_busreq_stamp = (uint64_t)STAMP_68K();
++            b->z80_bus_ack_delay = b->z80_reset_off ? bus_ack_window() : 0u;
++        }
+         snd_trace_busreq("REQ", b->z80_busreq); return; }                /* [SND-TRACE] */
+     if (a == 0xA11200u) { int o = b->z80_reset_off; b->z80_reset_off = (v & 0x0100) ? 1 : 0;
+         /* Asserting the reset line (1->0) resets the Z80 core: it must restart
+@@ -505,6 +601,13 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+          * a stale PC after the post-upload reset pulse and ran the driver from
+          * garbage — the S2 silent-audio bad-jump. */
+         if (o == 1 && b->z80_reset_off == 0) b->z80_reset_pending = 1;
++        /* Releasing reset while the bus is requested starts a fresh ack window:
++         * the Z80 begins executing (nop-slide through unwritten RAM) and only
++         * yields the bus after that window. */
++        if (!o && b->z80_reset_off == 1 && b->z80_busreq) {
++            b->z80_busreq_stamp = (uint64_t)STAMP_68K();
++            b->z80_bus_ack_delay = bus_ack_window();
++        }
+         snd_trace_busreq("RESET_OFF", b->z80_reset_off);  /* [SND-TRACE] */
+         return; }
+ }
+@@ -573,7 +676,23 @@ void gbus_z80_write(GenesisBus *b, uint16_t addr, uint8_t val)
+ {
+     if (addr < 0x4000u) { unsigned off = addr & 0x1FFFu;
+         if (g_sndwatch[off]) snd_trace_z80((uint16_t)off, val, 1);  /* [SND-TRACE] */
+-        b->z80_ram[off] = val; return; }                           /* RAM+mirror */
++        b->z80_ram[off] = val;                                     /* RAM+mirror */
++        /* Boogerman BOOT-ASSIST path (b): the native 68K stalls before issuing the
++         * post-init DAC-start / vblank stimuli, so the driver never acks (s26).
++         * When the Z80 consumes a command during boot, supply the stimuli the real
++         * 68K would ($0FC2=1 DAC request, $0FAD=$FE vblank flag) to break the cycle.
++         * Audio fidelity deferred; env-gated, default off. */
++        {
++            static int assist = -1;
++            if (assist < 0) assist = getenv("GENESIS_BOOT_ASSIST") != NULL;
++            extern unsigned long g_snd_frame;
++            if (assist && off == 0x0FACu && val == 0 &&
++                g_snd_frame >= 16 && g_snd_frame < 4000) {
++                b->z80_ram[0x0FC2] = 0x01;
++                b->z80_ram[0x0FAD] = 0xFE;
++            }
++        }
++        return; }
+     if (addr < 0x6000u) {
+         uint8_t port = (uint8_t)(addr & 3);
+         ym_write_side_effect(b, port, val, ym_abs_z80_stamp());
+diff --git a/runner/video/genesis_bus.h b/runner/video/genesis_bus.h
+index 0054723..f55774a 100644
+--- a/runner/video/genesis_bus.h
++++ b/runner/video/genesis_bus.h
+@@ -37,6 +37,12 @@ typedef struct GenesisBus {
+     uint8_t  z80_reset_pending;         /* reset line asserted; core reset due
+                                          * before the Z80 next runs (so it
+                                          * restarts at $0000 post-upload)     */
++    /* Bus arbitration latency (Boogerman engine patch): a running Z80 does not
++     * yield the bus instantly; $A11100 bit0 stays 1 until the ack window
++     * elapses. Without this, boot bus-grant waits collapse and the driver
++     * upload races the Z80 (Boogerman M2 halt at $000436). */
++    uint64_t z80_busreq_stamp;          /* STAMP_68K() at request / reset release */
++    uint32_t z80_bus_ack_delay;         /* 68K-cycle ack window (0 = immediate)   */
+ 
+     /* YM2612 timer/status state. Audio register writes are rendered later by
+      * the cycle-stamped mixer, but the emulated CPUs must observe timer flags
+diff --git a/runner/video/genesis_machine.c b/runner/video/genesis_machine.c
+index 9718e2f..a9d9a72 100644
+--- a/runner/video/genesis_machine.c
++++ b/runner/video/genesis_machine.c
+@@ -15,9 +15,18 @@
+ #include "chip_trace.h"   /* [CHIP-TRACE] shared FM/PSG stream ring + g_snd_* globals */
+ #include <string.h>
+ #include <stdio.h>   /* [SND-TRACE] temporary sound-command lifecycle trace */
++#include <stdlib.h>
+ 
+ GenesisMachine g_machine;
+ 
++/* Boogerman engine patch: PAL raster timing (312 lines) vs NTSC (262).
++ * Set from the cartridge header region byte at load (main.c). */
++int g_genesis_pal = 0;
++
++/* 68K master-clock accounting (glue.c) for the LOCKSTEP sub-chunk sync. */
++extern uint32_t g_audio_cycle_counter;
++extern uint32_t g_68k_stamp_rebase;
++
+ /* ===================== [SND-TRACE] sound-command lifecycle =================
+  * Always-on in-memory ring (no I/O in the hot path — PRINCIPLES #17/#18).
+  * Auto-discovers the SMPS Z80 command mailbox by watching the 68K's *gameplay*
+@@ -30,6 +39,7 @@ GenesisMachine g_machine;
+  * (so the oracle build has them too). This scheduler still owns/advances
+  * g_snd_frame + g_snd_line per scanline below. */
+ uint8_t       g_sndwatch[0x2000];    /* 1 = a gameplay 68K write touched this  */
++static uint64_t s_z80_progress;      /* fwd decl for snd_evt (defined below)   */
+ 
+ #ifndef GEN_DEV_TRACE
+ /* Prod builds: no ring memory, no captures, dumps report "not compiled in".
+@@ -45,7 +55,7 @@ void snd_trace_dump(const char *path)
+ void z80_ram_dump(const char *path)
+ { (void)path; fprintf(stderr, "[SND] z80 dump not compiled in (build with GEN_DEV_TRACE=ON)\n"); }
+ #else /* GEN_DEV_TRACE */
+-#define SND_TRACE_START_FRAME 90u    /* skip the boot driver upload            */
++#define SND_TRACE_START_FRAME 0u    /* Boogerman patch: trace boot upload too */
+ 
+ enum { SND_68KW = 1, SND_Z80W, SND_VASSERT, SND_VACCEPT, SND_BUS };
+ typedef struct {
+@@ -53,6 +63,7 @@ typedef struct {
+     uint16_t addr, pcz, line, pad;
+     uint32_t frame;
+     uint64_t master;
++    uint64_t prog;                   /* TEMP DEBUG: s_z80_progress at event   */
+     const char *tag;                 /* BUS only: REQ / RESET_OFF / REQ-READack */
+ } SndEvt;
+ #define SND_RING_N 65536u
+@@ -64,12 +75,29 @@ static SndEvt *snd_evt(uint8_t type) {
+     e->master = g_machine.master_cycle;
+     e->pcz = (uint16_t)g_machine.z80.pc;
+     e->addr = 0; e->v1 = e->v2 = e->flags = 0; e->tag = 0;
++    e->prog = s_z80_progress;
+     return e;
+ }
+ 
++/* TEMP DEBUG (Boogerman M3): env-gated mailbox trace. Logs every 68K/Z80 write
++ * to the sound-command mailbox offsets so the deposit/consume/ack ordering can
++ * be read directly. Off by default; rare writes, immediate print is safe. */
++static int mbox_on = -1;
++static void mbox_trace(uint16_t off, uint8_t oldv, uint8_t newv, int is_z80)
++{
++    if (mbox_on < 0) mbox_on = getenv("GENESIS_MBOX_TRACE") != NULL;
++    if (!mbox_on) return;
++    off &= 0x1FFFu;
++    if (off != 0x0FAC && off != 0x0FAD && off != 0x0FE4 && off != 0x0FE5 &&
++        off != 0x0FC2 && off != 0x0FAF) return;
++    fprintf(stderr, "[MBOX] f=%lu sl=%u %s z80[$%04X] $%02X->$%02X pcz=$%04X\n",
++            g_snd_frame, g_snd_line, is_z80 ? "Z80W" : "68KW", off, oldv, newv,
++            (unsigned)g_machine.z80.pc);
++}
+ void snd_trace_68k_write(uint16_t off, uint8_t oldv, uint8_t newv,
+                          int busreq, int reset_off)
+ {
++    mbox_trace(off, oldv, newv, 0);
+     if (!g_snd_trace || g_snd_frame < SND_TRACE_START_FRAME) return;
+     off &= 0x1FFFu;
+     g_sndwatch[off] = 1;
+@@ -79,6 +107,7 @@ void snd_trace_68k_write(uint16_t off, uint8_t oldv, uint8_t newv,
+ }
+ void snd_trace_z80(uint16_t off, uint8_t val, int is_write)
+ {
++    if (is_write) mbox_trace(off, 0, val, 1);
+     if (!g_snd_trace || !is_write) return;     /* writes only (clears/sets) */
+     SndEvt *e = snd_evt(SND_Z80W);
+     e->addr = (uint16_t)(off & 0x1FFFu); e->v1 = val;
+@@ -107,8 +136,9 @@ void snd_trace_dump(const char *path)
+             fprintf(f, "f=%u sl=%u mc=%llu Z80W   pcz=$%04X z80[$%04X]=$%02X\n",
+                     e->frame, e->line, (unsigned long long)e->master, e->pcz, e->addr, e->v1); break;
+         case SND_VASSERT:
+-            fprintf(f, "f=%u sl=%u mc=%llu VINT-ASSERT pcz=$%04X pending_was=%d iff1=%d\n",
+-                    e->frame, e->line, (unsigned long long)e->master, e->pcz, e->v1, e->v2); break;
++            fprintf(f, "f=%u sl=%u mc=%llu VINT-ASSERT pcz=$%04X pending_was=%d iff1=%d prog=%llu\n",
++                    e->frame, e->line, (unsigned long long)e->master, e->pcz, e->v1, e->v2,
++                    (unsigned long long)e->prog); break;
+         case SND_VACCEPT:
+             fprintf(f, "f=%u sl=%u mc=%llu VINT-ACCEPT pcz=$%04X\n",
+                     e->frame, e->line, (unsigned long long)e->master, e->pcz); break;
+@@ -379,8 +409,8 @@ void machine_set_pad_type(int port, int six_button)
+     if (port >= 0 && port < 2) g_machine.bus.pad_type[port] = six_button ? 1 : 0;
+ }
+ 
+-/* NTSC raster timing. */
+-#define LINES_TOTAL     262
++/* Raster timing: NTSC 262 lines, PAL 312 (Boogerman engine patch). */
++#define LINES_TOTAL     (g_genesis_pal ? 312 : 262)
+ #define MASTER_PER_LINE 3420u
+ #define M68K_PER_LINE   488u
+ #define Z80_PER_LINE    228u
+@@ -443,12 +473,24 @@ static uint64_t s_z80_progress = 0;
+ /* [Z80-SYNC] always-on counters (see machine_z80_sync_to). */
+ static uint64_t s_z80_sync_calls, s_z80_sync_runs, s_z80_sync_cycles,
+                 s_z80_sync_halted, s_z80_sync_halted_cycles, s_z80_sync_capped;
++/* Boogerman engine patch: index (relative to the current wall frame) of the
++ * last Z80 vblank IRQ asserted, -1 = none. machine_z80_sync_to asserts every
++ * frame boundary the Z80's time crosses (a multi-frame atomic handler must
++ * give the Z80 its periodic IRQs, as on HW); the scheduler asserts frame 0.
++ * Reset at line 0. */
++static int s_z80_irq_frame = -1;
+ 
+ /* Z80 can execute now: not held in reset and the 68K does not own its bus.
+  * Applies a reset pulse the 68K made while it was halted. */
++static int z80_no_bus_halt = -1;
+ static int z80_ready(GenesisMachine *m)
+ {
+-    if (!m->bus.z80_reset_off || m->bus.z80_busreq) return 0;   /* Z80 halted */
++    if (z80_no_bus_halt < 0)
++        z80_no_bus_halt = getenv("GENESIS_Z80_NO_BUS_HALT") != NULL;
++    /* Boogerman test knob: let the polling-driven Z80 run even while the 68K
++     * holds busreq (models the Z80 finishing internal-RAM work during brief
++     * arbitration). Default off (correct halt-on-busreq). */
++    if (!m->bus.z80_reset_off || (m->bus.z80_busreq && !z80_no_bus_halt)) return 0;
+     /* The 68K pulsed the Z80 reset line while halted — restart the core at
+      * $0000 now that it's released, so it runs the freshly-uploaded driver
+      * from its entry point (not from a stale, pre-upload PC). */
+@@ -464,6 +506,49 @@ static int z80_ready(GenesisMachine *m)
+     return 1;
+ }
+ 
++/* TEMP DEBUG (Boogerman M3): env-gated Z80 instruction ring, dumped at exit.
++ * Reveals the exact spin loop / register state at a crash. Off by default. */
++static struct { uint16_t pc; uint8_t op, a, f, b, c, h, l; } s_zi[4096];
++static unsigned s_zi_n;
++static int s_zi_on = -1;
++/* TEMP DEBUG (M3): tally of key sound-driver PCs to see which routines run. */
++static const uint16_t s_key_pc[] = { 0x1000,0x1017,0x10A7,0x10B4,0x11BE,0x1230,
++                                     0x16E0,0x174C,0x1788,0x0C95,0x0038 };
++static uint64_t s_key_cnt[11];
++static void z80_insn_trace_dump(void)
++{
++    for (unsigned k = 0; k < 11; k++)
++        fprintf(stderr, "[Z80-KEY] %04X count=%llu\n", s_key_pc[k],
++                (unsigned long long)s_key_cnt[k]);
++    unsigned n = s_zi_n < 200 ? s_zi_n : 200;
++    unsigned start = s_zi_n - n;
++    for (unsigned i = 0; i < n; i++) {
++        const unsigned idx = (start + i) & 4095;
++        fprintf(stderr, "[Z80-INSN] %04X op=%02X A=%02X F=%02X BC=%02X HL=%02X\n",
++                s_zi[idx].pc, s_zi[idx].op, s_zi[idx].a, s_zi[idx].f,
++                (unsigned)(s_zi[idx].b << 8 | s_zi[idx].c),
++                (unsigned)(s_zi[idx].h << 8 | s_zi[idx].l));
++    }
++}
++static inline void z80_insn_record(z80 *z)
++{
++    if (s_zi_on < 0) {
++        s_zi_on = getenv("GENESIS_Z80_INSN_TRACE") != NULL;
++        if (s_zi_on) atexit(z80_insn_trace_dump);
++    }
++    if (!s_zi_on) return;
++    const unsigned idx = s_zi_n & 4095;
++    s_zi[idx].pc = z->pc;
++    s_zi[idx].op = z->read_byte(z->userdata, z->pc);
++    s_zi[idx].a = z->a;
++    s_zi[idx].f = (uint8_t)((z->sf << 7) | (z->zf << 6) | (z->yf << 5) | (z->hf << 4) |
++                            (z->xf << 3) | (z->pf << 2) | (z->nf << 1) | z->cf);
++    s_zi[idx].b = z->b; s_zi[idx].c = z->c; s_zi[idx].h = z->h; s_zi[idx].l = z->l;
++    s_zi_n++;
++    for (unsigned k = 0; k < 11; k++)
++        if (z->pc == s_key_pc[k]) { s_key_cnt[k]++; break; }
++}
++
+ /* Execute Z80 instructions from line-relative cycle `done` until it reaches
+  * `target`; returns the cycle reached (>= target: the last instruction may
+  * overshoot). Each instruction's chip writes stamp at its start cycle. */
+@@ -484,6 +569,7 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
+         done+=z80_recomp_step_one();
+ #else
+         unsigned long c0 = m->z80.cyc;
++        z80_insn_record(&m->z80);
+         z80_step(&m->z80);     /* one instruction, then interrupt processing */
+         done += (uint32_t)(m->z80.cyc - c0);
+ #endif
+@@ -523,6 +609,19 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
+  * cannot see. Only a multi-frame handler (Sonic 1's SEGA PCM V-int) can reach
+  * that; it is counted, and glue.c's bounded no-progress fallback covers a
+  * poll that waits on a capped Z80. */
++/* TEMP DEBUG (Boogerman M2): remove after handshake fix. */
++static struct { uint32_t now, want, have, done; uint16_t pc;
++                uint8_t kind, asrt, iff; } s_tr[512];
++static int s_tr_n;
++static void z80_sync_trace_dump(void)
++{
++    static const char *kn[5] = { "early-base", "early-have", "HALTED", "run", "step" };
++    for (int i = 0; i < s_tr_n; i++)
++        fprintf(stderr, "[Z80-TRACE] %s now=%u want=%u have=%u done=%u asrt=%u pc=$%04X iff=%u\n",
++                kn[s_tr[i].kind], s_tr[i].now, s_tr[i].want, s_tr[i].have,
++                s_tr[i].done, s_tr[i].asrt, s_tr[i].pc, s_tr[i].iff);
++}
++
+ void machine_z80_sync_to(uint32_t master_now)
+ {
+     GenesisMachine *m = &g_machine;
+@@ -531,22 +630,60 @@ void machine_z80_sync_to(uint32_t master_now)
+      * The next assertion still ahead of the Z80's line is this frame's when
+      * that point has not been reached yet, else the next frame's. */
+     const uint32_t irq_at = ((uint32_t)gvdp_screen_height(&m->vdp) + 1u) * MASTER_PER_LINE;
+-    const uint32_t z80_line_pos = s_line_base + s_z80_line_target * MASTER_PER_Z80;
+-    const uint32_t cap = z80_line_pos >= irq_at ? LINES_TOTAL * MASTER_PER_LINE + irq_at
+-                                                : irq_at;
++    const uint32_t frame_master = LINES_TOTAL * MASTER_PER_LINE;
++    /* Boogerman engine patch: assert every periodic Z80 vblank IRQ whose
++     * assertion point the requested time crosses. The scheduler's own assert
++     * only runs between scanlines, so an atomic multi-frame handler (Boogerman's
++     * boot sound-init waits on the Z80) would otherwise cap the Z80 at one
++     * frame and starve it. master_now is wall-frame-relative, so frame indices
++     * are 0-based within the current wall frame. */
++    if (z80_ready(m)) {
++        while (master_now >= (uint32_t)(s_z80_irq_frame + 1) * frame_master + irq_at) {
++#ifdef GENESIS_Z80_RECOMP
++            z80_recomp_assert_irq();
++#else
++            m->z80.int_pending = 1;
++#endif
++            s_z80_irq_frame++;
++        }
++    }
++    const uint32_t cap = (uint32_t)(s_z80_irq_frame + 1) * frame_master + irq_at;
+     s_z80_sync_calls++;
+     int clamped = master_now > cap;
+     if (clamped) master_now = cap;
+-    if (master_now <= s_line_base) return;
+-    uint32_t want = (master_now - s_line_base) / MASTER_PER_Z80;
++    /* TEMP DEBUG (Boogerman M2): remove after handshake fix. Ring buffer is
++     * written during simulation (no I/O, no timing perturbation) and dumped
++     * by an atexit hook so a crash run still yields the trace. */
++    static int s_tr_on = -1;
++    if (s_tr_on < 0) {
++        s_tr_on = getenv("GENESIS_Z80_SYNC_TRACE") != NULL;
++        if (s_tr_on) atexit(z80_sync_trace_dump);
++    }
++    int trace = s_tr_on && s_tr_n < 512 && master_now >= irq_at;
++#define TR_RECORD(k, w, h, d) do { if (trace) { \
++        s_tr[s_tr_n].now = master_now; s_tr[s_tr_n].want = (w); \
++        s_tr[s_tr_n].have = (h); s_tr[s_tr_n].done = (d); \
++        s_tr[s_tr_n].pc = (uint16_t)m->z80.pc; s_tr[s_tr_n].kind = (k); \
++        s_tr[s_tr_n].asrt = (uint8_t)(s_z80_irq_frame >= 0); \
++        s_tr[s_tr_n].iff = (uint8_t)m->z80.iff1; s_tr_n++; } } while (0)
++    if (master_now <= s_line_base) { TR_RECORD(0, 0, 0, 0); return; }
++    /* Boogerman boot-assist: scale the in-service Z80 share by the same
++     * GENESIS_Z80_OVERCLOCK factor as the per-line budget (s_z80_line_target is
++     * already scaled), so a long boot V-int handler lets the Z80 finish fast. */
++    static uint32_t s_sync_oc;
++    if (!s_sync_oc) { const char *e = getenv("GENESIS_Z80_OVERCLOCK");
++                      s_sync_oc = e ? (uint32_t)strtoul(e, 0, 10) : 0;
++                      if (!s_sync_oc) s_sync_oc = 1; }
++    uint32_t want = ((master_now - s_line_base) * s_sync_oc) / MASTER_PER_Z80;
+     uint32_t have = s_z80_line_target + m->z80_cycle_debt;
+-    if (want <= have) return;
++    if (want <= have) { TR_RECORD(1, want, have, 0); return; }
+     if (!z80_ready(m)) {
+         /* Halted: no instruction can observe the clamp (Sonic 1's SEGA PCM
+          * handler holds the bus for ~2 s of 68K time and lands here). */
+         m->z80_cycle_debt = want - s_z80_line_target;
+         s_z80_sync_halted++;
+         s_z80_sync_halted_cycles += want - have;
++        TR_RECORD(2, want, have, 0);
+         return;
+     }
+     if (clamped) s_z80_sync_capped++;   /* a running Z80 stopped short of the 68K */
+@@ -554,6 +691,8 @@ void machine_z80_sync_to(uint32_t master_now)
+     m->z80_cycle_debt = done - s_z80_line_target;
+     s_z80_sync_runs++;
+     s_z80_sync_cycles += done - have;
++    TR_RECORD(3, want, have, done);
++#undef TR_RECORD
+ }
+ 
+ uint64_t machine_z80_progress(void) { return s_z80_progress; }
+@@ -567,6 +706,17 @@ void machine_z80_sync_stats(uint64_t out[6])
+ 
+ static void step_z80(GenesisMachine *m, uint32_t target)
+ {
++    /* TEMP DEBUG (Boogerman M2): remove after handshake fix. */
++    if (getenv("GENESIS_Z80_SYNC_TRACE") && s_tr_n < 512 &&
++        g_snd_frame >= 2 && g_snd_frame <= 4) {
++        s_tr[s_tr_n].now = g_snd_frame; s_tr[s_tr_n].want = target;
++        s_tr[s_tr_n].have = m->z80_cycle_debt;
++        s_tr[s_tr_n].done = (uint32_t)(m->bus.z80_busreq | (m->bus.z80_reset_off << 1) |
++                                       (m->bus.z80_reset_pending << 2));
++        s_tr[s_tr_n].pc = (uint16_t)m->z80.pc;
++        s_tr[s_tr_n].kind = 4; s_tr[s_tr_n].asrt = (uint8_t)z80_ready(m);
++        s_tr[s_tr_n].iff = (uint8_t)m->z80.iff1; s_tr_n++;
++    }
+     if (!z80_ready(m)) return;
+     int pend_before =
+ #ifdef GENESIS_Z80_RECOMP
+@@ -641,9 +791,26 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+         s_line_base = (uint32_t)line * MASTER_PER_LINE;
+         s_z80_off   = 0;   /* 68K writes during the chunk below land at the line start */
+         s_z80_line_target = 0;   /* Z80 sits at line-relative z80_cycle_debt */
+-
+-        /* Advance the recompiled 68K ~one scanline (it parks at WaitForVBlank). */
+-        glue_run_game_chunk(M68K_PER_LINE);
++        if (line == 0) s_z80_irq_frame = -1;
++
++        /* Advance the recompiled 68K ~one scanline (it parks at WaitForVBlank).
++         * Boogerman LOCKSTEP rework (env GENESIS_LOCKSTEP): interleave small 68K
++         * sub-chunks with a Z80 sync after each, so the two CPUs run concurrently
++         * at the hardware ratio even inside tight non-bus handshake loops (the
++         * boot sound-init wait). Default = single chunk (legacy). */
++        {
++            static int lockstep = -1;
++            if (lockstep < 0) lockstep = getenv("GENESIS_LOCKSTEP") != NULL;
++            if (lockstep) {
++                for (uint32_t k = 0; k < M68K_PER_LINE; k += 64) {
++                    uint32_t n = (M68K_PER_LINE - k) < 64 ? (M68K_PER_LINE - k) : 64;
++                    glue_run_game_chunk(n);
++                    machine_z80_sync_to(g_audio_cycle_counter * 7u + g_68k_stamp_rebase);
++                }
++            } else {
++                glue_run_game_chunk(M68K_PER_LINE);
++            }
++        }
+ 
+         /* If a prior V-int was latched while the 68K had IRQs masked (e.g. a
+          * move #$2700,sr screen transition), deliver it now that the chunk above
+@@ -652,9 +819,19 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+         glue_own_vint_service_latched(&m->vdp);
+         glue_own_hint_service_latched(&m->vdp);
+ 
+-        /* Step the Z80 (SMPS driver) for its share of the line. */
+-        step_z80(m, Z80_PER_LINE);
+-        s_z80_line_target = Z80_PER_LINE;   /* halted or not, the line's time passed */
++        /* Step the Z80 (SMPS driver) for its share of the line.
++         * Boogerman BOOT-ASSIST: GENESIS_Z80_OVERCLOCK (default 1) multiplies the
++         * per-line Z80 budget so a polling-driven boot driver finishes its
++         * FM/DAC init between V-ints instead of being starved by bus arbitration.
++         * Audio timing fidelity is deferred to M3/M4. */
++        {
++            static uint32_t oc;
++            if (!oc) { const char *e = getenv("GENESIS_Z80_OVERCLOCK");
++                       oc = e ? (uint32_t)strtoul(e, 0, 10) : 0; if (!oc) oc = 1; }
++            uint32_t zt = Z80_PER_LINE * oc;
++            step_z80(m, zt);
++            s_z80_line_target = zt;   /* halted or not, the line's time passed */
++        }
+ 
+         /* Deliver interrupts to the 68K (and the Z80 at vblank). */
+         if (irq & GVDP_IRQ_VBLANK) {
+@@ -679,11 +856,14 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+ #endif
+             }
+ #endif
++            if (s_z80_irq_frame < 0) {
+ #ifdef GENESIS_Z80_RECOMP
+-            z80_recomp_assert_irq();
++                z80_recomp_assert_irq();
+ #else
+-            m->z80.int_pending = 1;   /* level-triggered vblank IRQ assert */
++                m->z80.int_pending = 1;   /* level-triggered vblank IRQ assert */
+ #endif
++                s_z80_irq_frame = 0;
++            }
+             glue_own_interrupt(6, &m->vdp);
+         }
+ 
+diff --git a/runner/video/genesis_machine.h b/runner/video/genesis_machine.h
+index 399932a..ab1db1c 100644
+--- a/runner/video/genesis_machine.h
++++ b/runner/video/genesis_machine.h
+@@ -27,6 +27,8 @@ typedef struct GenesisMachine {
+ } GenesisMachine;
+ 
+ extern GenesisMachine g_machine;
++/* Boogerman engine patch: 1 = PAL raster (312 lines, 49.7015 Hz pacer). */
++extern int g_genesis_pal;
+ 
+ /* Native CPU scheduler hook, implemented by glue.c. Use the fixed-width public
+  * budget ABI on every host (uint_fast32_t is 64-bit on some platforms). */

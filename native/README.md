@@ -53,6 +53,20 @@ Framework pin: clone of `mstan/segagenesisrecomp` @ HEAD on 2026-11-24
 `2103d5e`, z80-recomp-core `4dfc5fc`, s1disasm `d343882`). Record the exact
 commit before shipping; convert to a submodule pin like the reference repo.
 
+## Engine patches (per-game work, kept in THIS repo)
+
+The submodule gitlink stays at the **public upstream base** so a fresh clone
+fetches cleanly. The Boogerman engine work (boot-assist, 68K/Z80 lockstep,
+immediate bus-ack, `[BOOT-TL]`/`[JOY-TL]`/Z80 traces) is carried as
+`segagenesisrecomp.diff` and applied to the submodule with:
+
+```
+powershell -File native\apply-engine-patch.ps1
+```
+
+Idempotent (skips if already applied). These patches are **never pushed to the
+upstream `mstan/segagenesisrecomp` repo** — only this repo is published.
+
 ## Regenerate the C
 
 ```
