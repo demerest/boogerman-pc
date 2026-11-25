@@ -522,6 +522,22 @@ verifiable much sooner.
     * => Next: find the V-int handler that first sets $FF0516 non-zero and its gate
       (likely a Z80 sound-started flag, e.g. $0FE4), or fix 68K/V-int ordering so the
       main loop reads the mode before it is cleared.
+  - **Session 40 (2026-11-26): corrected wait polarity; main loop parked, only V-int runs.**
+    * The mode waits (label_000786/0059D2/005CD2) loop while $FF0516 NON-zero and
+      proceed at 0 (s39 had the polarity backwards). The V-int CLEARS $FF0516, so
+      post-handler reads of 0 are expected (matches oracle memory), not a blocker.
+    * Dispatcher re-read: at title, A (0x10) calls func_006060 (accepts Start-or-A via
+      &0x90 -> func_0063DE); Start alone calls func_006F82. Pressing A at frame 1600
+      (--script-start 900) still left the title.
+    * Func histogram at title (120 samples): ONLY 00203C (64) / 0030E2 (56) — the V-int
+      and its sound service. The MAIN loop is parked in a glue_yield_for_interrupt_poll
+      wait and never executes boot staging / title dispatcher.
+    * crash_trail at title: last 64 blocks ALL 000786 (total 1.39M) ⇒ main parked at
+      label_000786 waiting $FF0516==0. Main wrote mode=4/8; the title V-int renders but
+      does NOT clear $FF0516 to 0, so the wait never completes. THE handoff bug.
+    * => Next: make the V-int clear $FF0516 after servicing (find where routine 8 should
+      write 0), or assist the main/V-int mode handoff, so main resumes to the title
+      dispatcher and Start/A -> func_0063DE (mode=$10).
   - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
     is a separate transition.**
     * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
