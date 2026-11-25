@@ -28,9 +28,15 @@ try {
     $w.WriteLine('{"id":4,"cmd":"rdb_get_state"}')
     $resp4 = $r.ReadLine()
     [System.IO.File]::WriteAllText("$out\68k-state.json", $resp4)
-    $w.WriteLine('{"id":5,"cmd":"read_memory","addr":16712960,"size":96}')
+    $w.WriteLine('{"id":5,"cmd":"read_memory","addr":"0xFF0500","size":96}')
     $resp5 = $r.ReadLine()
     [System.IO.File]::WriteAllText("$out\68k-ram-ff0500.json", $resp5)
+    $w.WriteLine('{"id":6,"cmd":"read_memory","addr":"0xFF0A70","size":32}')
+    $resp6 = $r.ReadLine()
+    [System.IO.File]::WriteAllText("$out\68k-ram-ff0a70.json", $resp6)
+    $w.WriteLine('{"id":7,"cmd":"read_memory","addr":"0xFF0210","size":16}')
+    $resp7 = $r.ReadLine()
+    [System.IO.File]::WriteAllText("$out\68k-ram-ff0210.json", $resp7)
     "probe ok: state=$($resp.Length) ram=$($resp2.Length) 68k=$($resp4.Length) dump=$resp3"
     $c.Close()
 } catch {

@@ -261,11 +261,20 @@ verifiable much sooner.
       display stays black, `cvblank_fires=0`. A deeper boot-state loop remains.
     * Probe tooling now also dumps `rdb_get_state` + `$FF0500` RAM
       (`tools/probe-us-z80.ps1 -NoBusHalt`).
+  - **Session 14 (2026-11-25): boot stall = raster-timing detect mismatch.**
+    * The `$1A36/$1A9A` loop is a timing/region detect: it writes measured
+      D1/D2 to `$FF0216/$FF0218` and compares against expected `$FF0A78/$FF0A7A`.
+      Live (NO_BUS_HALT, frame ~68): measured = 21/14, expected = 40/32 → never
+      converges → boot loops (oscillates with sound-init) and never enables the
+      display. So the remaining M2 blocker is V-int/raster TIMING fidelity, not
+      the Z80 mailbox (which NO_BUS_HALT already fixed).
+    * Probe `read_memory` needs `addr` as a hex STRING and returns `hex` (fixed
+      `tools/probe-us-z80.ps1`); now dumps `$FF0500/$FF0A70/$FF0210`.
   Next experiments (in order):
-  1. With NO_BUS_HALT, trace the boot oscillation `$1A9A`(checksum)↔`$98A30`
-     (sound): find the flag that makes boot re-enter sound-init instead of
-     proceeding to display-enable/title. Compare `$FF0216/$FF0218/$FF0A78`
-     checksum values and the sound "started" condition vs web 68K RAM.
+  1. Match the game's raster-timing detect: determine what D1/D2 count (V-ints /
+     raster lines between flags) and tune `g_vblank_threshold` / V-int line /
+     pacer so measured == expected (40/32). Compare against web oracle 68K RAM
+     `$FF0216/$FF0218/$FF0A78` at the same boot phase.
   2. Once boot reaches title: input-script route validation (Start → level),
      audio check, then M3 (RAM map re-verify), M4 polish/Deck.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
