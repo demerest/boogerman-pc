@@ -470,6 +470,19 @@ verifiable much sooner.
       natively. BOOT_ASSIST now holds $FF05B4=0x30 (glue.c) to open the gate; held
       Start still left the title ⇒ the joy-bit7 → game-init ($6424, mode=$10) branch
       is the remaining trace. The $61xx branch is a level-select (bits0/1), not Start.
+  - **Session 34 (2026-11-26): Start-bit7 tests located in sound routine ($98666/
+    $9868A), not the title.** The title→game transition is the mode=$10 write at
+    $6424 (part08), guarded by the joy Start edge ($FF0504 bit7). Held Start sets
+    $FF0502 bit7 but the pressed-edge/title branch still doesn't fire ⇒ next: trace
+    the title routine's $FF0504 bit7 read → $6424 call, and the pad pressed-edge
+    computation (part02:1801 / part21:231).
+  - **Session 35 (2026-11-26): title reads processed joy $FF050C/0E (empty), not raw
+    $FF0502/04.** Title Start branch = $628E read $FF050C|$FF050E, &$90, → func_0063DE
+    (game-init). Raw P1 joy $FF0502=0x80 under Start but $FF050C/0E=0 ⇒ the processed-joy
+    routine (part11:233/291, func_0058xx) isn't populating them. BOOT_ASSIST mirrors raw
+    into $FF050C/0E + holds $FF05B4=0x30; still no transition (part11 likely overwrites
+    back to 0). Next: make the part11 joy-processing routine read the correct raw pad /
+    run each frame, so $FF050C/0E carry Start.
   - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
     is a separate transition.**
     * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
