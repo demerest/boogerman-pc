@@ -179,7 +179,7 @@ index 3e146ce..2306f92 100644
  
  /* ---- sections ---------------------------------------------------------------- */
 diff --git a/runner/video/genesis_bus.c b/runner/video/genesis_bus.c
-index bd712d9..5107eab 100644
+index bd712d9..f375327 100644
 --- a/runner/video/genesis_bus.c
 +++ b/runner/video/genesis_bus.c
 @@ -8,7 +8,10 @@
@@ -260,7 +260,7 @@ index bd712d9..5107eab 100644
 +                if (assist < 0) assist = getenv("GENESIS_BOOT_ASSIST") != NULL;
 +                extern unsigned long g_snd_frame;
 +                if (assist && (off == 0x0FE4u || off == 0x0FACu) &&
-+                    g_snd_frame >= 16 && g_snd_frame < 240 && b->z80_ram[off])
++                    g_snd_frame >= 16 && g_snd_frame < 4000 && b->z80_ram[off])
 +                    return 0x0000;
 +            }
              return (uint16_t)(((uint16_t)b->z80_ram[off] << 8)

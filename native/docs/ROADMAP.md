@@ -378,6 +378,14 @@ verifiable much sooner.
       drains; that tick never runs because the Z80 is idle and iff1=0 (no IRQ
       tick). => The cmd-01 handler must write the ack itself; focused sound-
       driver RE (why `$11BE/$1230` doesn't reach the ack) is the next step.
+  - **Session 23 (2026-11-25): BOOT_ASSIST window extended (16–4000) — no effect.**
+    * Overriding 68K reads of `$0FE4`/`$0FAC` to 0 across the whole boot does NOT
+      move the histogram off `$098A30` ⇒ the spin is an OUTER retry on a 68K RAM
+      flag (e.g. `$FF054C`), whose success depends on the Z80 reaching the ack
+      via a path that never executes — not a simple Z80-RAM poll.
+    * => Next: cycle-accurate Z80 trace of cmd-01 (`$10A7→$11BE→$1230`) to the
+      ack (`$1788`), and of the 68K outer retry condition, to find the exact
+      missing write. This is a dedicated sound-driver RE effort.
   Next experiments (in order):
   1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
      by interleaving the long boot V-int handler / correcting the Z80 share;
