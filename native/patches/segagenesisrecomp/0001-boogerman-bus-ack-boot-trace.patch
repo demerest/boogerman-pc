@@ -132,7 +132,7 @@ index 3e146ce..2306f92 100644
  
  /* ---- sections ---------------------------------------------------------------- */
 diff --git a/runner/video/genesis_bus.c b/runner/video/genesis_bus.c
-index bd712d9..83bb53a 100644
+index bd712d9..bb2a820 100644
 --- a/runner/video/genesis_bus.c
 +++ b/runner/video/genesis_bus.c
 @@ -8,7 +8,10 @@
@@ -185,7 +185,20 @@ index bd712d9..83bb53a 100644
  /* [SND-TRACE] sound-command lifecycle trace (defined in genesis_machine.c). */
  extern uint8_t g_sndwatch[0x2000];
  extern unsigned long g_snd_frame;
-@@ -398,7 +433,7 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+@@ -314,7 +349,11 @@ static uint8_t pad_read(const GenesisBus *b, int port)
+ static uint16_t io_read(const GenesisBus *b, uint32_t a)
+ {
+     switch (a & 0x1E) {
+-        case 0x00: return b->version;            /* $A10000/1 version          */
++        /* Boogerman engine patch: the hardware version register must report
++         * the console region, not a fixed NTSC value. EU (PAL) games read
++         * $A10001 and halt if bit6 (PAL) is clear. 0xC0=overseas PAL,
++         * 0x80=overseas NTSC. Derived from the header region (g_genesis_pal). */
++        case 0x00: return (uint16_t)(g_genesis_pal ? 0xC0 : b->version);
+         case 0x02: return pad_read(b, 0);        /* $A10002/3 P1 data          */
+         case 0x04: return pad_read(b, 1);        /* $A10004/5 P2 data          */
+         case 0x06: return 0xFF;                  /* $A10006/7 EXP data         */
+@@ -398,7 +437,7 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
          return 0xFFFFu;                          /* bank/PSG region: open bus  */
      }
      if (a >= 0xA10000u && a < 0xA10020u) return io_read(b, a);      /* I/O      */
@@ -194,7 +207,7 @@ index bd712d9..83bb53a 100644
          snd_trace_busreq("REQ-READack", ack ? 1 : 0); return ack; }  /* [SND-TRACE] */
      if (a == 0xA11200u) return (uint16_t)(b->z80_reset_off ? 0x0100 : 0x0000);
      return 0xFFFFu;
-@@ -437,7 +472,7 @@ uint16_t gbus_peek16(const GenesisBus *b, uint32_t a)
+@@ -437,7 +476,7 @@ uint16_t gbus_peek16(const GenesisBus *b, uint32_t a)
          return 0xFFFFu;
      }
      if (a >= 0xA10000u && a < 0xA10020u) return io_read(b, a);
@@ -203,7 +216,7 @@ index bd712d9..83bb53a 100644
      if (a == 0xA11200u) return (uint16_t)(b->z80_reset_off ? 0x0100 : 0x0000);
      return 0xFFFFu;
  }
-@@ -496,7 +531,30 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+@@ -496,7 +535,30 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
          return;
      }
      if (a >= 0xA10000u && a < 0xA10020u) { io_write(b, a, (uint8_t)v); return; }
@@ -235,7 +248,7 @@ index bd712d9..83bb53a 100644
          snd_trace_busreq("REQ", b->z80_busreq); return; }                /* [SND-TRACE] */
      if (a == 0xA11200u) { int o = b->z80_reset_off; b->z80_reset_off = (v & 0x0100) ? 1 : 0;
          /* Asserting the reset line (1->0) resets the Z80 core: it must restart
-@@ -505,6 +563,13 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+@@ -505,6 +567,13 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
           * a stale PC after the post-upload reset pulse and ran the driver from
           * garbage — the S2 silent-audio bad-jump. */
          if (o == 1 && b->z80_reset_off == 0) b->z80_reset_pending = 1;

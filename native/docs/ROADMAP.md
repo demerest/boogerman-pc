@@ -220,14 +220,20 @@ verifiable much sooner.
       forever and `cvblank_fires=0` → display stays black. `NO_BUS_HALT` does
       not help ⇒ the divergence is in the 68K boot's awaited value / the
       Z80's started-flag path, i.e. 68K-side boot RE (M3), not CPU scheduling.
+  - **Session 10 (2026-11-25): EU region-check FIXED via region-aware $A10001.**
+    * The bus returned a fixed version `0x80` (overseas NTSC). EU (PAL) games
+      read `$A10001` and halt at `$436` when bit6 (PAL) is clear. Now
+      `io_read` returns `0xC0` (PAL) when `g_genesis_pal` (genesis_bus.c).
+    * EU now boots PAST the region screen into the SAME sound-init handshake
+      as US (trail `$98D2A…$981F0`, no `$436` halt). Both profiles converge on
+      the single remaining blocker: the sound-driver "started" flag.
   Next experiments (in order):
-  1. 68K boot sound-init RE: find the exact "started" flag the boot loop waits
-     for after the `$0FAC` ack, and why the Z80 never sets it (compare web
-     oracle Z80 RAM / `$0FAD`/$`0FE4` at the same phase). Check the `$0FAD=$FE`
-     vblank-flag writer.
-  2. Once US boots to title: input-script route validation (Start → level),
-     audio check, then M3 (RAM map re-verify for US), M4 polish/Deck.
-  3. EU remains open at the region-check divergence (session 5 probes).
+  1. Shared sound-driver started-flag RE (blocks BOTH EU and US): find the
+     exact flag the boot loop waits for after the `$0FAC` ack and why the Z80
+     never sets it; check the `$0FAD=$FE` vblank-flag writer. Web oracle exposes
+     only 68K RAM, so compare `$FF051A`/`$FF0516`/game_mode progression.
+  2. Once boot reaches title: input-script route validation (Start → level),
+     audio check, then M3 (RAM map re-verify), M4 polish/Deck.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites
