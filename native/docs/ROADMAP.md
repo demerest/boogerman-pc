@@ -386,6 +386,18 @@ verifiable much sooner.
     * => Next: cycle-accurate Z80 trace of cmd-01 (`$10A7→$11BE→$1230`) to the
       ack (`$1788`), and of the 68K outer retry condition, to find the exact
       missing write. This is a dedicated sound-driver RE effort.
+  - **Session 24 (2026-11-25): key-PC tally — DAC-start/tick/ack never execute.**
+    * Added `[Z80-KEY]` PC tally to the insn trace. Over 300 frames:
+      `$1017`(cmd poll)×119857, `$10A7`/`$11BE`(cmd01)×227, `$1230`(chan init)×1362,
+      `$174C`(DAC phase)×62690, but `$16E0`(DAC start)×0, `$10B4`(vblank tick)×0,
+      `$1788`(ack)×0, `$0C95`×0, `$0038`(IRQ)×1.
+    * `$174C` is a fractional DAC drain (`add a,e; ret nc` — only carries decrement
+      BC); with the DAC never started (`$16E0`×0) the phase never carries, BC never
+      reaches 0, `$1788` never writes the `$0FE4` ack ⇒ 68K waits forever.
+    * cmd-01 initializes channels but never produces the ack; the DAC-start trigger
+      (`$0FC2`/`$16E0`) and the vblank tick (`$10B4`, needs `$0FAD=$FE`) never fire.
+      => Find what starts the DAC on real HW (the 68K's next command after init, or
+      the Z80 init's ack path) — the missing link in the boot handshake.
   Next experiments (in order):
   1. M3 timing fidelity: make the boot converge at oracle speed (~100 frames)
      by interleaving the long boot V-int handler / correcting the Z80 share;
