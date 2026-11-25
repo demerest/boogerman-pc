@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\recompiler\src\main_step.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\recompiler\src\rom_parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\external\m68k-recomp-core\common\m68k_decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\external\m68k-recomp-core\common\m68k_validator.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\external\m68k-recomp-core\common\m68k_timing.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\external\m68k-recomp-core\common\annotations.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\external\m68k-recomp-core\profiles\genesis\return_capture.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\external\m68k-recomp-core\profiles\genesis\function_finder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\external\m68k-recomp-core\profiles\genesis\code_generator.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\external\m68k-recomp-core\profiles\genesis\codegen_diag.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\recompiler\src\game_config.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\recompiler\src\toml.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="S:\home\dev\boogerman-pc\native\segagenesisrecomp\recompiler\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{833B005A-6FF8-334B-AD18-B65C69AD7394}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

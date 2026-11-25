@@ -113,15 +113,23 @@ verifiable much sooner.
       save/restore window (decoder or movem semantics suspect; interpreter
       shares the decoder, which is why it crashes identically).
   Next experiments (in order):
-  1. Park native (tier-4) just before the `$250` movem save; dump stack
-     `$FF01C0-$FF0240` and A6; dump the same from web at the same frame
-     (`web/test/ram-dump.html?frames=N`); diff to find the first wrong
-     stack slot / missing lea.
-  2. Hand-decode ROM `$244-$294` against generated part13 instruction by
-     instruction (movem post-increment with address reg in list is the
-     prime semantics suspect).
-  3. Fix decoder/movem in framework (engine patch), regen, rebuild,
-     re-validate boot → title → gameplay; then M3+.
+  1. **Region/pacer mismatch (new clue 2026-11-25):** runner logs
+     `[pacer] target frame rate: 59.9401 fps` for the PAL dump — find the
+     runner's region detection (main.c / game.toml) and force PAL; a PAL
+     game paced at NTSC mis-times every VBlank-counted boot wait.
+  2. Break-setting race understood: boot completes in milliseconds, so
+     breaks set after startup never fire (earlier "never executes"
+     conclusions were artifacts of this race). Added
+     `GENESIS_BUS_ACK_CYCLES` env knob (engine patch) to slow boot for
+     probes; windowed run with the knob died early — investigate crash vs
+     SDL/direct3d11 in this session; prefer headless capture runs.
+  3. Movem semantics verified CORRECT against ROM (`4C9D`=.W, `4CDD`=.L,
+     `4CD6`=(a6) no increment); the prebuilt-v0.1.3-vs-source theory was
+     disproven (source-built recompiler emits identical, correct code).
+     Rebuild now uses the source-built recompiler
+     (`native/build-recomp/Release/GenesisRecomp.exe`).
+  4. Then: same-frame stack/save-area diff native vs web oracle; fix the
+     remaining boot divergence; re-validate boot → title → gameplay; M3+.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites

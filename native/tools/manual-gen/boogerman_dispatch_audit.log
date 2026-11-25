@@ -1,0 +1,50 @@
+# JMP-table dispatch audit
+# total sites: 28
+#
+# Summary:
+#   static_target             23  (JMP with statically resolved target — safe)
+#   in_function_switch         0  (JMP(PC,Dn.W) compiled to in-function switch+goto — safe, this is the Duff's-device fix)
+#   dynamic_register           4  (JMP (An)/(d,An)/(An,Xn) — runtime address from register, safe via call_by_address)
+#   fallback_hybrid                — JMP(PC,Dn.W) routed through hybrid_jmp_interpret; subdivided:
+#     function_entry           1    (base IS a registered function — call_by_address resolves it directly)
+#     bra_w_trampoline         0    (base opcode = 0x6000; runtime miss feedback works)
+#     offset_table             0    (base is a dc.w (target-base) table; 1+ entries decode to functions — runtime resolves it)
+#     INTERIOR_UNRESOLVED      0    (DANGER: base is interior to a function, NOT one of the safe patterns above — silent failure class like pre-fix CPZ)
+#     external_unresolved      0    (base outside any known function — investigate)
+#   unsupported                0  (decoder hit a JMP mode the emitter doesn't handle)
+#
+# When `interior_unresolved` is non-zero, inspect each site — these are
+# Sonic-2-CPZ-style silent-failure candidates. Either the recompiler's
+# Duff's-device probe (probe_pc_idx_targets) didn't match, or the table
+# really is a new pattern that needs new codegen support.
+#
+# Format: <jmp_addr>  in func <func>  base <base>  kind=<kind>[ targets=N]
+
+$0006C8  in func $0006C8  base $0006DA  kind=static_target
+$000A5E  in func $0009B8  base $000000  kind=dynamic_register
+$000C56  in func $000C2A  base $001FF8  kind=static_target
+$000C5E  in func $000C2A  base $00204E  kind=static_target
+$000D70  in func $000D60  base $004FB8  kind=static_target
+$000D8C  in func $000D76  base $004F8E  kind=static_target
+$0018F4  in func $0018C2  base $002926  kind=static_target
+$00192E  in func $0018FC  base $002902  kind=static_target
+$001970  in func $001936  base $00296A  kind=static_target
+$0019A6  in func $001936  base $00296A  kind=static_target
+$0019EC  in func $0019B0  base $002994  kind=static_target
+$001A20  in func $0019B0  base $002994  kind=static_target
+$0031D8  in func $0031B2  base $000000  kind=dynamic_register
+$003A12  in func $0039EC  base $000000  kind=dynamic_register
+$0052AA  in func $005270  base $001496  kind=static_target
+$005310  in func $0052B2  base $001496  kind=static_target
+$005556  in func $005526  base $001EB0  kind=static_target
+$00556E  in func $005526  base $006CCC  kind=static_target
+$006FEC  in func $006FB8  base $09816C  kind=static_target
+$006FF8  in func $006FB8  base $098194  kind=static_target
+$007004  in func $006FB8  base $0981AC  kind=static_target
+$007010  in func $006FB8  base $0980C0  kind=static_target
+$00701C  in func $006FB8  base $0980D0  kind=static_target
+$007038  in func $006FB8  base $098BB8  kind=static_target
+$0070EE  in func $0070B4  base $000000  kind=dynamic_register
+$00711C  in func $0070F0  base $098000  kind=static_target
+$098002  in func $098000  base $098006  kind=fallback_hybrid/function_entry
+$098166  in func $098166  base $098BB8  kind=static_target
