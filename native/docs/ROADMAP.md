@@ -483,6 +483,13 @@ verifiable much sooner.
     into $FF050C/0E + holds $FF05B4=0x30; still no transition (part11 likely overwrites
     back to 0). Next: make the part11 joy-processing routine read the correct raw pad /
     run each frame, so $FF050C/0E carry Start.
+  - **Session 36 (2026-11-26): reverted 5B4/mirror assists (ineffective; kept 0FAD/0FC2).**
+    * Start@1600 (title up, natural mode-8 staging) still shows title ⇒ the title's
+      Start branch ($628E read $FF050C|$FF050E &$90 → func_0063DE) is not firing even
+      with raw joy present. The pressed-edge ($FF050C) is 0 except on the press frame;
+      the title must sample it that frame. Remaining: verify the part11 edge computation
+      runs on the press frame and the title samples $FF050C in mode 8 (ordering/gate).
+    * M2 (native renders authentic title) stands; boot ~1500f. Start→game is the last gap.
   - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
     is a separate transition.**
     * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their

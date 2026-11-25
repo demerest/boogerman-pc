@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..1c79e4c 100644
+index 4eee55c..2387228 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -225,6 +225,31 @@ void (*g_fm_write_trace_fn )(uint32_t address,      uint8_t value, uint32_t targ
@@ -77,7 +77,7 @@ index 4eee55c..1c79e4c 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1025,42 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1025,34 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -92,14 +92,6 @@ index 4eee55c..1c79e4c 100644
 +            extern GenesisMachine g_machine;
 +            g_machine.bus.z80_ram[0x0FAD] = 0xFE;
 +            g_machine.bus.z80_ram[0x0FC2] = 0x01;
-+            /* Title Start gate: $FF05B4 must be in (0,0x66) for the title to
-+             * accept Start; it stalls at 0 natively. Hold it mid-window. */
-+            g_ram[0x05B4] = 0x30;
-+            /* The title reads joy pair $FF050C/0E (processed), which stays 0
-+             * natively while raw P1 joy $FF0502/04 has the buttons. Mirror raw
-+             * into the title's pair so Start is seen (s34). */
-+            g_ram[0x050C] = g_ram[0x0502]; g_ram[0x050D] = g_ram[0x0503];
-+            g_ram[0x050E] = g_ram[0x0504]; g_ram[0x050F] = g_ram[0x0505];
 +        }
 +    }
 +    /* TEMP DEBUG (Boogerman M3 cosim): env-gated boot timeline. Logs one line
@@ -120,7 +112,7 @@ index 4eee55c..1c79e4c 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1842,16 +1910,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +1902,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
