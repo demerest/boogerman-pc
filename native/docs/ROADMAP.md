@@ -545,6 +545,20 @@ verifiable much sooner.
     * => Next: make the V-int clear $FF0516 after servicing (find where routine 8 should
       write 0), or assist the main/V-int mode handoff, so main resumes to the title
       dispatcher and Start/A -> func_0063DE (mode=$10).
+  - **Session 41 (2026-11-26): V-int DOES clear mode; real gate = title dispatcher init flags + edge ordering.**
+    * func_004DF0 (V-int) reads $FF0516, calls the routine via table at $20002, then
+      WRITES $FF0516=0 at $4E00 ⇒ the handoff works; the 000786 spin is the normal
+      per-frame wait, not a park. s40's "V-int doesn't clear" was wrong.
+    * Added seen-mask (rdb_on_block: 1=006060,2=0063DE,4=006F82,8=005960) + a65 to
+      [JOY-TL]. At title seen=8 only: dispatcher func_005960 runs but returns early.
+    * func_005960 gates: $FF05D4==0xF, $FF0A65 bit0, $FF02BA!=0, $FF0284&9, then reads
+      pressed edge at $598E BEFORE func_005898 computes it at $59DA ⇒ stale-edge return.
+      All init flags 0 natively (title init never ran). Assisting 5D4/A65/2BA/284 opened
+      the title (attract timer runs) but the edge-ordering gate still blocks Start/A.
+      Flag-assist chain reverted (ineffective); seen-mask/JOY-TL kept.
+    * => Next: make the processed joy edge fresh before func_005960's $598E gate (run
+      func_005898 / edge compute at frame start), and set the title-init flags via the
+      real init path, so Start/A reaches func_0063DE (mode=$10).
   Next experiments (anticipated, in order):
   1. Resolve the boot main-loop wait-for-$FF0516 (label_000786): identify the V-int
      write that first sets mode non-zero and its Z80 gate (sound-started flag, e.g.
