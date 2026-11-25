@@ -1,8 +1,58 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..b6b433e 100644
+index 4eee55c..21a26bb 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
-@@ -1842,16 +1842,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -225,6 +225,31 @@ void (*g_fm_write_trace_fn )(uint32_t address,      uint8_t value, uint32_t targ
+ void (*g_mem_write_trace_fn)(uint32_t byte_address, uint8_t value, uint32_t target_cycle) = NULL;
+ 
+ #define INSN_WATCHDOG_LIMIT GENESIS_NATIVE_WATCHDOG_LIMIT
++/* Boogerman engine patch: env-tunable watchdog headroom. A legitimate boot
++ * sound-init V-int handler can run many millions of native insns while the
++ * Z80 drains its DAC / FM tables; the fixed dev limit aborts it prematurely.
++ * GENESIS_WATCHDOG_INSN / GENESIS_WATCHDOG_BUS raise the thresholds (0=keep
++ * compile-time default). */
++static uint64_t watchdog_insn_limit(void)
++{
++    static uint64_t v;
++    if (!v) {
++        const char *e = getenv("GENESIS_WATCHDOG_INSN");
++        v = e ? strtoull(e, 0, 10) : 0;
++        if (!v) v = INSN_WATCHDOG_LIMIT;
++    }
++    return v;
++}
++static uint32_t watchdog_bus_limit(void)
++{
++    static uint32_t v;
++    if (!v) {
++        const char *e = getenv("GENESIS_WATCHDOG_BUS");
++        v = e ? (uint32_t)strtoul(e, 0, 10) : 0;
++        if (!v) v = WATCHDOG_LIMIT;
++    }
++    return v;
++}
+ GenesisNativeRegisterBudget g_native_register_budget={0,0,0,1,0,0};
+ #define s_insn_watchdog_base g_native_register_budget.watchdog_base
+ #define s_interleave_active g_native_register_budget.interleave_active
+@@ -242,7 +267,7 @@ static void instruction_watchdog_reset(void)
+ 
+ static void instruction_watchdog_check(void)
+ {
+-    if (g_native_insn_count - s_insn_watchdog_base < INSN_WATCHDOG_LIMIT)
++    if (g_native_insn_count - s_insn_watchdog_base < watchdog_insn_limit())
+         return;
+ 
+     char reason[160];
+@@ -329,7 +354,7 @@ static void dump_bus_ring(void)
+ static void watchdog_check(uint32_t addr, int is_write, uint32_t val)
+ {
+     (void)val;
+-    if (++s_watchdog_counter != WATCHDOG_LIMIT)
++    if (++s_watchdog_counter != watchdog_bus_limit())
+         return;
+ 
+     char reason[128];
+@@ -1842,16 +1867,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -217,7 +267,7 @@ index 0054723..f55774a 100644
      /* YM2612 timer/status state. Audio register writes are rendered later by
       * the cycle-stamped mixer, but the emulated CPUs must observe timer flags
 diff --git a/runner/video/genesis_machine.c b/runner/video/genesis_machine.c
-index 9718e2f..ea4faa6 100644
+index 9718e2f..be68f8f 100644
 --- a/runner/video/genesis_machine.c
 +++ b/runner/video/genesis_machine.c
 @@ -15,9 +15,14 @@
@@ -304,7 +354,56 @@ index 9718e2f..ea4faa6 100644
  
  /* Z80 can execute now: not held in reset and the 68K does not own its bus.
   * Applies a reset pulse the 68K made while it was halted. */
-@@ -523,6 +538,19 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
+@@ -464,6 +479,40 @@ static int z80_ready(GenesisMachine *m)
+     return 1;
+ }
+ 
++/* TEMP DEBUG (Boogerman M3): env-gated Z80 instruction ring, dumped at exit.
++ * Reveals the exact spin loop / register state at a crash. Off by default. */
++static struct { uint16_t pc; uint8_t op, a, f, b, c, h, l; } s_zi[4096];
++static unsigned s_zi_n;
++static int s_zi_on = -1;
++static void z80_insn_trace_dump(void)
++{
++    unsigned n = s_zi_n < 200 ? s_zi_n : 200;
++    unsigned start = s_zi_n - n;
++    for (unsigned i = 0; i < n; i++) {
++        const unsigned idx = (start + i) & 4095;
++        fprintf(stderr, "[Z80-INSN] %04X op=%02X A=%02X F=%02X BC=%02X HL=%02X\n",
++                s_zi[idx].pc, s_zi[idx].op, s_zi[idx].a, s_zi[idx].f,
++                (unsigned)(s_zi[idx].b << 8 | s_zi[idx].c),
++                (unsigned)(s_zi[idx].h << 8 | s_zi[idx].l));
++    }
++}
++static inline void z80_insn_record(z80 *z)
++{
++    if (s_zi_on < 0) {
++        s_zi_on = getenv("GENESIS_Z80_INSN_TRACE") != NULL;
++        if (s_zi_on) atexit(z80_insn_trace_dump);
++    }
++    if (!s_zi_on) return;
++    const unsigned idx = s_zi_n & 4095;
++    s_zi[idx].pc = z->pc;
++    s_zi[idx].op = z->read_byte(z->userdata, z->pc);
++    s_zi[idx].a = z->a;
++    s_zi[idx].f = (uint8_t)((z->sf << 7) | (z->zf << 6) | (z->yf << 5) | (z->hf << 4) |
++                            (z->xf << 3) | (z->pf << 2) | (z->nf << 1) | z->cf);
++    s_zi[idx].b = z->b; s_zi[idx].c = z->c; s_zi[idx].h = z->h; s_zi[idx].l = z->l;
++    s_zi_n++;
++}
++
+ /* Execute Z80 instructions from line-relative cycle `done` until it reaches
+  * `target`; returns the cycle reached (>= target: the last instruction may
+  * overshoot). Each instruction's chip writes stamp at its start cycle. */
+@@ -484,6 +533,7 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
+         done+=z80_recomp_step_one();
+ #else
+         unsigned long c0 = m->z80.cyc;
++        z80_insn_record(&m->z80);
+         z80_step(&m->z80);     /* one instruction, then interrupt processing */
+         done += (uint32_t)(m->z80.cyc - c0);
+ #endif
+@@ -523,6 +573,19 @@ static uint32_t z80_run_span(GenesisMachine *m, uint32_t done, uint32_t target)
   * cannot see. Only a multi-frame handler (Sonic 1's SEGA PCM V-int) can reach
   * that; it is counted, and glue.c's bounded no-progress fallback covers a
   * poll that waits on a capped Z80. */
@@ -324,7 +423,7 @@ index 9718e2f..ea4faa6 100644
  void machine_z80_sync_to(uint32_t master_now)
  {
      GenesisMachine *m = &g_machine;
-@@ -531,22 +559,53 @@ void machine_z80_sync_to(uint32_t master_now)
+@@ -531,22 +594,53 @@ void machine_z80_sync_to(uint32_t master_now)
       * The next assertion still ahead of the Z80's line is this frame's when
       * that point has not been reached yet, else the next frame's. */
      const uint32_t irq_at = ((uint32_t)gvdp_screen_height(&m->vdp) + 1u) * MASTER_PER_LINE;
@@ -383,7 +482,7 @@ index 9718e2f..ea4faa6 100644
          return;
      }
      if (clamped) s_z80_sync_capped++;   /* a running Z80 stopped short of the 68K */
-@@ -554,6 +613,8 @@ void machine_z80_sync_to(uint32_t master_now)
+@@ -554,6 +648,8 @@ void machine_z80_sync_to(uint32_t master_now)
      m->z80_cycle_debt = done - s_z80_line_target;
      s_z80_sync_runs++;
      s_z80_sync_cycles += done - have;
@@ -392,7 +491,7 @@ index 9718e2f..ea4faa6 100644
  }
  
  uint64_t machine_z80_progress(void) { return s_z80_progress; }
-@@ -567,6 +628,17 @@ void machine_z80_sync_stats(uint64_t out[6])
+@@ -567,6 +663,17 @@ void machine_z80_sync_stats(uint64_t out[6])
  
  static void step_z80(GenesisMachine *m, uint32_t target)
  {
@@ -410,7 +509,7 @@ index 9718e2f..ea4faa6 100644
      if (!z80_ready(m)) return;
      int pend_before =
  #ifdef GENESIS_Z80_RECOMP
-@@ -641,6 +713,7 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+@@ -641,6 +748,7 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
          s_line_base = (uint32_t)line * MASTER_PER_LINE;
          s_z80_off   = 0;   /* 68K writes during the chunk below land at the line start */
          s_z80_line_target = 0;   /* Z80 sits at line-relative z80_cycle_debt */
@@ -418,7 +517,7 @@ index 9718e2f..ea4faa6 100644
  
          /* Advance the recompiled 68K ~one scanline (it parks at WaitForVBlank). */
          glue_run_game_chunk(M68K_PER_LINE);
-@@ -679,11 +752,14 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
+@@ -679,11 +787,14 @@ void machine_run_frame_ex(GenesisScanlineSink sink, void *user,
  #endif
              }
  #endif

@@ -190,11 +190,28 @@ verifiable much sooner.
       sync-trace knobs), `tools/probe-us-z80.ps1` (live `z80_state` /
       `read_z80_ram` / `snd_dump`). Env-gated `[Z80-TRACE]` ring kept (off by
       default); unconditional probes stripped.
+  - **Session 8 (2026-11-25): watchdog headroom removes the abort; boot
+    completes but display never enables (M3 sound-driver RE confirmed).**
+    * The exit-2 was the *instruction watchdog* (20M native insns without
+      yield), not a true deadlock. Made both watchdogs env-tunable
+      (`GENESIS_WATCHDOG_INSN` / `GENESIS_WATCHDOG_BUS`, glue.c). With
+      headroom (400M/100M) and quantum 0, a 900-frame run exits 0 — the boot
+      sound-init handler now runs to completion instead of being aborted.
+    * Added env-gated `[Z80-INSN]` instruction ring (pc/opcode/A/F/BC/HL,
+      dumped at exit) — it shows the Z80 *is* progressing: consuming command
+      01, running `$11BE`/`$1230` channel init and draining the `$174C` DAC
+      (BC decrementing). So superzazu executes the driver; it is not stuck on
+      a bad instruction.
+    * BUT `[VBLA] cvblank_fires=0` and 667 no-progress fallbacks: the 68K
+      never leaves boot sound-init (`$98D2A`→`$98D52`→`$981F0`), so the
+      display stays black and the title is never reached. The Z80 command-ack
+      (`$A00FE4`) / DAC-drain handshake still doesn't complete in step with
+      the 68K. This is per-game 68K↔Z80 sound-driver protocol RE (M3).
   Next experiments (in order):
-  1. Z80 core validation: single-step the `$0D2F-$0D7F` FM-init / `$174C` DAC
-     loop in superzazu vs a known-good Z80 core (gx oracle) to find the
-     instruction/flag that fails to terminate; consider the runtime Z80
-     backend or static Z80 recomp if superzazu is at fault.
+  1. Sound-driver protocol: trace the 68K command deposits (`$A00FAC`) vs the
+     Z80's consume/ack (`$0FAC`→0, `$A00FE4`→0) across frames against the web
+     oracle; find why the ack never lands (DAC drain ordering / bank window).
+     Compare superzazu vs gx Z80 for the `$174C` DAC + `$1230` init path.
   2. Once US boots to title: input-script route validation (Start → level),
      audio check, then M3 (RAM map re-verify for US), M4 polish/Deck.
   3. EU remains open at the region-check divergence (session 5 probes).

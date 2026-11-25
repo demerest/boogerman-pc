@@ -1,8 +1,12 @@
-﻿param([int]$Frames = 40, [switch]$SyncTrace, [switch]$InterleaveIrq, [int]$Quantum = -1)
+﻿param([int]$Frames = 40, [switch]$SyncTrace, [switch]$InterleaveIrq, [int]$Quantum = -1, [switch]$InsnTrace,
+      [long]$WatchdogInsn = -1, [long]$WatchdogBus = -1)
 $ErrorActionPreference = 'Stop'
 if ($SyncTrace) { $env:GENESIS_Z80_SYNC_TRACE = '1' }
 if ($InterleaveIrq) { $env:GENESIS_INTERLEAVE_IRQ = '1' }
+if ($InsnTrace) { $env:GENESIS_Z80_INSN_TRACE = '1' }
 if ($Quantum -ge 0) { $env:GENESIS_Z80_BUS_QUANTUM = "$Quantum" }
+if ($WatchdogInsn -ge 0) { $env:GENESIS_WATCHDOG_INSN = "$WatchdogInsn" }
+if ($WatchdogBus -ge 0) { $env:GENESIS_WATCHDOG_BUS = "$WatchdogBus" }
 $root = 'S:\home\dev\boogerman-pc'
 $exe  = "$root\native\build\Release\BoogermanRecomp_us.exe"
 $rom  = "$root\Boogerman (U) [!].gen"
