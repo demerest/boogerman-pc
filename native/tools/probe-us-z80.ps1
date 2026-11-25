@@ -1,7 +1,8 @@
-﻿param([int]$DelayMs = 1000, [switch]$NoBusHalt, [switch]$FullSync)
+﻿param([int]$DelayMs = 1000, [switch]$NoBusHalt, [switch]$FullSync, [switch]$Lockstep)
 $ErrorActionPreference = 'Stop'
 if ($NoBusHalt) { $env:GENESIS_Z80_NO_BUS_HALT = '1' }
 if ($FullSync) { $env:GENESIS_Z80_FULL_SYNC = '1' }
+if ($Lockstep) { $env:GENESIS_LOCKSTEP = '1' }
 $env:GENESIS_WATCHDOG_INSN = '400000000'; $env:GENESIS_WATCHDOG_BUS = '100000000'
 $root = 'S:\home\dev\boogerman-pc'
 $exe  = "$root\native\build\Release\BoogermanRecomp_us.exe"

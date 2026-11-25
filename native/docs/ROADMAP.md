@@ -443,6 +443,16 @@ verifiable much sooner.
       waits `$0FAC==0`; the Z80 (halted under busreq) never consumes within the wait.
       The release/consume window ordering is the crux — a per-instruction lockstep of
       the two CPUs during the handshake is the required engine change.
+  - **Session 30 (2026-11-25): LOCKSTEP rework implemented (`GENESIS_LOCKSTEP`).**
+    * machine_run_frame_ex now interleaves 64-cycle 68K sub-chunks with a Z80 sync
+      after each (env-gated), giving true concurrency inside tight handshake loops.
+    * Verified under lockstep+full-sync: Z80 runs concurrently, mailboxes clear
+      (`$0FAC=0`,`$0FE4=0`), Z80 idle at `$1009`. BUT the 68K still spins at
+      `$098A30`/`$981FC` = the bus-ACK wait (`$981F0` reads `$A11100` bit0). So the
+      remaining stall is the busreq/ack semantics under NO_BUS_HALT, not Z80 speed.
+    * => Next: reconcile z80_busreq_word (ack) with NO_BUS_HALT so the 68K's
+      request/ack/release handshake completes; the ack window / busreq reporting is
+      the last mismatch. M2 render-title + M3 RAM map stand; web remains playable.
   Next experiments (anticipated, in order):
   1. Engine: cycle-accurate 68K/Z80 interleave (per-instruction) so the boot
      sound-init handshake completes; re-test interactive title. (dedicated effort)
