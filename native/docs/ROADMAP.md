@@ -497,6 +497,14 @@ verifiable much sooner.
       assists don't help because the poll itself isn't executing. Next: wire the
       Boogerman main-loop/WaitForVBlank resume (spec or codegen vblank_yield_addr) so the
       title main loop runs and samples Start each frame.
+  - **Session 38 (2026-11-26): title histogram confirms main loop stuck in sound-init.**
+    * At ~26s (title rendered) the func histogram peaks at $00203C (36) / $0030E2 (24) —
+      the sound-init bus handshake, NOT the title Start routine ($628E). So the V-int
+      draws the title but the MAIN loop is blocked in func_0030E2's Z80 handshake and
+      never reaches the Start poll. The Start→game gap IS the sound-init handshake.
+    * => The remaining blocker is the main-loop Z80 sound-init ack ($0030E2→$98xxx).
+      BOOT_ASSIST (0FAD/0FC2) lets the V-int stage/render but not the main-loop ack.
+      Next: resolve the main-loop sound-init Z80 response (the $00203C wait condition).
   - **Session 32 (2026-11-25): mode 0→4→8 is automatic boot staging; Start→game
     is a separate transition.**
     * The `$FF0516=4` ($79E) and `=8` ($7DE) writes are unconditional within their
