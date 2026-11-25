@@ -409,13 +409,21 @@ verifiable much sooner.
       concurrent timing; native scheduling breaks the cycle. Two viable paths:
       (a) reference-Z80 cosim to find the exact divergent step, or (b) a documented
       per-game boot accommodation that breaks the cycle (skip the boot sound wait).
+  - **Session 26 (2026-11-25): path (a) reference cosim — superzazu is CORRECT.**
+    * Added `tools/z80_ref_test.c` (runs the uploaded driver in superzazu with a
+      faithful bus stub + correct 68K stimuli). With `$0FC2=1`/`$0FAD=$FE` issued
+      after cmd-01, superzazu runs `$16E0`(DAC start)×1, `$10B4`(tick)×1 and CLEARS
+      the ack `$0FE4=0` (at `$178D`). ⇒ the Z80 core executes the driver correctly.
+    * => The defect is on the NATIVE 68K side: it never issues the post-init
+      DAC-start (`$0FC2`) / vblank (`$0FAD=$FE`, via cmd-04 `$0C95`) stimuli because
+      it stalls in the sound-init wait first. The boot wait-pointer (`$FF051A` from
+      z80[$0004/5]) / sequence differs from real HW.
+    * Path (b) (documented boot accommodation) remains the backup to reach the
+      interactive title without full 68K sequence fidelity.
   Next experiments (anticipated, in order):
-  1. Break the boot cycle (pick one):
-     a. Reference-Z80 cosim: run the uploaded driver image in a known-good Z80 core
-        with a faithful bus stub; diff vs superzazu on cmd-01/boot to find the missing
-        ready/ack or the mis-scheduled trigger. (dedicated RE effort)
-     b. Per-game boot accommodation: bypass the boot sound-init wait (documented,
-        env-gated) so the game reaches the interactive title; audio fidelity deferred.
+  1. Fix the native 68K boot sequence so it issues cmd-04 / `$0FC2` after cmd-01
+     (compare the 68K sound-init command sequence & wait-pointer vs real HW), OR
+     apply path (b) boot accommodation (backup) to reach the interactive title.
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
