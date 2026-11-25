@@ -10,7 +10,7 @@
 # needs real values before playable validation (see docs/ROADMAP.md).
 
 [game]
-output_prefix = "boogerman"
+output_prefix = "boogerman_eu"
 
 [ram_layout]
 game_mode      = 0x000000   # TODO: RE — game mode byte/word address

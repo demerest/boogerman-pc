@@ -145,19 +145,34 @@ verifiable much sooner.
       STILL halts at $436 ⇒ the ack patch is not the cause; the divergence
       is in the region-routine translation or bus/VDP modeling,
       independent of bus-grant timing.
+  - **Session 6 (2026-11-25): US profile wired; new failure subsystem.**
+    * User supplied `Boogerman (U) [!].gen` (verified: checksum 8BD9,
+      CRC32 1A7A2BEC, SHA-1 bb1d23ca…, region U, IRQ4=$6BDE). Two profiles
+      now build side by side: `profiles/eu`, `profiles/us`, targets
+      `BoogermanRecomp_eu.exe` / `_us.exe`, launchers `-EU.bat` / `-US.bat`.
+    * **Entry/IRQ must use `recomp_call_addr()`** (owns a dispatch frame);
+      direct `func_XXXXXX()` calls abort exit 2 on any recompiled tail call.
+      Both specs fixed.
+    * US boots PAST the region check (EU's $436 halt is region-specific).
+      US dies at frame ~20 in the **Z80 sound-driver handshake**: 68K polls
+      `$A00FAC` while `busreq=1, reset_off=1`, Z80 halted (`$0D60`/`$10A5`);
+      no-progress fallback answers $00; then V-int handler runs ~9 frames
+      → IRQ-DEBT crash probe. With ack=0 (stock grant) it AVs (0xC0000005)
+      even earlier; with ack=70000 non-service-aware it spun ~659 frames.
+    * Ack patch made **service-aware** (grant immediately inside
+      `g_native_register_budget.in_vblank_service`, latency only in
+      scheduled chunks) — removed the infinite service spin.
   Next experiments (in order):
-  1. Web frames 1-2 register snapshots (`ram-dump.html?frames=1/2`) vs
-     native boot registers at the fill point (A6/D5/D6/A5) — first
-     phase-matched register comparison; identify the diverging instruction
-     (lea/movem at $220-$228 prime suspect).
-  2. If registers match at boot, diff the region-routine branch outcomes
-     via web RAM writes ring-equivalent (web has no ring; use frame-stepped
-     RAM diffs at frames 1..4) vs native `rdb_dump`.
-  3. Fix the diverging semantics in the engine patch; regen, rebuild,
-     re-validate boot → title → gameplay; then M3+.
-  4. Optional easier path (user offer): a US/NTSC dump takes different
-     region-check branches and stock NTSC timing; would need a second game
-     profile + full regen (identity/CRC/RAM map). EU web port unaffected.
+  1. Z80 handshake: compare web-oracle Z80 PC/RAM at the same boot phase
+     (web `ram-dump` + romdev regs) vs native `z80_state`; determine whether
+     the driver's ready byte at `$A00FAC` is written before busreq on real
+     HW, and whether the framework halts the Z80 too early on busreq.
+  2. Inspect US boot bus-ring order of `$A11100/$A11200` writes vs the
+     driver's expected handshake; check if the no-progress fallback's $00
+     answer is wrong for this driver (should perhaps let the Z80 advance).
+  3. Once US boots to title: input-script route validation (Start → level),
+     audio check, then M3 (RAM map re-verify for US), M4 polish/Deck.
+  4. EU remains open at the region-check divergence (session 5 probes).
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites

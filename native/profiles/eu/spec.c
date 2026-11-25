@@ -10,11 +10,13 @@
  */
 #include "game_spec.h"
 #include "genesis_runtime.h"
-#include "boogerman_decls.h"
+#include "boogerman_eu_decls.h"
 
-static void boogerman_entry(void)  { func_000210(); }
-static void boogerman_vblank(void) { func_004DF0(); }
-static void boogerman_hblank(void) { func_006C14(); }
+/* Entry/IRQ must go through recomp_call_addr: it owns a dispatch frame,
+ * without which any recompiled tail call (JMP) aborts (exit 2). */
+static void boogerman_entry(void)  { recomp_call_addr(0x000210u); }
+static void boogerman_vblank(void) { recomp_call_addr(0x004DF0u); }
+static void boogerman_hblank(void) { recomp_call_addr(0x006C14u); }
 
 const GameSpec g_game_spec = {
     .video = NULL,                  /* native VDP presentation only */
