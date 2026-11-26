@@ -1,0 +1,5 @@
+# s61 (frame-index form): native demo ends ~2268 (web ~2030; demo length
+# depends on the emulated pad-history counter), so press Start after the
+# post-demo interactive title arrives, phase-matched to web's Start@2450.
+2450 START
+2490 -

@@ -994,21 +994,56 @@ verifiable much sooner.
       post-splash phase; s59's determinism proof covered OBJ_TL on/off, not web
       phase-match.
     * => Next: s61 mode-4/8 alternation freeze; then route validation; M3 sound RE.
+  - **Session 61 (2026-11-27): s60's "mode freeze at 8" was a grep artifact (s60f's
+    own log alternates 4/8 every frame). Real root = the assist froze the guest's
+    6A36 sound-service countdown; releasing it makes the demo play and Start-late
+    commit natively (0244=1 @2452, 0254=1/1506=180 @2484 vs web 2480). Menu
+    regression intact. Native port now reaches level-load staging from cold boot.**
+    * Re-aggregated s60f/s61a BOOT-TL into mode ranges: full 4/8 alternation
+      73-2599, no freeze anywhere. The real gap was 0254 never taken natively
+      (no mode C, demo never played), not V-int cadence.
+    * Load-chain decode (US ROM): demo script 1562E writes 0244=34 + 284|5 then
+      bra 15560 wait loop (jsr 4970/31E0/3A14; tst (4C,a5); bmi exit). 4970 =
+      coroutine yield: +4C countdown, +48 = resume PC, 49AA sets +4C=-1 when the
+      continuation returns. The 15740 continuation = intro chunk loader
+      ((54,a0) counts to 0x127); it completes natively @~1814 then idles at 579C
+      re-arming +4C=1 (the 0/1 mailbox oscillation both ports show).
+    * Guest consumption lives in 6A36 (main 7FA): bit2 set → 6AB8 5D4 countdown
+      (decrement written via the 5D6 wrap); at 0 with bit0 set → 6B38 tail-calls
+      506A→5076: 0252=0254, 0244&=FF, 0254=0244, then 5162/70B4/7040/5AEA/55CE.
+      s59's "head work only via staged stub" model wrong again — 5076 is
+      guest-driven once the countdown runs.
+    * s60 assist load rules (284&~5 every frame + 5D4≥0F hold + 5D6=1 hold) froze
+      exactly that countdown. s61 releases all three during the committed load →
+      0254=34 @1846 (pc 005096), 1506=180 @1847, mode-C demo play @1852+, demo end
+      ~2268 (web 2030; demo length rides the emulated pad-history counter).
+    * US 5A3E polarity INVERTED vs the EU-derived decode: Start held (5A4A bne) →
+      5A96; the 0244=1 commit (write @5AAC) needs Start held AND 284 bit2 CLEAR;
+      bit2 set detours to 5A4E (2B4==FFFF → 5AB8 0244=[0A62], else mirror). The
+      s60 post_title bit2 supply starved it. s61 post_title emulates the idle
+      service (284 &= ~0xF; web post-demo 284=0) → Start@2450 (s61-startlate.input)
+      commits @2452; guest 5076 stages 0254=1/1506=180 @2484 (web 2480).
+    * Regression s61m: menu climb 025E 4→6→8 and confirm 0244=2 @1250 unchanged.
+    * Tooling truths: the US build compiles
+      native/build/generated/boogerman_us/boogerman_us_partNN.c (profile-prefixed,
+      rdb-instrumented, staged from the ROM at build time); tools/manual-gen (EU)
+      and native/generated are reference copies — edits there never reach the
+      exe. 5A3E is interpreter-only in the US build; INSN_TL's fixed watch list
+      only sees emitted code. Above 4E64 the US/EU shift makes EU-generated
+      labels ≠ US PCs — verify against US ROM dumps before trusting EU decodes.
+    * => Next: s62 gameplay validation past level load; M3 sound RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Mode-4/8 alternation freeze (s61, THE remaining root): find why the native main
-     loop / 6A00 family stops completing mode-4 passes post-splash (5B4 byte-tick vs
-     web word-tick branch). Levers: 6A00/6AC0 branch selector (5D6/5D4/286 parity?),
-     the 79A 15C4 / 79E / 7DE mode-setter path, s51's 5D6 hold phase. Verify BOOT-TL
-     mode alternation vs web + guest 0502 sampling on mode-4 frames. Once alternation
-     restores: demo completes → post-demo title → Start-late commits (s60f edge
-     already forms @2201).
-  2. Route validation once interactive: menu climb/confirm (s59-menu2) and Start-late
-     (s59-startlate) into gameplay; scrolling/collision/transitions vs web oracle.
-  3. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284 bit2
-     service tick (2B6 pad history wrap), 054C/0524/0548 acks, Z80 iff1/$0038 handler;
-     retire the s59 marker/consumption emulations; audio fidelity.
-  4. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
-  5. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
+  1. Gameplay validation (s62): past the 0254=1/1506=180 level staging — level-1
+     play (mode-10 scroll handler, player object/025E, collision, transitions)
+     vs web oracle with phase-matched inputs; menu2 + startlate routes as the
+     entry scripts. Demo-end timing fidelity (native ~2268 vs web 2030) only if
+     it blocks route timing.
+  2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
+     service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
+     handler; retire the s59/s60/s61 emulations (marker, countdown release,
+     idle-service 284); audio fidelity.
+  3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
+  4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites
