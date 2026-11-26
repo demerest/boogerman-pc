@@ -629,6 +629,14 @@ verifiable much sooner.
       not the V-int handoff nor input. Dedicated next step: single-step the boot main loop
       (func_0007xx) from reset to find the exact wait that never completes and the 68K/Z80 flag
       it polls; seed/fix that flag. This is the last RE gap to a playable native port.
+  - **Session 49 (2026-11-26): boot-loop trace — staging runs; title warm-up (5D4→0xF) never completes.**
+    * [BOOT-TL] shows mode=4/8 alternating from f73 ⇒ boot main loop runs staging each frame
+      (NOT stalled at 000786). func_006A00 counts $FF05D4 up to 0xF via $FF05D6 countdown with
+      reload $FF05D8; natively 5D8=0 so 5D4 stays 0 ⇒ title never "active" (dispatcher gate).
+    * Start at f4000 (after would-be warm-up) via genuine --input-script: still title.
+    * => Last RE gap: the title/sound init that seeds $FF05D8 (and a65/2BA/284) never runs; find
+      its gate (likely the Z80 sound-started flag) and make it run, or seed 5D8 so warm-up
+      completes. Combined with the earlier edge-ordering gate, both must be resolved for Start→game.
   Next experiments (anticipated, in order):
   1. Fix scheduler input alignment so the processed pressed-edge is present when the
      title dispatcher func_005960 reads it ($598E), and re-call the dispatcher each frame
