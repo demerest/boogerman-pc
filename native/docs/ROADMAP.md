@@ -610,6 +610,16 @@ verifiable much sooner.
       routine (reference games set it; Boogerman=0) so the fiber parks correctly and the boot
       main loop completes, OR fix the boot sound-init completion at the scheduler level.
       Compare Sonic1/RKA main-loop/WaitForVBlank wiring. M2 stands; Start→game open.
+  - **Session 47 (2026-11-26): reference-game-guided effort — Sonic1 on_post_reset sound seed applied; still stalls.**
+    * Studied sonic1_spec.c: on_post_reset seeds Z80-stub sound RAM ($FFF009=$80) so UpdateMusic
+      exits cleanly; resume/dispatch_main_loop_pc are save-resume fields (not per-frame).
+    * Added Boogerman US on_post_reset seeding Z80 $0FAD=$FE/$0FC2=1 at reset (mirrors Sonic).
+      Genuine --input-script Start hold still seen=8 ⇒ boot sound-init/title-init stall is on
+      the 68K side, not fixed by Z80 seeding at reset.
+    * => Precise remaining RE step: trace the boot main-loop sound-init call chain
+      (func_0039EC/func_000AD2/func_0030E2) to find the 68K-side ready flag that never sets and
+      why title init (5D4/A65/2BA/284) never runs; compare a working reference boot. on_post_reset
+      kept (harmless, mirrors Sonic). M2 stands; Start→game open.
   Next experiments (anticipated, in order):
   1. Fix scheduler input alignment so the processed pressed-edge is present when the
      title dispatcher func_005960 reads it ($598E), and re-call the dispatcher each frame
