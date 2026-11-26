@@ -579,6 +579,16 @@ verifiable much sooner.
       It is a scheduler/input-timing fix (dedicated effort), not a RAM assist. All
       assist/drive chains reverted; known-good title build restored. M2 (native authentic
       title, EU+US) stands; Start→game remains open.
+  - **Session 44 (2026-11-26): edge is a 1-frame pulse; 40-frame hold + drive + flags still seen=8.**
+    * func_005898 transfers a V-int pad sample from $FF04DE then computes edge=(prev^cur)&cur;
+      with a sustained hold prev==cur so edge is a single pulse at the press transition.
+    * Lengthened scripted Start hold to 40 frames (kept, harness). Combined with frame-start
+      drive (5898+5960) + flag/timer assist: still seen=8 — the dispatcher never sees the
+      pulse, i.e. the pad-sample→04DE write and the dispatcher read are not co-scheduled.
+    * => Confirms a genuine scheduler/input-pipeline ordering defect. Needs dedicated work:
+      make the V-int pad sample, the 04DE→0502 transfer, and func_005960's $598E read occur
+      in one frame in the right order (or run the title loop as the resident main loop).
+      Drive/flag assists reverted; 40-frame hold kept. M2 stands; Start→game open.
   Next experiments (anticipated, in order):
   1. Fix scheduler input alignment so the processed pressed-edge is present when the
      title dispatcher func_005960 reads it ($598E), and re-call the dispatcher each frame

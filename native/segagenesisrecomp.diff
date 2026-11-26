@@ -160,10 +160,22 @@ index 4eee55c..9da7258 100644
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
 diff --git a/runner/main.c b/runner/main.c
-index 771b446..67f66c8 100644
+index 771b446..18a35fd 100644
 --- a/runner/main.c
 +++ b/runner/main.c
-@@ -3078,6 +3078,20 @@ int main(int argc, char *argv[])
+@@ -1018,8 +1018,9 @@ static cc_bool input_requested_cb(void *user_data,
+     if (player_id == 0 && (s_script_start_frame || s_script_right_frame)) {
+         uint32_t f = s_current_frame_for_input;
+         if (button_id == GB_START) {
+-            /* Press Start for exactly 2 frames at the target frame */
+-            if (s_script_start_frame && f >= s_script_start_frame && f < s_script_start_frame + 2)
++            /* Hold Start ~40 frames (human-like) so the 1-frame-lagged processed
++             * edge coincides with a title-dispatcher read. */
++            if (s_script_start_frame && f >= s_script_start_frame && f < s_script_start_frame + 40)
+                 return cc_true;
+         }
+         if (button_id == GB_RIGHT) {
+@@ -3078,6 +3079,20 @@ int main(int argc, char *argv[])
          }
      }
  
@@ -184,7 +196,7 @@ index 771b446..67f66c8 100644
      if(replay_path) {
  #if RECOMP_LAUNCHER
          const RecompLauncherCModProvider *p=app_config_video_mods(g_game_spec.video,settings_ini);
-@@ -3418,10 +3432,11 @@ int main(int argc, char *argv[])
+@@ -3418,10 +3433,11 @@ int main(int argc, char *argv[])
          fprintf(stderr, "[display] interlace_display=%s\n",
                  s_interlace_display_mode == INTERLACE_DISPLAY_RAW ? "raw" : "tv");
      }
