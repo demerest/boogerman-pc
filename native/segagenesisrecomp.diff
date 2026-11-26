@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..747b014 100644
+index 4eee55c..84ebcd4 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -85,7 +85,7 @@ index 4eee55c..747b014 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1026,293 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,316 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -172,15 +172,31 @@ index 4eee55c..747b014 100644
 +             * commits the Start flow (0244/0254=1) emulate the sound-service
 +             * consumption of 284 bits0+2 (web: 284 5->0 coincident with the
 +             * 1506=0180 level staging). */
-+            {
-+                static int s_flow_seen;
-+                if (m68k_read16(0x00FF0244u) == 1 || m68k_read16(0x00FF0254u) == 1)
-+                    s_flow_seen = 1;
-+                if (!s_flow_seen)
-+                    m68k_write16(0x00FF0284u, (uint16_t)(m68k_read16(0x00FF0284u) | 0x0004u));
-+                else
-+                    m68k_write16(0x00FF0284u, (uint16_t)(m68k_read16(0x00FF0284u) & ~0x0005u));
-+            }
++            /* s60: any non-zero 0244/0254 is a committed load — the attract
++             * demo commits 0244=34 at 1562E (web f1811), which the s59 ==1
++             * test missed, keeping bit2 supplied through the load. */
++            static int s_s60_commit;
++            uint16_t s60_g244 = m68k_read16(0x00FF0244u);
++            uint16_t s60_g254 = m68k_read16(0x00FF0254u);
++            uint16_t s60_g1506 = m68k_read16(0x00FF1506u);
++            if (s60_g244 != 0 || s60_g254 != 0) s_s60_commit = 1;
++            /* s60e web phase model (s60web wt): demo commit 0244=34 @1811
++             * with 2BA=0; load/demo keeps A65 bit0 clear and 1506=0180;
++             * post-demo title (0254=34, 1506=0160) restores A65=3, 2BA=1
++             * and the service tick; Start commits via 5AAC (web 2B4 is a
++             * running counter, never FFFF). */
++            int s60_post_title = s_s60_commit && s60_g244 != 1 &&
++                                 s60_g254 != 0 && s60_g1506 == 0x0160u;
++            int s60_load = s_s60_commit && !s60_post_title;
++            int s60_loadwin = s_s60_commit &&
++                              (s60_g254 == 0 || md_pre == 0x000Cu);
++            if (s60_load)
++                m68k_write16(0x00FF0284u, (uint16_t)(m68k_read16(0x00FF0284u) & ~0x0005u));
++            else if (s60_post_title)
++                m68k_write16(0x00FF0284u,
++                             (uint16_t)((m68k_read16(0x00FF0284u) & ~0x0001u) | 0x0004u));
++            else
++                m68k_write16(0x00FF0284u, (uint16_t)(m68k_read16(0x00FF0284u) | 0x0004u));
 +            /* s58: retire only on the level-select confirm (6160 writes
 +             * 0244=2). s57 also retired at mode 10, but that killed the
 +             * 59D2->608E menu pump: the in-608E menu (6108) polls pressed
@@ -205,7 +221,12 @@ index 4eee55c..747b014 100644
 +                if (s_confirm_seen)
 +                    m68k_write16(0x00FF0284u,
 +                                 (uint16_t)(m68k_read16(0x00FF0284u) & ~0x0001u));
-+                if (s_retired)
++                /* s60: web keeps A65 bit0 clear through the committed-load
++                 * window (0254 shadow not taken) and the mode-C demo/intro;
++                 * holding it open let 6482 re-pin FF1506=0160 every 2f and
++                 * starve the load (s60c f1816+). Post-demo title (mode 4/8,
++                 * shadow taken) web is back to 3, so hold again there. */
++                if (s_retired || (s60_loadwin && !s_confirm_seen))
 +                    m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) & ~0x01u));
 +                else
 +                    m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x03u));
@@ -216,24 +237,24 @@ index 4eee55c..747b014 100644
 +                    m68k_write16(0x00FF02B8u, (uint16_t)(m68k_read16(0x00FF02B8u) | 0x0080u));
 +                }
 +            }
-+            /* s59: web oracle (s59web2): the authentic gameplay route is
-+             * 2BA=1 (attract marker, 55CE with A65 bit1) + Start -> 5A3E
-+             * 5AAC -> 0244=1, 284|5, sound service consumes 284 ->
-+             * 1506=0180 level load. Natively 55CE (main 5110, inside 5076)
-+             * is never reached — object-thread yield semantics skip the
-+             * 5076 tail — so supply the marker once obj0 enters the
-+             * attract script (cont >= 15532). Pre-attract keep 0 so the
-+             * interactive 5968 dispatcher still works. */
++            /* s60e: web holds 2BA=0 through attract AND the demo; the
++             * marker returns only at the post-demo interactive title
++             * (f2036). Forcing it earlier produced spurious 5ACE commits
++             * mid-demo (s60d f1817). 2B4 stays the guest's counter (web
++             * never FFFF); 5AAC is the Start commit path. */
 +            {
 +                uint32_t cont = m68k_read32(0x00FF1A12u) & 0xFFFFFFu;
-+                if (cont >= 0x15532u) {
++                /* pre-demo attract keeps the s59 supply (the native menu
++                 * route is interactive pre-demo, web is not); during the
++                 * committed load/demo web holds 0 and so do we. */
++                if (s60_post_title || (!s_s60_commit && cont >= 0x15532u)) {
 +                    m68k_write16(0x00FF02BAu, 0x0001u);
-+                    /* 5A56->5AC0 needs the pad-history counter wrapped
-+                     * (2B4=FFFF); natively the history never wraps and the
-+                     * s50 2B4=1 hold blocks it. 5ADE then loads 0244 from
-+                     * 0A62 (=1 on web post-attract; its writer sits in the
-+                     * unreachable 55CE tail). Supply both. */
-+                    m68k_write16(0x00FF02B4u, 0xFFFFu);
++                    /* s60f: the attract demo trigger needs the pad-history
++                     * wrap (2B4=FFFF); the dead service never produces it
++                     * (s60e lost the demo commit without this). Pre-commit
++                     * only — post-commit web 2B4 is a running counter. */
++                    if (!s_s60_commit)
++                        m68k_write16(0x00FF02B4u, 0xFFFFu);
 +                    if (!m68k_read16(0x00FF0A62u))
 +                        m68k_write16(0x00FF0A62u, 0x0001u);
 +                } else {
@@ -261,7 +282,9 @@ index 4eee55c..747b014 100644
 +             * frames, feed the raw sample from the live pad port (two-phase
 +             * 3-button read, same merge the game's 6E16 helper produces:
 +             * Up/Down/Left/Right/B/C from TH=0, A/Start from TH=1). */
-+            if (m68k_read16(0x00FF0516u) == 0x0008u) {
++            /* s60: the handler clears 0516 before the assist runs, so the
++             * live read is always 0 here; gate on the pre-handler mode. */
++            if (md_pre == 0x0008u || m68k_read16(0x00FF0516u) == 0x0008u) {
 +                /* TH=0 carries Start/A (bits7/6), TH=1 carries CBRLDU —
 +                 * same merge as cmd_server's read_joypad_port probe. Drive
 +                 * TH save/restore so the game's own ReadJoypads protocol
@@ -379,7 +402,7 @@ index 4eee55c..747b014 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1842,16 +2162,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +2185,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -405,7 +428,7 @@ index 4eee55c..747b014 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2366,38 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2389,62 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -417,6 +440,12 @@ index 4eee55c..747b014 100644
 +static unsigned long s_obj_tl_count;
 +static unsigned long s_obj_tl_max;
 +static uint32_t s_obj_tl_hi;
++/* s60: with a widened HI range the hot boot-RAM writes exhaust the 600k
++ * line cap before the title phase (cap hit at f=819 in s60a/b), silently
++ * blinding the tap. An explicit low-16 address list keeps the log small
++ * enough to cover the whole run. */
++static uint32_t s_obj_tl_addrs[40];
++static int s_obj_tl_naddr;
 +static void obj_tl_note(uint32_t addr, uint32_t val, int size)
 +{
 +    if (s_obj_tl < 0) {
@@ -427,9 +456,27 @@ index 4eee55c..747b014 100644
 +         * (FF36EE level controller, FF3832 staging); allow widening the tap. */
 +        const char *h = getenv("GENESIS_OBJ_TL_HI");
 +        s_obj_tl_hi = h ? (uint32_t)strtoul(h, NULL, 16) : 0x2212u;
++        const char *al = getenv("GENESIS_OBJ_TL_ADDRS");
++        if (al) {
++            char tmp[256];
++            strncpy(tmp, al, sizeof(tmp) - 1);
++            tmp[sizeof(tmp) - 1] = 0;
++            char *tok = strtok(tmp, ",");
++            while (tok && s_obj_tl_naddr < 40) {
++                s_obj_tl_addrs[s_obj_tl_naddr++] =
++                    (uint32_t)strtoul(tok, NULL, 16) & 0xFFFFu;
++                tok = strtok(NULL, ",");
++            }
++        }
 +    }
 +    if (!s_obj_tl || s_obj_tl_count >= s_obj_tl_max) return;
 +    if (addr < 0xFF0000u || addr >= 0xFF0000u + s_obj_tl_hi) return;
++    if (s_obj_tl_naddr) {
++        int hit = 0;
++        for (int i = 0; i < s_obj_tl_naddr; i++)
++            if ((addr & 0xFFFFu) == s_obj_tl_addrs[i]) { hit = 1; break; }
++        if (!hit) return;
++    }
 +    s_obj_tl_count++;
 +    fprintf(stderr, "[OBJ-TL] f=%lu pc=%06X a=%06X v=%06X s=%d\n",
 +            (unsigned long)g_frame_count, g_cpu.PC & 0xFFFFFFu, addr, val, size);
@@ -444,7 +491,7 @@ index 4eee55c..747b014 100644
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2069,6 +2417,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2464,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -452,7 +499,7 @@ index 4eee55c..747b014 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2089,6 +2438,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2485,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);

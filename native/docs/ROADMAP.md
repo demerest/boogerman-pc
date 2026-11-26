@@ -946,14 +946,62 @@ verifiable much sooner.
       pc=/vc= fields between f= and a=/mode= — patterns must include them.
     * => Next: s60 staged V-int RAM stub / intro-level script completion (FF3832/FF0202,
       BB-C7 draw + C8-CA completion → 15ADA/15F70); then M3 sound RE to retire assists.
+  - **Session 60 (2026-11-26): tap-cap blindness found+fixed (OBJ_TL_ADDRS); US V-int
+    dispatch decoded (flush = pure VDP DMA, NOT head-work dispatch — s59 stub model
+    corrected); web phase model decoded (attract plays a demo level, 2BA=0 through
+    demo, marker returns post-demo); native demo commit verified @1816; assist
+    load-starvation (A65/6482 pinning FF1506) and dead pad-feed gate fixed; Start edge
+    forms natively @2201. Remaining root = post-splash V-int mode freeze at 8 (s61).**
+    * Tooling: OBJ-TL's default 600k line cap was silently exhausted at f=819 with
+      HI=4000 (hot boot-RAM writes) — s60a/b were blind past f819 and part of s59's
+      "never commits" evidence is unverified. New GENESIS_OBJ_TL_ADDRS env knob
+      (comma-list of low-16 addresses) keeps whole-run logs small (s60c-f).
+    * US ROM decode (EU is +8 bytes shifted from 4E64): 4DF0 = movem, movea.w FF0516,a1,
+      movea.l (4E22,a1),a0, JSR (a0), then 4E00 FF0516=0, bsr 6D60, jsr 98000 (object
+      pump EVERY V-int), 0288++, rte. Table offsets: 0→4E36 rts, 4→4E38, 8→4E4A,
+      C→4E5C (flush FF3822+FF3832), 10→4E66 (scroll). Flush 4FD0 = bus-req + VDP ctrl
+      longs from slot+0/+6/+10 + jsr FF0202 stub (move.w d0,(a1); rts, seeded from US
+      505E) + DMA-busy wait. Slots are 16-byte VDP DMA command blocks (4F60 init fill
+      pattern; boot 0D76→4F8E builds FF3832 from FF146E). The flush does NOT dispatch
+      5076/5AEA/55CE — s59's "staged stub performs head work" model was wrong.
+    * Web phase model (s60web, wt extended with 2B4/2BA/0A62/288/3832-38/202): attract
+      PLAYS A DEMO LEVEL: 0244=34 @1811 (script 1562E) + 284=5; @1841 284→0 + 0254=34 +
+      0A90=60 + 0A62=35; mode C 1861-1954 (demo play); demo end → 1506=160 @2030,
+      2BA=1 @2036, A65=3 by 2399 (guest-set). 2BA=0 through attract AND demo; 2B4 is a
+      running counter (never FFFF); Start@2450 commits via 5AAC (Start-not-held + bit2)
+      → 0244=1+284=5; @2480 0254=1/284=0/1506=180/0A62=0; @2512 55CE clr 2B4/2BA.
+      Mode alternates 4/8 EVERY frame through the title.
+    * Native object threads DO run: demo commit 0244=34 @1816 pc=01562E (s60c). The
+      post-commit stall was assist-induced: holding A65 bit0 kept 6482's gate open so
+      FF1506 was re-pinned 0160 every 2f (pc 0064B2) forever, starving the load (web
+      keeps A65 bit0=0 through load/demo).
+    * Assist s60 phase model (glue.c TITLE_ASSIST): commit flag on 0244/0254!=0;
+      load window (0254==0 or md_pre==C) clears A65 bit0 (menu-confirm window exempt);
+      post_title (commit && 0244!=1 && 0254!=0 && 1506==160) restores A65=3 + 2BA=1 +
+      0A62 + service tick (284&~1)|4; load consumes 284&~5; marker 2BA=0 during
+      load/demo (s60d's early supply caused spurious 5ACE 0244=1 @1817); pre-commit
+      attract keeps the s59 supply incl 2B4=FFFF — the history-wrap emulation gates
+      the attract demo trigger (s60e lost the demo commit without it). Pad-feed gate
+      fixed to md_pre==8 (the handler clears 0516 before the assist runs; the live
+      read was always 0) → Start edge 050C=80 @2201 forms natively (s60f).
+    * Remaining root (s61): V-int mode FREEZES at 8 post-splash (BOOT-TL mode=8
+      constant @1816-2480; web alternates 4/8 every frame). Guest pad sampler skips
+      mode-8 frames; the load/demo script's mode waits stall (0254 never taken, mode C
+      never reached, demo never ends → post-demo interactive title never arrives →
+      Start-late cannot commit: 2BA=0 during load, web-faithful). Native 6A00 family
+      runs the byte-tick branch (5B4 +1 byte @6AA4) vs web word-tick (+100/2f) — the
+      branch selector diverges post-splash. s58's "frozen mode" was REAL for the
+      post-splash phase; s59's determinism proof covered OBJ_TL on/off, not web
+      phase-match.
+    * => Next: s61 mode-4/8 alternation freeze; then route validation; M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Intro/level chain (s60, THE remaining root): seed/complete the BB-C7 intro stager
-     and C8-CA scripts so FF3832/FF0202 staging happens and the mode-C V-int handler
-     runs the staged RAM stub (which performs the per-frame head work: 0254 shadow,
-     5AEA flow dispatch, 55CE marker). Levers: 4B8C template attach (obj+4E table;
-     37BE8 reads FFFF), C8-CA completion → 15ADA/15F70 scroll-in seed; verify with
-     OBJ_TL_HI=4000 + wt=1 web phase-match. Both the menu-confirm and Start-post-attract
-     routes converge here.
+  1. Mode-4/8 alternation freeze (s61, THE remaining root): find why the native main
+     loop / 6A00 family stops completing mode-4 passes post-splash (5B4 byte-tick vs
+     web word-tick branch). Levers: 6A00/6AC0 branch selector (5D6/5D4/286 parity?),
+     the 79A 15C4 / 79E / 7DE mode-setter path, s51's 5D6 hold phase. Verify BOOT-TL
+     mode alternation vs web + guest 0502 sampling on mode-4 frames. Once alternation
+     restores: demo completes → post-demo title → Start-late commits (s60f edge
+     already forms @2201).
   2. Route validation once interactive: menu climb/confirm (s59-menu2) and Start-late
      (s59-startlate) into gameplay; scrolling/collision/transitions vs web oracle.
   3. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284 bit2
