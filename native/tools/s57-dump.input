@@ -1,0 +1,13 @@
+# s57: Start@1000, B@1100, dump work RAM + VRAM at 1200 (post-608E, mode C).
+WAIT 1000
+HOLD START
+WAIT 40
+RELEASE
+WAIT 60
+HOLD B
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s57d\ram1200.bin
+DUMP_VRAM S:\home\dev\boogerman-pc\native\captures-us\s57d\vram1200.bin
+EXIT 0

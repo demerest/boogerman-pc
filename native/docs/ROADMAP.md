@@ -827,22 +827,55 @@ verifiable much sooner.
       Deterministic-pacing fix remains open.
     * => Next: mode-C level-init completion (6054→64xx staging consumer / completion flag) native
       vs web; then Start→level-1 route; deterministic pacing; M3 sound RE to retire the assists.
+  - **Session 57 (2026-11-26): Start→load route decoded end-to-end; V-int table mapping
+    corrected; dispatcher-retirement assist fix; intro/teardown gap localized to the
+    demo-controller tail.**
+    * V-int truth: 4DF0 dispatches via LONG at 4E22+mode (byte offset = mode; the emitted C's
+      "20002" is decimal 0x4E22). mode C→4E64 (flush FF3822/FF3832 blocks via 4FD8, which
+      arbitrates the Z80 bus and calls RAM stub FF0202 = move.w d0,(a0); rts), 10→4E6E (4E8C
+      scroll), 18→6054. s56's idx=mode>>1 was wrong; the 649A/FF1506 staging is main-loop
+      7B4→6482 (gated A65 bit0 && 0246), not V-int.
+    * Interactive chain: 5968 gates → 59D2 0516=0C + ack spin → 59E6 A65 bit0 → 59F0 pad bit4
+      (B) → 608E load: 670C stages FF146E-150E=0180 (671C), 716C copies 71FA→FF369A, 631A sound
+      blocks+VM, 62F6/6308 VDP cmds, 63AA commits 10 @63E6 + 8 scroll iters + 200× vblank wait
+      (6994 = $C00004 bit3 = in_vblank in the runner), 6414 second scroll loop; then in-608E
+      menu 6108-62E2 (Right/Left climb 025E, Up/Down 05B4/05B6; (A|C)&&d7==8 → 6160 confirm:
+      0244=2, 0284|5, 050C|80). 5A16 Start-held fallthrough = VM 04 + 566E (sprite-table
+      builder, NOT a load). s57a: B@1100 → 608E @1100, mode 10 @1102 — native runs the load.
+    * Why title persisted: while the assist pins the gates, the 59D2 wait loop re-commits C
+      every frame, overwriting the load. Web oracle (ram-shot press timeline + mode trace):
+      stock web also has 5D4=F/A65=0 at attract (Start via 5968 only once A65 arrives ~f2400);
+      its proven gameplay route is the attract demo: C@1861-1954 shows the "FLATULENT SWAMPS"
+      intro with ALL object slots inactive, FF1506=0180, FF385x staged, 0245=34.
+    * Phase-matched RAM diff (new tools/diff-ram.ps1 + DUMP_RAM/DUMP_VRAM script directives):
+      native post-608E keeps title objects (obj0 cont 15532), FF3832 unstaged, 1506=0160 —
+      6482 (enabled by our A65 bit0 hold) overwrites 670C's 0180; web keeps A65=0 so 6482 skips.
+    * Assist fix (glue.c): drop A65 bit0 once 0244!=0 or md_pre==10 → gate2 fails → the 59D2
+      loop retires (verified s57f: no re-commits) and 6482 skips. Necessary, not sufficient:
+      the B path never runs the confirm/teardown; synthesized 0244=2 alone (s57h) also does
+      not teardown. Menu climb attempts (s57e/g): 608E re-enters ~11f but 025E never persists
+      — the menu pad edge plumbing (58A0/5A36, 2B4/286 signed compare) is itself broken natively.
+    * Demo path (s57b): 15776 controller spawns types 1EF-1F3/3/4 @f777-1263 then parks at a
+      49B0 yield whose resume never fires — before the intro stager (15978+ / FF3832 writer).
+      That yield-resume ack (M3 sound family) is the s58 lever for both routes.
+    * Tooling: run-us-misses -InputScript; s57-*.input timelines (frame-index lines and
+      sequential directives share one op list); ram-shot.html gained a press timeline +
+      mode/gate trace — web ramRead16 returns BYTE-SWAPPED words (ram() little-endian per
+      word); diff-ram.ps1 swaps web pairs before diffing.
+    * => Next: s58 demo-tail yield-resume + intro stager RE; menu pad plumbing; then route
+      validation; deterministic pacing; M3 sound RE to retire the assists.
   Next experiments (anticipated, in order):
-  1. Level-init completion (s57): trace the mode-C V-int handler 6054→64xx on the EU pair — what
-     consumes the FF1506 staging and which completion flag/poll never clears natively (sound/DMA
-     family); compare web at a Start-matched phase (ram-shot + probe). Fix or extend the documented
-     assist; re-test Start→level 1 (mode 10) and the attract-demo park (15776). Then route
-     validation (scrolling/collision/transitions) vs web.
+  1. Demo-tail completion (s58): trace the 15776/15900 yield-resume park (~f1263) on the EU
+     pair (which ack/flag the 49B0 resume waits on; M3 sound family) and identify the
+     FF3832/intro stager (15978+); fix or extend the documented assist; re-test demo→gameplay
+     and the interactive Start→B→confirm route (includes menu pad plumbing 58A0/5A36/2B4/286).
   2. Deterministic boot pacing: OBJ_TL-off runs die at f65 / never leave boot; make completion
      host-speed independent so regression runs don't need the trace overhead.
-  3. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284 bit2 service tick
-     (2B6 pad history), 054C/0524/0548 acks, Z80 iff1/$0038 handler; audio fidelity.
-  4. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
+  3. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284 bit2 service
+     tick (2B6 pad history), 054C/0524/0548 acks, Z80 iff1/$0038 handler; audio fidelity.
+  4. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs; route
+     validation (scrolling/collision/transitions) vs web once interactive.
   5. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
-  2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
-     verify scrolling/collision/transitions; audio check.
-  3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
-  4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework
   reverse-debug/trace to find them). Resolve the 6 indirect dispatch sites

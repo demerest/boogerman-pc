@@ -1,0 +1,9 @@
+# s57: Start@1000, B@1100 (608E load), then synthesize the 6160 confirm flag
+# (0244=2) at 1250 to test whether it drives title-object teardown / intro.
+1000 START
+1040 -
+1100 B
+1200 -
+1250 WRITE_RAM16 FF0244 0002
+1600 DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s57h\ram1600.bin
+1610 EXIT 0

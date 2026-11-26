@@ -1,0 +1,6 @@
+# s57: Start@1000 (hold 40f) accepted by 5968 -> mode 0C wait loop;
+# B@1100 (hold 40f) hits the 59F0 bit4 check -> bsr 608E level load -> mode 10.
+1000 START
+1040 -
+1100 B
+1140 -

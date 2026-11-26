@@ -1,0 +1,11 @@
+# s57: Start@1000 -> mode C; B@1100 enters 608E menu each call (~11-13f apart);
+# Right held across two calls climbs 025E 4->6->8; A@1130 with d7==8 confirms
+# (6160: 0244=2, 0284|5, 050C|80, bsr 6414) -> assist retires the dispatcher.
+1000 START
+1040 -
+1100 B
+1110 B+RIGHT
+1126 B
+1130 B+A
+1150 B
+1200 -
