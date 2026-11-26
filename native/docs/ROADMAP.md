@@ -657,10 +657,33 @@ verifiable much sooner.
       guest main loop run 5960 every frame with stable gates (fix mode alternation / RTE-pending
       bails at the scheduler level, reference-game guided), then Start→func_0063DE (mode=$10).
     * TITLE_ASSIST kept (env-gated, off by default); on_post_reset kept; known-good title build.
+  - **Session 51 (2026-11-26): ROOT CAUSE — V-int mode-service stubs never recompiled (data-table-only reachability); promoted via [functions] extra. Warm-up + pad now run natively.**
+    * [SCHED-TL] (new env-gated gate dump at 6A00/5960/579E entry, reverse_debug.c/.h) showed the
+      dispatcher gates and the 6A00 attract mutation per frame. Tracing the V-int dispatch
+      (func_004DF0 reads $FF0516, JSR via long-pointer table) revealed the table base is ROM $4E22
+      (the C literal `20002` is DECIMAL), mode 0/4/8/C/10 → 4E36/4E38/4E4A/4E5C/4E66.
+    * Those 5 stubs are reached ONLY via the data table, so static discovery never emitted them;
+      recomp_dispatch_once logged "interior-label miss" and silently no-opped each frame ⇒ the
+      guest's own per-mode title init / pad-history / counter seeding never ran. THIS is the
+      upstream stall behind s46–s50 (not input, not the V-int handoff).
+    * Fix: profiles/{us,eu}/game.toml [functions] extra = [4E36,4E38,4E4A,4E5C,4E66]. Regeneration
+      emitted 5/5 (217→259 funcs). Now 5D4 warm-up reaches 0F and the pad history fills natively
+      (pressed edge forms without assist); the 4E38/4E4A dispatch misses are gone.
+    * Added 5D6=1 hold to TITLE_ASSIST: 6A00's $6AC0 decrements 5D6; at 0 it wraps negative and
+      $6ACC decrements 5D4→0E right before 5960 (gate1 fail). Holding 5D6=1 skips that decrement.
+    * Still not playable: with assist the gates read stable (5D4=0F,a65=3,2BA=1,284&9,edge=80) but
+      5960 still early-returns before 599A/6F82; the title OBJECT-handler state machine (attract bit
+      284.2 set by 5CCA) is driven by init behind the 4 unresolved indirect JMPs (0031D8/003A12/
+      000A5E/0070B8 = object-handler dispatch via RAM pointers). No-assist boot still stops at the
+      Interplay splash (title-object init needs a65/284). => Next: promote the object-handler
+      targets (read spawn constants / bus-tap the object table) so the guest's own title init runs.
+    * game.toml comment corrected: vint_routine ptr table at ROM $4E22 (decimal 20002).
   Next experiments (anticipated, in order):
-  1. Dedicated scheduler effort: run title dispatcher func_005960 every frame with stable gates
-     (fix boot-main mode-4/8 alternation / RTE-pending bails so the 5960 tail isn't skipped and
-     6A00 doesn't mutate gates mid-frame); re-test Start/A → func_0063DE (mode=$10).
+  1. Promote the title/object handler functions reached via the unresolved indirect JMPs
+     (0031D8/003A12/000A5E/0070B8) so the guest's OWN title init sets a65/284/25E/276/278 and the
+     interactive title + Start→func_0063DE (mode=$10) work without TITLE_ASSIST. Read object-spawn
+     handler constants / bus-tap the object table ($FF225A+) to enumerate targets; add to
+     [functions] extra or [[jump_table]]; re-test Start/A.
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.

@@ -15,7 +15,7 @@ output_prefix = "boogerman_eu"
 [ram_layout]
 game_mode      = 0x00FF0516 # word mode index (0/4/8/10/12…); selects VBlank routine
 vint_runcount  = 0x00FF0288 # word +1 per VBlank ($004E14 addq.w #1,$FF0288)
-vint_routine   = 0x00FF0516 # word: VBlank dispatch index (ptr table at +$20002)
+vint_routine   = 0x00FF0516 # word: VBlank dispatch index (long ptr table at ROM $4E22; the C literal 20002 is decimal)
 plc_pending    = 0x000000   # TODO: RE — pattern-load cue count (if any)
 initial_ssp    = 0x00FF0200 # from reset vector $0 (reset code re-sets SP here)
 vbla_stack     = 0x00FF0200 # VBlank MOVEM uses the current SP (no switch seen)
@@ -27,3 +27,9 @@ level_modes    = []         # TODO: RE — gameplay mode values
 # $010001 is an odd-address auto-discovery artifact (data mid-instruction);
 # real code at $010000 is reached via JSR from elsewhere.
 blacklist = [0x010001]
+# s51: V-int mode-service stubs, reached ONLY via the long-pointer table at
+# ROM $4E22 (mode 0/4/8/C/10 -> 4E36/4E38/4E4A/4E5C/4E66). Static discovery
+# never sees them, so the dispatch was a silent no-op each frame and the
+# guest's own title init / pad-history / counter seeding never ran. Promote
+# them (and their BSR closure) to function entries.
+extra = [0x004E36, 0x004E38, 0x004E4A, 0x004E5C, 0x004E66]

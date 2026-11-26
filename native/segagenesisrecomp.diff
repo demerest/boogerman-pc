@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..9ae949d 100644
+index 4eee55c..6664c38 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -85,7 +85,7 @@ index 4eee55c..9ae949d 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1026,114 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,120 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -117,6 +117,12 @@ index 4eee55c..9ae949d 100644
 +            if (!m68k_read16(0x00FF02BAu)) m68k_write16(0x00FF02BAu, 0x0001u);
 +            if (!m68k_read16(0x00FF025Au)) m68k_write16(0x00FF025Au, 0x0001u);
 +            if (m68k_read8(0x00FF05D4u) < 0x0Fu) m68k_write8(0x00FF05D4u, 0x0Fu);
++            /* s51: with the V-int mode stubs now emitted, the guest warm-up reaches
++             * 5D4=0F on its own, but 6A00's attract path ($6AC0) decrements 5D6;
++             * when 5D6=0 it wraps negative and $6ACC then decrements 5D4 to 0E
++             * right before 5960 reads it (gate1 fail). Hold 5D6=1 so $6AC0 yields
++             * 0 (N clear) and the 5D4 decrement is skipped, keeping the gate stable. */
++            if (!m68k_read16(0x00FF05D6u)) m68k_write16(0x00FF05D6u, 0x0001u);
 +            /* s50: the pad-history table ($FFFE00+2B6) is never filled natively
 +             * (2B6 does not wrap), so func_005A36 overwrites the V-int's raw
 +             * $FF0502 sample with 0 and the pressed edge never forms. Mirror the
@@ -200,7 +206,7 @@ index 4eee55c..9ae949d 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1842,16 +1983,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +1989,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -293,24 +299,58 @@ index 3e146ce..2306f92 100644
  
  /* ---- sections ---------------------------------------------------------------- */
 diff --git a/runner/reverse_debug.c b/runner/reverse_debug.c
-index ccb0f9c..2c1a1b7 100644
+index ccb0f9c..f57f6ea 100644
 --- a/runner/reverse_debug.c
 +++ b/runner/reverse_debug.c
-@@ -236,6 +236,9 @@ int g_rdb_resume_now    = 0;
+@@ -20,6 +20,7 @@
+ #include "glue.h"
+ #include "backend_decls.h"
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <stdint.h>
+ 
+@@ -236,6 +237,35 @@ int g_rdb_resume_now    = 0;
  uint64_t g_rdb_slow_count = 0;
  uint64_t g_rdb_park_count = 0;
  
 +unsigned g_bg_seen = 0;
 +unsigned g_bg_flow = 0;
 +
++/* s51: scheduler-effort trace. At 6A00 (attract/warm-up), 5960 (title
++ * dispatcher) and 579E (title clear) entry, dump the dispatcher gates plus
++ * the attract counters so the mid-main mutation chain is visible per frame. */
++void rdb_sched_trace(uint32_t block_id)
++{
++    static int on = -1;
++    if (on < 0) on = getenv("GENESIS_SCHED_TL") != NULL;
++    if (!on) return;
++    extern unsigned long g_snd_frame;
++    if (!((g_snd_frame >= 2000 && g_snd_frame < 2004) ||
++          (g_snd_frame >= 3990 && g_snd_frame < 4012))) return;
++    fprintf(stderr,
++        "[SCHED-TL] f=%lu at=%06X d4=%02X a65=%02X ba=%04X g284=%04X "
++        "edge=%04X raw=%04X d6=%04X d8=%04X b4=%02X md=%04X\n",
++        g_snd_frame, block_id,
++        g_ram[0x5D4], g_ram[0xA65],
++        (g_ram[0x2BA] << 8) | g_ram[0x2BB],
++        (g_ram[0x284] << 8) | g_ram[0x285],
++        (g_ram[0x50C] << 8) | g_ram[0x50D],
++        (g_ram[0x502] << 8) | g_ram[0x503],
++        (g_ram[0x5D6] << 8) | g_ram[0x5D7],
++        (g_ram[0x5D8] << 8) | g_ram[0x5D9],
++        g_ram[0x5B4],
++        (g_ram[0x516] << 8) | g_ram[0x517]);
++}
++
  static struct {
      int      step_mode;
      /* For STEP_OVER: snapshot of the 68K call-stack depth at the moment
 diff --git a/runner/reverse_debug.h b/runner/reverse_debug.h
-index 2deb32c..541703f 100644
+index 2deb32c..3addf6b 100644
 --- a/runner/reverse_debug.h
 +++ b/runner/reverse_debug.h
-@@ -102,9 +102,42 @@ void rdb_on_block_slow(uint32_t block_id);
+@@ -102,9 +102,47 @@ void rdb_on_block_slow(uint32_t block_id);
   * the last N block transitions. Defined in crash_report.c. */
  void crash_report_record_block(uint32_t block_addr);
  
@@ -322,6 +362,9 @@ index 2deb32c..541703f 100644
 + * 1=5976 early-return, 2=5978, 4=599A mode-wait, 8=59CA, 0x10=59D2, 0x20=6F82. */
 +extern unsigned g_bg_flow;
 +
++/* s51: env-gated (GENESIS_SCHED_TL) gate dump at 6A00/5960/579E entry. */
++void rdb_sched_trace(uint32_t block_id);
++
  static inline void rdb_on_block(uint32_t block_id)
  {
      crash_report_record_block(block_id);
@@ -329,7 +372,9 @@ index 2deb32c..541703f 100644
 +    case 0x006060u: g_bg_seen |= 1u; break;
 +    case 0x0063DEu: g_bg_seen |= 2u; break;
 +    case 0x006F82u: g_bg_seen |= 4u; g_bg_flow |= 0x20u; break;
-+    case 0x005960u: g_bg_seen |= 8u; g_bg_flow |= 0x40u; break;
++    case 0x005960u: g_bg_seen |= 8u; g_bg_flow |= 0x40u; rdb_sched_trace(block_id); break;
++    case 0x006A00u: rdb_sched_trace(block_id); break;
++    case 0x00579Eu: rdb_sched_trace(block_id); break;
 +    case 0x005898u: g_bg_seen |= 0x10u; break;
 +    case 0x005A36u: g_bg_seen |= 0x20u; break;
 +    case 0x00506Eu: g_bg_seen |= 0x40u; g_bg_flow |= 0x2000u; break;
