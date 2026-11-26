@@ -589,6 +589,16 @@ verifiable much sooner.
       make the V-int pad sample, the 04DE→0502 transfer, and func_005960's $598E read occur
       in one frame in the right order (or run the title loop as the resident main loop).
       Drive/flag assists reverted; 40-frame hold kept. M2 stands; Start→game open.
+  - **Session 45 (2026-11-26): post-V-int co-scheduled drive also seen=8 — assist/drive approach exhausted.**
+    * Placed func_005898+func_005960 AFTER the V-int pad sample (so $04DE fresh) + flag/timer
+      assist + 40f hold: still seen=8 (no 006F82/006060/0063DE). The dispatcher never reaches
+      the Start/A call under any assist/drive placement.
+    * => The blocker is architectural: the recompiled boot main loop does not run the title
+      state machine as a resident loop, and injected recomp_call_addr dispatches do not
+      reproduce the game's frame ordering. Next dedicated effort: rework the fiber scheduler
+      so the guest's own main loop runs the title routine each frame (fix the boot-loop
+      re-entry / mode handoff at the scheduler level), not via injected calls or RAM assists.
+      All drives reverted; known-good title build restored. M2 stands; Start→game open.
   Next experiments (anticipated, in order):
   1. Fix scheduler input alignment so the processed pressed-edge is present when the
      title dispatcher func_005960 reads it ($598E), and re-call the dispatcher each frame
