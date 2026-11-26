@@ -1,0 +1,25 @@
+diff --git a/profiles/genesis/code_generator.c b/profiles/genesis/code_generator.c
+index 6366979..2954973 100644
+--- a/profiles/genesis/code_generator.c
++++ b/profiles/genesis/code_generator.c
+@@ -2034,6 +2034,20 @@ static void emit_instr(FILE *f, const GenesisRom *rom,
+          * callee with a PROVEN capturing exit (the path-local byte count
+          * decides whether that exit ran), or one that explicitly skips
+          * stack through ADDQ/SUBQ (SMPS stop-track), may consume the slot. */
++        /* s53: PEA $target; ...; RTS is a computed jump, not a return.
++         * A path-local net delta of -4 means one unmatched push (PEA or
++         * MOVE -(SP)): the RTS pops that pushed target and transfers to it.
++         * Dispatch via recomp_call_addr (guest-stack-neutral); the caller's
++         * JSR slot remains below for the normal call-site pop. Boogerman's
++         * func_0028BE uses this idiom to reach the object sweep at $29D0. */
++        if (*has_sp_adjust) {
++            fprintf(f, "  if (_sp_popped == -4) { /* PEA+RTS computed jump */\n");
++            fprintf(f, "    uint32_t _pea_t = m68k_read32(g_cpu.A[7]) & 0xFFFFFFu;\n");
++            fprintf(f, "    g_cpu.A[7] += 4; _sp_popped = 0;\n");
++            fprintf(f, "    recomp_call_addr(_pea_t);\n");
++            fprintf(f, "    return;\n");
++            fprintf(f, "  }\n");
++        }
+         if (*has_sp_adjust
+                 && (s_func_explicit_sp_skip
+                     || m68k_return_capture_has_capturing_exit(rom, func_addr))) {

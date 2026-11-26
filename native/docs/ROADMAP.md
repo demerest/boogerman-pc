@@ -698,11 +698,42 @@ verifiable much sooner.
       native+interp, not a recompiler coverage gap.
     * => Next: bus-tap object-table ($FF1A0E+) writes during the mode-4 splash to identify the spawn/init
       routine that sets strides/handlers; promote THAT real function entry; re-test mode 4→8 and Start.
+  - **Session 53 (2026-11-26): bus-tap found the REAL root cause — PEA+RTS computed-jump idiom compiled as
+    plain return; engine codegen fix; native now runs the object sweep; both modes converge on the splash
+    +10 wait.**
+    * New taps/tools: GENESIS_OBJ_TL in glue.c (object table first, then full WRAM $FF0000..$FF2212; writer
+      PC real under FORCE_INTERP); GENESIS_CALL_TL watch-list entry trace (CALLT) + indirect-source trace
+      (CALLSRC) + ROM→RAM flight catcher (RAMJMP) in reverse_debug.c/h and m68k_interp.c;
+      tools/diff-writes.ps1 (ordered), tools/diff-writes-byaddr.ps1 (per-address, V-int-jitter immune),
+      tools/probe-objchain.ps1 (stride-chain walk).
+    * s52 zero-stride hypothesis DISPROVEN: stride chain healthy ($8058→$87A8→$FF220E end). Ordered
+      write-diff first divergence = V-int timing jitter only; per-address diff of 8201 addresses clean ⇒
+      native/interp divergence was control-flow, not data.
+    * CALLT diff: after the common first spawn, interp runs the object sweep func_0029D0 (entered from
+      $2900), native skipped it. Root: func_0028BE = `PEA $29D0; …; RTS` (computed jump via stack).
+      code_generator MN_RTS emitted plain `return;` (the split-SP model only handles net POPS) ⇒ native
+      silently skipped the sweep and stalled downstream.
+    * FIX in external/m68k-recomp-core/profiles/genesis/code_generator.c MN_RTS: when path-local
+      _sp_popped == -4 (one unmatched push), pop the pushed target and recomp_call_addr it
+      (guest-stack-neutral), then return; 41 RTS sites carry the runtime guard. Carried as
+      native/m68k-recomp-core-pea-rts.diff (nested submodule gitlink stays public); apply-engine-patch.ps1
+      applies both patches. Rebuilt GenesisRecomp (build-recomp) + regenerated US.
+    * Verified: native sweep entries now match interp (29D0→2A2A→2CDA…); per-address write sequences
+      identical; title gate flags 5D4=0F / A65=03 / 2BA=1 set WITHOUT TITLE_ASSIST; mode oscillates 4/8.
+    * Remaining blocker (BOTH modes): splash object +10 ($FF1A18) stays 0 and scroll accumulators
+      $FF0A90/$FF0A92 stay 0; main fiber waits in the $14C30 loop (`cmpi #1,$A(A4)`); the V-int mode-8
+      long branch func_006D60→6DE0→098000 script VM runs every frame but never completes. TITLE_ASSIST+Start
+      regressed (5960 no longer reached): the assist path now blocks in the same splash wait — assist and
+      authentic paths converge on one blocker.
+    * => Next: find the healthy-boot writer of $FF1A18=1 / $FF0A90/92 (suspect: 098000 script VM / mode-8
+      6D60 chain, gated on a Z80 SMPS ack for the splash jingle); satisfy that handshake (runner fix or
+      documented SPLASH assist); re-test interactive title and Start→func_0063DE.
   Next experiments (anticipated, in order):
-  1. Bus-tap object-table ($FF1A0E+) writes during the mode-4 splash (rdb bus ring / PAD-TL-style tap) to
-     find the object spawn/init routine that seeds strides/handlers; the second func_0030E2 walk spins on
-     a zero-stride object. Promote that real function entry ([functions] extra), NOT the interior
-     jump-table fragments; re-test mode 4→8, interactive title, and Start→func_0063DE without TITLE_ASSIST.
+  1. Decode the splash-completion path: bus-tap $FF1A18/$FF0A90/$FF0A92 writers against a healthy
+     reference (phase-matched oracle RAM watch, or interp with the wait satisfied); decode the 098000
+     script VM per-step wait (likely Z80 ack). Fix the handshake or add a documented SPLASH assist;
+     re-test mode 4→8, interactive title, and Start→func_0063DE without TITLE_ASSIST; restore assist-path
+     regression coverage (s53 regressed it).
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.

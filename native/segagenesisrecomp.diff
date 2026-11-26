@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..a637983 100644
+index 4eee55c..c2dff17 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -254,11 +254,65 @@ index 4eee55c..a637983 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
+@@ -2045,11 +2215,28 @@ uint32_t m68k_read32(uint32_t byte_addr)
+     return ((uint32_t)hi << 16) | (uint32_t)lo;
+ }
+ 
++/* s53 OBJ-TL: tap 68K writes into work RAM ($FF0000..$FF2212: stack,
++ * manager flags, object table). Writer PC is real under
++ * GENESIS_FORCE_INTERP, 0 in native recomp. Diffing two runs' write
++ * sequences locates the first native/interp divergence. */
++static int s_obj_tl = -1;
++static unsigned long s_obj_tl_count;
++static void obj_tl_note(uint32_t addr, uint32_t val, int size)
++{
++    if (s_obj_tl < 0) s_obj_tl = getenv("GENESIS_OBJ_TL") ? 1 : 0;
++    if (!s_obj_tl || s_obj_tl_count >= 600000) return;
++    if (addr < 0xFF0000u || addr >= 0xFF2212u) return;
++    s_obj_tl_count++;
++    fprintf(stderr, "[OBJ-TL] f=%lu pc=%06X a=%06X v=%06X s=%d\n",
++            (unsigned long)g_frame_count, g_cpu.PC & 0xFFFFFFu, addr, val, size);
++}
++
+ void m68k_write16(uint32_t byte_addr, uint16_t val)
+ {
+     byte_addr &= 0xFFFFFFu;
+     watchdog_check(byte_addr, 1, val);
+     bus_ring_push(byte_addr, 4);
++    obj_tl_note(byte_addr, val, 2);
+     z80_sync_for_68k_access(byte_addr, 2);
+     /* 16-bit FM writes land one byte per port per cycle on hardware. The
+      * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
+@@ -2069,6 +2256,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+     byte_addr &= 0xFFFFFFu;
+     watchdog_check(byte_addr, 1, val);
+     bus_ring_push(byte_addr, 3);
++    obj_tl_note(byte_addr, val, 1);
+     z80_sync_for_68k_access(byte_addr, 1);
+     audio_detour_write(byte_addr, val);
+     if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
+@@ -2089,6 +2277,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+     byte_addr &= 0xFFFFFFu;
+     watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
+     bus_ring_push(byte_addr, 5);
++    obj_tl_note(byte_addr, val >> 16, 2);
++    obj_tl_note(byte_addr + 2, val & 0xFFFFu, 2);
+     z80_sync_for_68k_access(byte_addr, 4);
+     /* 32-bit write = two consecutive 16-bit writes. Only matters for FM
+      * bus; SMPS never uses 32-bit to write FM regs so this is defensive
 diff --git a/runner/m68k_interp.c b/runner/m68k_interp.c
-index 1290d52..781b84e 100644
+index 1290d52..31f8824 100644
 --- a/runner/m68k_interp.c
 +++ b/runner/m68k_interp.c
-@@ -691,6 +691,39 @@ static M68kiStatus exec_one(const M68KInstr *ins, uint32_t *next_pc) {
+@@ -14,6 +14,7 @@
+  */
+ #include "m68k_interp.h"
+ #include "m68k_decoder.h"   /* recompiler/src — added to the runner include path */
++#include "reverse_debug.h"  /* s53 CALLT watch trace */
+ #include "rom_parser.h"     /* GenesisRom, rom_read* (decoder's fetch source)    */
+ #ifdef GENESIS_COSIM
+ #include "game_cycles.h"    /* game_insn_cost — clown-measured baked costs        */
+@@ -691,6 +692,39 @@ static M68kiStatus exec_one(const M68KInstr *ins, uint32_t *next_pc) {
          flags_logic(g_cpu.D[ins->reg], M68K_SIZE_L);
          return M68KI_OK;
  
@@ -298,6 +352,27 @@ index 1290d52..781b84e 100644
      case MN_LEA:
          g_cpu.A[ins->reg] = addr_ea(ins, ins->src_ea, &er);
          return M68KI_OK;
+@@ -1326,6 +1360,7 @@ static void interp_account_cycles(const M68KInstr *ins) {
+ /* Execute one instruction at g_cpu.PC; advance g_cpu.PC. */
+ M68kiStatus m68k_interp_step(void) {
+     uint32_t pc = g_cpu.PC & 0xFFFFFFu;
++    rdb_watch_note(pc);
+     if (!pc_fetchable(pc)) { g_m68ki_bad_pc = pc; return M68KI_HALT_BADADDR; }
+     if (interp_game_hook(pc)) { g_cpu.PC = pop32_rts() & 0xFFFFFFu; return M68KI_OK; }
+ 
+@@ -1343,6 +1378,12 @@ M68kiStatus m68k_interp_step(void) {
+         return M68KI_HALT_UNIMPL;
+     }
+     g_cpu.PC = next & 0xFFFFFFu;
++    /* s53: log the SOURCE of transfers into watched entries (indirect
++     * dispatch attribution). */
++    if ((next & 0xFFFFFFu) != (pc + ins.byte_length)) {
++        rdb_watch_src(pc, next & 0xFFFFFFu);
++        rdb_watch_ram(pc, next & 0xFFFFFFu);
++    }
+     /* Mirror the generated code's per-instruction cycle accounting + VBlank
+      * servicing so a floor run keeps the 68K clock advancing and lets the VBla
+      * handler fire / the game fiber yield between interpreted instructions,
 diff --git a/runner/main.c b/runner/main.c
 index 771b446..18a35fd 100644
 --- a/runner/main.c
@@ -365,7 +440,7 @@ index 3e146ce..2306f92 100644
  
  /* ---- sections ---------------------------------------------------------------- */
 diff --git a/runner/reverse_debug.c b/runner/reverse_debug.c
-index ccb0f9c..f57f6ea 100644
+index ccb0f9c..c4a80a9 100644
 --- a/runner/reverse_debug.c
 +++ b/runner/reverse_debug.c
 @@ -20,6 +20,7 @@
@@ -412,11 +487,71 @@ index ccb0f9c..f57f6ea 100644
  static struct {
      int      step_mode;
      /* For STEP_OVER: snapshot of the 68K call-stack depth at the moment
+@@ -386,6 +416,59 @@ static void rdb_insn_refresh_pending(void)
+     g_rdb_insn_pending = s_tier4.step_insn || s_tier4.break_count > 0;
+ }
+ 
++/* s53 CALLT: watch-list of manager/dispatcher function entries. */
++static int s_watch_on = -1;
++static unsigned long s_watch_n;
++static const uint32_t s_watch[] = {
++    0x0006DAu, 0x00203Cu, 0x0030E2u, 0x002752u, 0x0031B2u, 0x002A2Au,
++    0x002C0Eu, 0x002CDAu, 0x002E0Cu, 0x002E30u, 0x005FC0u, 0x006C50u,
++    0x000D92u, 0x005898u, 0x005A36u, 0x005960u, 0x0063DEu,
++    0x0029D0u, 0x00506Eu, 0x0053E4u, 0x002F38u, 0x005466u, 0x001606u,
++    0x0015C4u, 0x00551Eu,
++    0x014C40u, 0x004E78u, 0x00169Au, 0x006BFAu, 0x006C34u, 0x004FD0u,
++    0x004FE6u, 0x005022u, 0x005042u, 0x006D60u, 0x006D86u, 0x006DACu,
++    0x006DB6u, 0x006DE0u, 0x006DF4u, 0x006EDEu, 0x006EF0u, 0x098000u,
++    0x098006u, 0x0981CEu, 0x0981FAu,
++};
++void rdb_watch_note(uint32_t pc)
++{
++    if (s_watch_on < 0) s_watch_on = getenv("GENESIS_CALL_TL") ? 1 : 0;
++    if (!s_watch_on || s_watch_n >= 200000) return;
++    for (unsigned i = 0; i < sizeof s_watch / sizeof s_watch[0]; i++) {
++        if (s_watch[i] == pc) {
++            extern uint64_t g_frame_count;
++            s_watch_n++;
++            fprintf(stderr, "[CALLT] f=%lu pc=%06X\n",
++                    (unsigned long)g_frame_count, pc);
++            return;
++        }
++    }
++}
++
++void rdb_watch_src(uint32_t from, uint32_t to)
++{
++    if (s_watch_on <= 0 || s_watch_n >= 200000) return;
++    for (unsigned i = 0; i < sizeof s_watch / sizeof s_watch[0]; i++) {
++        if (s_watch[i] == to) {
++            extern uint64_t g_frame_count;
++            s_watch_n++;
++            fprintf(stderr, "[CALLSRC] f=%lu from=%06X to=%06X\n",
++                    (unsigned long)g_frame_count, from, to);
++            return;
++        }
++    }
++}
++
++void rdb_watch_ram(uint32_t from, uint32_t to)
++{
++    if (s_watch_on <= 0) return;
++    if (from < 0xFF0000u && to >= 0xFF0000u) {
++        extern uint64_t g_frame_count;
++        fprintf(stderr, "[RAMJMP] f=%lu from=%06X to=%06X\n",
++                (unsigned long)g_frame_count, from, to);
++    }
++}
++
+ void rdb_on_insn_slow(uint32_t pc)
+ {
+     int park = 0;
 diff --git a/runner/reverse_debug.h b/runner/reverse_debug.h
-index 2deb32c..3addf6b 100644
+index 2deb32c..b65bb66 100644
 --- a/runner/reverse_debug.h
 +++ b/runner/reverse_debug.h
-@@ -102,9 +102,47 @@ void rdb_on_block_slow(uint32_t block_id);
+@@ -102,9 +102,54 @@ void rdb_on_block_slow(uint32_t block_id);
   * the last N block transitions. Defined in crash_report.c. */
  void crash_report_record_block(uint32_t block_addr);
  
@@ -431,9 +566,16 @@ index 2deb32c..3addf6b 100644
 +/* s51: env-gated (GENESIS_SCHED_TL) gate dump at 6A00/5960/579E entry. */
 +void rdb_sched_trace(uint32_t block_id);
 +
++/* s53: env-gated (GENESIS_CALL_TL) function-entry watch trace, shared by
++ * native block entries and interpreter steps for control-flow diffing. */
++void rdb_watch_note(uint32_t block_id);
++void rdb_watch_src(uint32_t from, uint32_t to);
++void rdb_watch_ram(uint32_t from, uint32_t to);
++
  static inline void rdb_on_block(uint32_t block_id)
  {
      crash_report_record_block(block_id);
++    rdb_watch_note(block_id);
 +    switch (block_id) {
 +    case 0x006060u: g_bg_seen |= 1u; break;
 +    case 0x0063DEu: g_bg_seen |= 2u; break;
