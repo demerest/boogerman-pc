@@ -32,6 +32,11 @@
       });
     const modes = []; let prevMode = -1;
     const gates = [];
+    /* s59: optional per-frame write-change timeline (wt=1) for the
+     * post-confirm flow addresses; oracle-side counterpart of OBJ-TL. */
+    const wt = new URLSearchParams(location.search).get('wt');
+    const wtAddrs = [0x244, 0x254, 0x284, 0x50C, 0x502, 0x516, 0x246, 0x690, 0xA90, 0x1506, 0x1A56, 0x36EE, 0x3736, 0x25E, 0x5B4];
+    const wtPrev = {}; const wtLog = [];
     const gateFrames = [900, 1000, 1050, 1100, 1150, 1200, 1400, 1800, 2399];
     /* web ram() is little-endian per word: ramRead16 returns byte-swapped words. */
     const sw = v => ((v & 0xFF) << 8) | (v >> 8);
@@ -40,6 +45,10 @@
     function step() {
       for (const p of presses) BP.input.setVirtual(0, p.id, n >= p.st && n < p.st + p.hold);
       BP.core.run();
+      if (wt) for (const a of wtAddrs) {
+        const v = sw(BP.core.ramRead16(a));
+        if (wtPrev[a] !== v) { wtLog.push(n + ':' + a.toString(16) + '=' + v.toString(16)); wtPrev[a] = v; }
+      }
       const m = sw(BP.core.ramRead16(0x516));
       const boring = x => x === 0 || x === 4 || x === 8;
       if (m !== prevMode && (!boring(m) || !boring(prevMode))) { modes.push(n + ':' + m.toString(16)); prevMode = m; }
@@ -79,7 +88,8 @@
           }
         }
         document.getElementById('out').textContent = 'SHOTDONE ' + regs +
-          ' MODES ' + modes.join(',') + ' GATES ' + gates.join(' ');
+          ' MODES ' + modes.join(',') + ' GATES ' + gates.join(' ') +
+          (wt ? ' WT ' + wtLog.join(',') : '');
         document.title = 'SHOT DONE';
         return;
       }

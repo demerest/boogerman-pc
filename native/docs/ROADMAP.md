@@ -902,18 +902,64 @@ verifiable much sooner.
       address/value, or use FORCE_INTERP (which has its own post-splash stack bug, s54).
     * => Next: s59 V-int/main-loop cadence determinism (elevated); intro render + C8-CA→15F70
       chain; valid-script confirm retest; then M3 sound RE to retire assists.
+  - **Session 59 (2026-11-26): cadence determinism PROVEN (s58 starvation claims were
+    measurement artifacts); menu climb+confirm verified natively; web-oracle gameplay
+    route decoded (Start post-attract → 0244=1 → level load); the single remaining root
+    is the staged V-int RAM stub / intro-level script completion (s60).**
+    * Determinism: s59c (OBJ_TL on) vs s59d (OBJ_TL off), same script/env otherwise —
+      [BOOT-TL] per-V-int sequences byte-identical (2584 lines, diff=0); mode C @1005,
+      mode 10 @1104 in both. The sim is sealed per tick (sim_step.c); presentation is
+      output-only. s58's "V-int dies post-mode10 / 025E never climbs / frozen mode 4-8
+      nondeterminism" were grep artifacts (patterns omitted the pc=/vc= fields between
+      f= and a=/mode=) plus parser-rejected scripts: s58j DID climb 025E 4→6→8 @1117/1128.
+      No engine cadence fix needed; item closed.
+    * Menu route native: s59c/e (s59-menu2.input: Start@1000, B hold, Right×2 windows,
+      wide A window 1230-1300) → 025E 4→6→8, confirm 6160 @1250 (0244=2, 284|5, 050C|80,
+      025E=d7, bsr 6414). 6414 = scroll/DMA + mode-10 recommit + 200×6994 waits ×8.
+      d7≠8 → 618C (6394 table → eori #1,(obj) + bsr 631A direct load); d7==8 → flag path.
+      A 10f window can fall inside the ~11f 608E load-wait (no pad sampling) — widen it.
+    * Post-confirm stall RE: 762 clears 0244 and 76A (5076: 5162/5AEA/55CE) run ONLY at
+      cold entry — the main-loop loopback at $000802 is `bra 76E` (ROM). Per-frame head
+      work therefore runs only via indirect dispatch (dispatch.c table) from the staged
+      V-int RAM stub (FF0202/FF3832, mode-C handler 4E64→4FD8). Natively FF3832 is never
+      staged post-boot (OBJ_TL_HI tap) ⇒ 0254 shadow/5AEA/55CE never run ⇒ both the
+      menu-confirm flags and the Start flow die. Same root as s58 item 2 (intro black).
+    * Web oracle (ram-shot.html gained wt=1 per-frame change timeline; s59web2, presses
+      phase-matched to web's ~f2400 interactive title): Start@2450 with 2BA=1 →
+      5A3E/5A48(Start held)/5A56(2B4==FFFF)/5AC0(bit2)/5ACE → 2BA=FFFF, 284|5,
+      0244=[0A62]=1; ~30f later 284→0 (sound-service consumption) coincident with
+      0254=1 + FF1506=0180 level staging; 05B4 countdown; level load. 5A3E full decode:
+      2BA==0 → return (no mirror); 2BA!=0 + Start not held → 5A9E bit2 → 5AAC(0244=1);
+      Start held + 2B4==FFFF → 5AC0; else pad-history mirror (2B6 wrap).
+    * Assist s59 (glue.c, env-gated TITLE_ASSIST): OBJ_TL_HI knob (tap range, default
+      2212; level objects FF36EE/FF3832 need 4000); attract-marker chain once obj0 cont
+      >=15532: 2BA=1 + 2B4=FFFF (history-wrap emulation; s50's 2B4=1 hold blocked 5AC0)
+      + 0A62=1 (55CE-tail value); flow-gated 284 (bit2 supply pre-transition, &~5 after
+      0244/0254=1 = consumption emulation); confirm-consumption block (bit0 clear +
+      Start feed while 0244==2, retire A65 only at 0244==1). s59i/j: marker engages
+      @1740, Start edge forms @2202, but 0244=1 still never commits — 5A3E itself is
+      head work (76E runs, but 5AC0 needs bit2 at the right instant AND the 5ACE→5AEA
+      dispatch chain is stub-driven); the chain completes only once the staged V-int
+      stub runs ⇒ s60.
+    * Tooling: ram-shot.html wt=1 change timeline (web oracle); s59-menu2.input /
+      s59-startlate.input; OBJ_TL_HI; grep discipline: OBJ-TL/BOOT-TL lines carry
+      pc=/vc= fields between f= and a=/mode= — patterns must include them.
+    * => Next: s60 staged V-int RAM stub / intro-level script completion (FF3832/FF0202,
+      BB-C7 draw + C8-CA completion → 15ADA/15F70); then M3 sound RE to retire assists.
   Next experiments (anticipated, in order):
-  1. V-int/main-loop cadence (s59, elevated): post-mode-commit delivery starvation is
-     nondeterministic (frozen mode 4/8; pad sampling dies; post-load/intro black screens).
-     Make V-int delivery and main-loop completion host-speed independent; then re-test the
-     menu climb/confirm (Right×4 calls = d7 8, A confirms) and attract intro rendering.
-  2. Intro/level chain (s59): why BB-C7 objects don't draw (FF3832 staging / V-int mode-C
-     consumption; 4B8C template attach), C8-CA completion → 15ADA/15F70 scroll-in seed;
-     retest synthesized 0244=2 with a VALID sequential script (s57h was parser-rejected).
-  3. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284 bit2 service
-     tick (2B6 pad history), 054C/0524/0548 acks, Z80 iff1/$0038 handler; audio fidelity.
-  4. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs; route
-     validation (scrolling/collision/transitions) vs web once interactive.
+  1. Intro/level chain (s60, THE remaining root): seed/complete the BB-C7 intro stager
+     and C8-CA scripts so FF3832/FF0202 staging happens and the mode-C V-int handler
+     runs the staged RAM stub (which performs the per-frame head work: 0254 shadow,
+     5AEA flow dispatch, 55CE marker). Levers: 4B8C template attach (obj+4E table;
+     37BE8 reads FFFF), C8-CA completion → 15ADA/15F70 scroll-in seed; verify with
+     OBJ_TL_HI=4000 + wt=1 web phase-match. Both the menu-confirm and Start-post-attract
+     routes converge here.
+  2. Route validation once interactive: menu climb/confirm (s59-menu2) and Start-late
+     (s59-startlate) into gameplay; scrolling/collision/transitions vs web oracle.
+  3. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284 bit2
+     service tick (2B6 pad history wrap), 054C/0524/0548 acks, Z80 iff1/$0038 handler;
+     retire the s59 marker/consumption emulations; audio fidelity.
+  4. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
   5. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
   vint_routine, stacks, object table (use web port's Dev RAM watch + framework

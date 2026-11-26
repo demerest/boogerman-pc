@@ -1,0 +1,13 @@
+# s59 (frame-index form): Start -> C; hold B so 59D2 pumps 608E/menu.
+# d7 starts at 025E=4; each Right +2 -> two Right windows reach 8; A confirms
+# (6160: 0244=2, 0284|5, 050C|80) -> teardown + level load.
+1000 START
+1040 -
+1100 B
+1110 B+RIGHT
+1140 B
+1160 B+RIGHT
+1190 B
+1230 B+A
+1300 B
+2000 -

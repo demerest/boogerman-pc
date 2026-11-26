@@ -1,0 +1,5 @@
+# s59 (frame-index form): let the attract demo run to the 15532 wait so the
+# 2BA=1 marker assist engages (web phase-match: Start after attract), then
+# Start -> 5A3E/5AAC -> 0244=1 -> level load. No B (menu path not wanted).
+2200 START
+2240 -

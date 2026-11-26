@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..4bec6eb 100644
+index 4eee55c..747b014 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -85,7 +85,7 @@ index 4eee55c..4bec6eb 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1026,242 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,293 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -168,7 +168,19 @@ index 4eee55c..4bec6eb 100644
 +             * never sets bit2 (2B6 history never wraps); supply it here.
 +             * ONLY bit2: 5968 gate4 requires 284&9==0 (5994 bne->return),
 +             * so bits0/3 must stay clear; 6AAE consumes bit2 leaving 0. */
-+            m68k_write16(0x00FF0284u, (uint16_t)(m68k_read16(0x00FF0284u) | 0x0004u));
++            /* s59: bit2 warm-up supply only pre-transition; once the guest
++             * commits the Start flow (0244/0254=1) emulate the sound-service
++             * consumption of 284 bits0+2 (web: 284 5->0 coincident with the
++             * 1506=0180 level staging). */
++            {
++                static int s_flow_seen;
++                if (m68k_read16(0x00FF0244u) == 1 || m68k_read16(0x00FF0254u) == 1)
++                    s_flow_seen = 1;
++                if (!s_flow_seen)
++                    m68k_write16(0x00FF0284u, (uint16_t)(m68k_read16(0x00FF0284u) | 0x0004u));
++                else
++                    m68k_write16(0x00FF0284u, (uint16_t)(m68k_read16(0x00FF0284u) & ~0x0005u));
++            }
 +            /* s58: retire only on the level-select confirm (6160 writes
 +             * 0244=2). s57 also retired at mode 10, but that killed the
 +             * 59D2->608E menu pump: the in-608E menu (6108) polls pressed
@@ -178,17 +190,56 @@ index 4eee55c..4bec6eb 100644
 +             * silence 6482's title staging via its OTHER gate (0246) so the
 +             * 0180 DMA block survives; the web oracle keeps A65=0 during the
 +             * intro for the same reason. */
-+            if (m68k_read16(0x00FF0244u) != 0)
-+                m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) & ~0x01u));
-+            else
-+                m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x03u));
-+            if (md_pre == 0x0010u && m68k_read16(0x00FF0244u) == 0)
-+                m68k_write16(0x00FF0246u, 0x0000u);
-+            /* s56: 5968 gate3 is 2BA==0 (5986 bne->return); 2BA=1 is the
-+             * attract-demo marker set by 55CE when A65 bit1 holds. The old
-+             * assist forced 2BA=1 (s41 misread) and blocked Start itself.
-+             * Hold it 0 so the dispatcher stays interactive. */
-+            m68k_write16(0x00FF02BAu, 0x0000u);
++            /* s59: confirm (6160) sets 0244=2, 284 bit0 (sound cmd pending)
++             * and a synthesized Start edge (050C|80). Natively the sound
++             * service never consumes bit0 (M3 family), so 5968 gate4 stays
++             * closed; retiring A65 bit0 immediately also kills gate2 before
++             * the edge is taken. Emulate the consumption: clear bit0, hold
++             * Start in the raw sample while 0244==2, and retire only once
++             * the guest's own Start transition commits (0244=1). */
++            {
++                static int s_confirm_seen, s_retired;
++                uint16_t g244 = m68k_read16(0x00FF0244u);
++                if (g244 == 2) s_confirm_seen = 1;
++                if (g244 == 1) s_retired = 1;
++                if (s_confirm_seen)
++                    m68k_write16(0x00FF0284u,
++                                 (uint16_t)(m68k_read16(0x00FF0284u) & ~0x0001u));
++                if (s_retired)
++                    m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) & ~0x01u));
++                else
++                    m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x03u));
++                if (!s_retired && (md_pre == 0x0010u || s_confirm_seen))
++                    m68k_write16(0x00FF0246u, 0x0000u);
++                if (g244 == 2) {
++                    m68k_write16(0x00FF0502u, (uint16_t)(m68k_read16(0x00FF0502u) | 0x0080u));
++                    m68k_write16(0x00FF02B8u, (uint16_t)(m68k_read16(0x00FF02B8u) | 0x0080u));
++                }
++            }
++            /* s59: web oracle (s59web2): the authentic gameplay route is
++             * 2BA=1 (attract marker, 55CE with A65 bit1) + Start -> 5A3E
++             * 5AAC -> 0244=1, 284|5, sound service consumes 284 ->
++             * 1506=0180 level load. Natively 55CE (main 5110, inside 5076)
++             * is never reached — object-thread yield semantics skip the
++             * 5076 tail — so supply the marker once obj0 enters the
++             * attract script (cont >= 15532). Pre-attract keep 0 so the
++             * interactive 5968 dispatcher still works. */
++            {
++                uint32_t cont = m68k_read32(0x00FF1A12u) & 0xFFFFFFu;
++                if (cont >= 0x15532u) {
++                    m68k_write16(0x00FF02BAu, 0x0001u);
++                    /* 5A56->5AC0 needs the pad-history counter wrapped
++                     * (2B4=FFFF); natively the history never wraps and the
++                     * s50 2B4=1 hold blocks it. 5ADE then loads 0244 from
++                     * 0A62 (=1 on web post-attract; its writer sits in the
++                     * unreachable 55CE tail). Supply both. */
++                    m68k_write16(0x00FF02B4u, 0xFFFFu);
++                    if (!m68k_read16(0x00FF0A62u))
++                        m68k_write16(0x00FF0A62u, 0x0001u);
++                } else {
++                    m68k_write16(0x00FF02BAu, 0x0000u);
++                }
++            }
 +            if (!m68k_read16(0x00FF025Au)) m68k_write16(0x00FF025Au, 0x0001u);
 +            if (m68k_read8(0x00FF05D4u) < 0x0Fu) m68k_write8(0x00FF05D4u, 0x0Fu);
 +            /* s51: with the V-int mode stubs now emitted, the guest warm-up reaches
@@ -328,7 +379,7 @@ index 4eee55c..4bec6eb 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1842,16 +2111,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +2162,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -354,7 +405,7 @@ index 4eee55c..4bec6eb 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2315,33 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2366,38 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -365,15 +416,20 @@ index 4eee55c..4bec6eb 100644
 +static int s_obj_tl = -1;
 +static unsigned long s_obj_tl_count;
 +static unsigned long s_obj_tl_max;
++static uint32_t s_obj_tl_hi;
 +static void obj_tl_note(uint32_t addr, uint32_t val, int size)
 +{
 +    if (s_obj_tl < 0) {
 +        s_obj_tl = getenv("GENESIS_OBJ_TL") ? 1 : 0;
 +        const char *m = getenv("GENESIS_OBJ_TL_MAX");
 +        s_obj_tl_max = m ? strtoul(m, NULL, 10) : 600000ul;
++        /* s59: level/intro objects live above the title object table
++         * (FF36EE level controller, FF3832 staging); allow widening the tap. */
++        const char *h = getenv("GENESIS_OBJ_TL_HI");
++        s_obj_tl_hi = h ? (uint32_t)strtoul(h, NULL, 16) : 0x2212u;
 +    }
 +    if (!s_obj_tl || s_obj_tl_count >= s_obj_tl_max) return;
-+    if (addr < 0xFF0000u || addr >= 0xFF2212u) return;
++    if (addr < 0xFF0000u || addr >= 0xFF0000u + s_obj_tl_hi) return;
 +    s_obj_tl_count++;
 +    fprintf(stderr, "[OBJ-TL] f=%lu pc=%06X a=%06X v=%06X s=%d\n",
 +            (unsigned long)g_frame_count, g_cpu.PC & 0xFFFFFFu, addr, val, size);
@@ -388,7 +444,7 @@ index 4eee55c..4bec6eb 100644
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2069,6 +2361,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2417,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -396,7 +452,7 @@ index 4eee55c..4bec6eb 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2089,6 +2382,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2438,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);
