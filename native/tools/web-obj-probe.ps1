@@ -22,10 +22,15 @@ function l($o) { return (w $o) * 65536 + (w ($o+2)) }
 "ram200: {0:X4} {1:X4} {2:X4} {3:X4} {4:X4} {5:X4}" -f (w 0x200),(w 0x202),(w 0x204),(w 0x206),(w 0x208),(w 0x20A)
 $a = 0x1A0E
 for ($i = 0; $i -lt 10; $i++) {
-  $w0 = w $a; $w2 = w ($a+2); $h = l ($a+4); $w68 = w ($a+68); $w10 = w ($a+10); $w16 = w ($a+16)
-  "obj@{0:X6}: w0={1:X4} w2={2:X4} handler={3:X6} +10={4:X4} +16={5:X4} +68={6:X4}" -f (0xFF0000+$a), $w0, $w2, $h, $w10, $w16, $w68
+  $w0 = w $a
   $stride = $w0 -band 0x7FFF
   if ($stride -eq 0 -or $w0 -eq 0xFFFF -or $stride -gt 0x700) { "end/free slot"; break }
+  $w2 = w ($a+2); $h = l ($a+4); $w68 = w ($a+68); $w10 = w ($a+10); $w16 = w ($a+16)
+  try {
+    "obj@{0:X6}: w0={1:X4} w2={2:X4} handler={3:X6} +10={4:X4} +16={5:X4} +68={6:X4} +40={7:X4} +42={8:X4}" -f (0xFF0000+$a), $w0, $w2, $h, $w10, $w16, $w68, (w ($a+40)), (w ($a+42))
+  } catch {
+    "obj@{0:X6}: w0={1:X4} w2={2:X4} (raw) +10={3} +16={4} +68={5} +40={6} +42={7}" -f (0xFF0000+$a), $w0, $w2, $w10, $w16, $w68, (w ($a+40)), (w ($a+42))
+  }
   $a += $stride
   if ($a -ge 0x2212) { "end of table"; break }
 }

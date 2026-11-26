@@ -758,12 +758,48 @@ verifiable much sooner.
     * => Next: trace the f747 respawn (3450 death tail → $6C3C branch → 2CDA spawn params) against
       web's title-controller seed; find the flag selecting camera-object vs title-script; fix or
       assist; re-test 5960/Start→63DE; restore assist-path regression coverage.
+  - **Session 55 (2026-11-26): spawn chain fully decoded; s54 death-tail misdecode corrected;
+    oracle region truth (web=EU); blocker moved INTO the title bytecode VM (6F82) yield/ack.**
+    * Oracle region: web/rom/boogerman.gen.js sha1 = 4fd33ee… = the EU dump. All prior web-vs-native
+      comparisons were cross-region (native US). run-us-misses.ps1 gained -Rom eu; EU native vs web
+      EU is the clean same-ROM pair. EU native behaves like US native post-splash (camera stall),
+      so the blocker is engine-side, not region-side.
+    * Death tail CORRECTED: $3450-$34AE is a sprite-release loop — andi.b #$FE,($FF16EE,D2.W);
+      move.w #$180,($FF182E,D6.W); addi #2,d6; dbra d2 — NOT a bra $6C3C (s54 misread the andi
+      extension word 6000 + move opcode 37BC as bra.w). +40/+42 = sprite base/count (template[-8]/
+      [-6]); +64/+66 = script words; ALL identical native vs web at spawn (s54's "+40/+42 diverge"
+      was reading +64/+66).
+    * Spawn chain: 2C0E (d0/d1/d3 ← 0A58/5A/5C, d7=FFFF) → 2CDA (template ptr = ROM[$3848+d3*4];
+      w0=a1[-2], w2=a1[-4]; tst d7 selects template vs RAM 027E/0280 for +40/+42) → 2E30 free-object
+      stride walk / 2E0C free-sprite scan. $34E0 = inline-param spawn helper (jsr; d4/d5/d3 read
+      from the return-address stream); $49B0 = yield (pops resume PC into object+48).
+    * obj2 tail: 1AB80 camera-Y gate → 1AB98 jsr 34E0 with inline type 0x2E (camera) in US — authentic
+      US stage order; EU inline type 5. EU native spawns the title controller (type 5) correctly
+      @f735, but its thread never leaves the camera-handler yield oscillation (cont 54BA/54C0 EU,
+      54F6/54FC US); web EU reaches the attract loop (cont 154C0) by f760.
+    * Title script 15740: jsr 6F82 = INLINE BYTECODE VM (consumes bytes from the stack stream,
+      deposits sound cmd at 0518, tail-dispatches 9816C/98194), then +54 countdown to 0x127. The
+      stall is the VM's script-pointer/ack yield interaction — same stack-idiom family as s53
+      PEA+RTS — not spawn parameters. That is the s56 lever.
+    * Pacing sensitivity: WITHOUT OBJ_TL (fast host run) the object sweep dies @f65; WITH OBJ_TL the
+      splash completes deterministically (s55a/s55e logs line-identical). Boot completion depends on
+      host pacing (audio-queue yield suspected) — needs a deterministic-pacing fix.
+    * Trace truth: the hybrid interp path bypasses rdb_watch_note (CALLT blind there); OBJ-TL writer
+      PC is the reliable trace for unemitted code. CALLT watch extended with death-tail + 34E0/28C4/31F2.
+    * Assist regression restored: US -TitleAssist -SplashAssist + Start@1700 completes splash (@552)
+      but 5960/6060/63DE/6F82 never entered ⇒ init-flag assists insufficient; the gate is inside the
+      VM/camera stage. SPLASH_ASSIST remains documented, off by default.
+    * => Next: EU-pair trace of the 6F82 VM byte consumption + 49B0 yield/resume stack cells
+      (FF01F0-FA, object+48) vs web phase-matched; find the stuck opcode/ack; fix the codegen stack
+      idiom or add a documented VM assist; re-test Start→63DE; deterministic pacing for OBJ_TL-off runs.
   Next experiments (anticipated, in order):
-  1. Post-splash spawn divergence: decode func_003450 death tail ($3462-$34AE, cmp #$FE / bra $6C3C)
-     and the $6C3C path that seeds the next-stage object; bus-tap the f747 spawn params (native) vs
-     the web title-controller seed (cont 155xx, w2=5); identify the selecting flag (mode/28A/0516
-     suspect); fix the branch or add a documented spawn assist; re-test interactive title and
-     Start→func_0063DE without TITLE_ASSIST; restore assist-path regression coverage.
+  1. Title-VM stall (s56): on the EU same-ROM pair, trace func_006F82 inline-bytecode consumption and
+     the 49B0 yield/resume stack protocol (FF01F0-FA pushes/pops, object+48) native vs web
+     phase-matched; identify the opcode/ack where the native script pointer stops advancing (camera
+     yield oscillation 54BA/54C0 vs web attract 154C0); fix the codegen stack idiom (s53 family) or
+     add a documented VM-assist; re-test interactive title and Start→func_0063DE without TITLE_ASSIST.
+     Also make boot pacing deterministic (OBJ_TL-off runs currently die at f65; audio-queue yield
+     suspect) so regression runs don't depend on host speed.
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
