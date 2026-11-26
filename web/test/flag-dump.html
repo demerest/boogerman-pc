@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>flag dump</title></head>
+<body>
+<div id="out">waiting</div>
+<script src="../vendor/gpgx/gpgx.web.js"></script>
+<script src="../vendor/gpgx/gpgx.wasm.js"></script>
+<script src="../rom/boogerman.gen.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/hooks.js"></script>
+<script src="../js/patches.js"></script>
+<script src="../js/shaders.js"></script>
+<script src="../js/audio.js"></script>
+<script src="../js/input.js"></script>
+<script src="../js/video.js"></script>
+<script src="../js/cheats.js"></script>
+<script src="../js/states.js"></script>
+<script src="../js/mods.js"></script>
+<script src="../js/core.js"></script>
+<script>
+(async function () {
+  try {
+    await BP.core.init({ silent: true });
+    BP.core.loadGame(BP.util.b64ToBytes(window.BP_ROM_B64), 'boogerman.gen');
+    const target = parseInt(new URLSearchParams(location.search).get('frames') || '600', 10);
+    let n = 0;
+    function step() {
+      BP.core.run();
+      if (++n >= target) {
+        const w = (a) => BP.core.ramRead16(a).toString(16).padStart(4, '0');
+        const parts = [
+          'FLAGS',
+          '244=' + w(0x244), '284=' + w(0x284), '2BA=' + w(0x2BA),
+          '5B4=' + w(0x5B4), '5D4=' + w(0x5D4), '5D6=' + w(0x5D6), '5D8=' + w(0x5D8),
+          'A64=' + w(0xA64), 'A62=' + w(0xA62),
+          '502=' + w(0x502), '50C=' + w(0x50C), '50E=' + w(0x50E),
+          '24A=' + w(0x24A), '248=' + w(0x248), '25E=' + w(0x25E), '25A=' + w(0x25A),
+          '276=' + w(0x276), '278=' + w(0x278),
+          '260=' + w(0x260) + w(0x262), '45A=' + w(0x45A) + w(0x45C),
+          '516=' + w(0x516), '5D0=' + w(0x5D0)
+        ];
+        document.getElementById('out').textContent = parts.join(' ');
+        document.title = 'FLAGS DONE';
+        return;
+      }
+      setTimeout(step, 0);
+    }
+    setTimeout(step, 0);
+  } catch (e) {
+    document.getElementById('out').textContent = 'ERR ' + e.message;
+  }
+})();
+</script>
+</body>
+</html>

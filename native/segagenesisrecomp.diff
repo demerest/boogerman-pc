@@ -1,8 +1,16 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..9da7258 100644
+index 4eee55c..9ae949d 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
-@@ -225,6 +225,31 @@ void (*g_fm_write_trace_fn )(uint32_t address,      uint8_t value, uint32_t targ
+@@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
+ #endif
+ 
+ #include "crash_report.h"
++#include "reverse_debug.h"
+ 
+ #include "genesis_machine.h"
+ /* Debug write-trace hooks (--mem-write-log, FM trace) are normally defined in
+@@ -225,6 +226,31 @@ void (*g_fm_write_trace_fn )(uint32_t address,      uint8_t value, uint32_t targ
  void (*g_mem_write_trace_fn)(uint32_t byte_address, uint8_t value, uint32_t target_cycle) = NULL;
  
  #define INSN_WATCHDOG_LIMIT GENESIS_NATIVE_WATCHDOG_LIMIT
@@ -34,7 +42,7 @@ index 4eee55c..9da7258 100644
  GenesisNativeRegisterBudget g_native_register_budget={0,0,0,1,0,0};
  #define s_insn_watchdog_base g_native_register_budget.watchdog_base
  #define s_interleave_active g_native_register_budget.interleave_active
-@@ -242,7 +267,7 @@ static void instruction_watchdog_reset(void)
+@@ -242,7 +268,7 @@ static void instruction_watchdog_reset(void)
  
  static void instruction_watchdog_check(void)
  {
@@ -43,7 +51,7 @@ index 4eee55c..9da7258 100644
          return;
  
      char reason[160];
-@@ -329,7 +354,7 @@ static void dump_bus_ring(void)
+@@ -329,7 +355,7 @@ static void dump_bus_ring(void)
  static void watchdog_check(uint32_t addr, int is_write, uint32_t val)
  {
      (void)val;
@@ -52,7 +60,7 @@ index 4eee55c..9da7258 100644
          return;
  
      char reason[128];
-@@ -828,9 +853,15 @@ void glue_run_game_chunk(uint32_t cycles)
+@@ -828,9 +854,15 @@ void glue_run_game_chunk(uint32_t cycles)
   * queue-read where hardware places it after (the S3 giant-ring entry-sound
   * kill). */
  uint64_t g_chunk_yield_count = 0;
@@ -69,7 +77,7 @@ index 4eee55c..9da7258 100644
          uint32_t now = g_audio_cycle_counter;
          if (s_main_cpu_divisor > 1 && !s_irq_in_progress && now > s_budget_cyc_seen) {
              uint32_t elapsed = now - s_budget_cyc_seen;
-@@ -984,6 +1015,7 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -984,6 +1016,7 @@ static void own_deliver_vint(GVDP *vdp)
      uint8_t vbla_routine_at_entry =
          glue_peek8(g_game_layout.vint_routine_addr & 0xFFFFFF);
  #endif
@@ -77,7 +85,7 @@ index 4eee55c..9da7258 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1025,55 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,114 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -92,6 +100,36 @@ index 4eee55c..9da7258 100644
 +            extern GenesisMachine g_machine;
 +            g_machine.bus.z80_ram[0x0FAD] = 0xFE;
 +            g_machine.bus.z80_ram[0x0FC2] = 0x01;
++        }
++    }
++    /* Boogerman TITLE-ASSIST (s50): the 68K sound/pad service init never
++     * completes natively, leaving the dispatcher init flags 0. Hold the gates
++     * open with the web-oracle interactive-title values (f2400 snapshot):
++     * 284 bits0+3, a65 bits0+1, 2BA=1, 25A=1, 5D4=0F. 5D8=0 is authentic
++     * (web also 0): with reload 0 the warm-up ticks every frame once 284&2. */
++    {
++        static int tassist = -1;
++        if (tassist < 0) tassist = getenv("GENESIS_TITLE_ASSIST") != NULL;
++        extern unsigned long g_snd_frame;
++        if (tassist && g_snd_frame >= 200) {
++            m68k_write16(0x00FF0284u, (uint16_t)(m68k_read16(0x00FF0284u) | 0x0009u));
++            m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x03u));
++            if (!m68k_read16(0x00FF02BAu)) m68k_write16(0x00FF02BAu, 0x0001u);
++            if (!m68k_read16(0x00FF025Au)) m68k_write16(0x00FF025Au, 0x0001u);
++            if (m68k_read8(0x00FF05D4u) < 0x0Fu) m68k_write8(0x00FF05D4u, 0x0Fu);
++            /* s50: the pad-history table ($FFFE00+2B6) is never filled natively
++             * (2B6 does not wrap), so func_005A36 overwrites the V-int's raw
++             * $FF0502 sample with 0 and the pressed edge never forms. Mirror the
++             * raw sample into $FF02B8 and hold $FF02B4=1 so 5A36's signed
++             * compare (286<2B4) takes the $5A8A path that copies 2B8->502. */
++            if (!m68k_read16(0x00FF02B4u)) m68k_write16(0x00FF02B4u, 0x0001u);
++            m68k_write16(0x00FF02B8u, m68k_read16(0x00FF0502u));
++            /* s50: the title dispatcher (5960) runs only on mode-8 frames while
++             * 5898 recomputes a 1-frame pressed pulse each frame, so a press on a
++             * mode-4 frame is lost. Force prev=0 so the edge is level-triggered
++             * (held button reads as pressed every frame) and the dispatcher catches it. */
++            m68k_write16(0x00FF0508u, 0x0000u);
++            m68k_write16(0x00FF050Au, 0x0000u);
 +        }
 +    }
 +    /* TEMP DEBUG (Boogerman M3 cosim): env-gated boot timeline. Logs one line
@@ -109,6 +147,28 @@ index 4eee55c..9da7258 100644
 +                    g_snd_frame, vc, md, (unsigned)(g_audio_cycle_counter - cyc_before));
 +        }
 +    }
++    /* TEMP DEBUG (Boogerman s50): env-gated bus-tap dump of the last 60 work-RAM
++     * writes at V-int entry, to establish the per-frame pad write order
++     * (502/508/50C) with func attribution. */
++    {
++        static int pt_on = -1;
++        if (pt_on < 0) pt_on = getenv("GENESIS_PAD_TL") != NULL;
++        if (pt_on) {
++            extern unsigned long g_snd_frame;
++            if (g_snd_frame >= 3995 && g_snd_frame < 4008) {
++                rdb_snapshot_begin();
++                uint32_t n = rdb_snapshot_count();
++                uint32_t lo = n > 4000 ? n - 4000 : 0;
++                for (uint32_t i = lo; i < n; i++) {
++                    char buf[256];
++                    if (rdb_format_entry(i, buf, sizeof buf) > 0 &&
++                        (strstr(buf, "0xFF04D") || strstr(buf, "0xFF050") || strstr(buf, "0xFF051")))
++                        fprintf(stderr, "[PAD-TL] f=%lu %s\n", g_snd_frame, buf);
++                }
++                rdb_snapshot_end();
++            }
++        }
++    }
 +    /* TEMP DEBUG (Boogerman Start->game): env-gated joy/mode timeline around a
 +     * scripted Start press. Shows raw held ($FF0502), processed pressed edge
 +     * ($FF050C|$FF050E), mode ($FF0516) and attract timer ($FF05B4). */
@@ -118,22 +178,29 @@ index 4eee55c..9da7258 100644
 +        if (jt_on) {
 +            extern unsigned long g_snd_frame;
 +            if ((g_snd_frame >= 1580 && g_snd_frame < 1700) ||
-+                (g_snd_frame >= 1400 && g_snd_frame < 2400 && (g_snd_frame % 20) == 0)) {
++                (g_snd_frame >= 1400 && g_snd_frame < 2400 && (g_snd_frame % 20) == 0) ||
++                (g_snd_frame >= 3900 && g_snd_frame < 4300 && (g_snd_frame % 5) == 0) ||
++                (g_snd_frame >= 3990 && g_snd_frame < 4030)) {
 +                unsigned raw = (g_ram[0x502] << 8) | g_ram[0x503];
 +                unsigned e1  = (g_ram[0x50C] << 8) | g_ram[0x50D];
 +                unsigned e2  = (g_ram[0x50E] << 8) | g_ram[0x50F];
 +                unsigned md  = (g_ram[0x516] << 8) | g_ram[0x517];
 +                unsigned tm  = (g_ram[0x5B4] << 8) | g_ram[0x5B5];
 +                extern unsigned g_bg_seen;
-+                fprintf(stderr, "[JOY-TL] f=%lu raw=%04X edge=%04X mode=%04X tm=%04X a65=%02X seen=%X\n",
-+                        g_snd_frame, raw, e1 | e2, md, tm, g_ram[0xA65], g_bg_seen);
++                fprintf(stderr, "[JOY-TL] f=%lu raw=%04X edge=%04X mode=%04X mdpre=%04X p4de=%04X prev=%04X tm=%04X a65=%02X g284=%04X b=%04X q=%04X d4=%02X seen=%X flow=%X\n",
++                        g_snd_frame, raw, e1 | e2, md, md_pre,
++                        (g_ram[0x4DE] << 8) | g_ram[0x4DF], (g_ram[0x508] << 8) | g_ram[0x509],
++                        tm, g_ram[0xA65],
++                        (g_ram[0x284] << 8) | g_ram[0x285], (g_ram[0x2BA] << 8) | g_ram[0x2BB],
++                        (g_ram[0x25A] << 8) | g_ram[0x25B], g_ram[0x5D4], g_bg_seen, g_bg_flow);
++                g_bg_flow = 0; /* main runs after this print; show it next frame */
 +            }
 +        }
 +    }
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1842,16 +1923,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +1983,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -226,23 +293,24 @@ index 3e146ce..2306f92 100644
  
  /* ---- sections ---------------------------------------------------------------- */
 diff --git a/runner/reverse_debug.c b/runner/reverse_debug.c
-index ccb0f9c..cd7b369 100644
+index ccb0f9c..2c1a1b7 100644
 --- a/runner/reverse_debug.c
 +++ b/runner/reverse_debug.c
-@@ -236,6 +236,8 @@ int g_rdb_resume_now    = 0;
+@@ -236,6 +236,9 @@ int g_rdb_resume_now    = 0;
  uint64_t g_rdb_slow_count = 0;
  uint64_t g_rdb_park_count = 0;
  
 +unsigned g_bg_seen = 0;
++unsigned g_bg_flow = 0;
 +
  static struct {
      int      step_mode;
      /* For STEP_OVER: snapshot of the 68K call-stack depth at the moment
 diff --git a/runner/reverse_debug.h b/runner/reverse_debug.h
-index 2deb32c..bff4c01 100644
+index 2deb32c..541703f 100644
 --- a/runner/reverse_debug.h
 +++ b/runner/reverse_debug.h
-@@ -102,9 +102,20 @@ void rdb_on_block_slow(uint32_t block_id);
+@@ -102,9 +102,42 @@ void rdb_on_block_slow(uint32_t block_id);
   * the last N block transitions. Defined in crash_report.c. */
  void crash_report_record_block(uint32_t block_addr);
  
@@ -250,14 +318,36 @@ index 2deb32c..bff4c01 100644
 + * (1=006060 title, 2=0063DE game-init, 4=006F82 start-path, 8=005960 dispatcher). */
 +extern unsigned g_bg_seen;
 +
++/* s50: per-V-int dispatcher flow mask (cleared by glue before the handler):
++ * 1=5976 early-return, 2=5978, 4=599A mode-wait, 8=59CA, 0x10=59D2, 0x20=6F82. */
++extern unsigned g_bg_flow;
++
  static inline void rdb_on_block(uint32_t block_id)
  {
      crash_report_record_block(block_id);
 +    switch (block_id) {
 +    case 0x006060u: g_bg_seen |= 1u; break;
 +    case 0x0063DEu: g_bg_seen |= 2u; break;
-+    case 0x006F82u: g_bg_seen |= 4u; break;
-+    case 0x005960u: g_bg_seen |= 8u; break;
++    case 0x006F82u: g_bg_seen |= 4u; g_bg_flow |= 0x20u; break;
++    case 0x005960u: g_bg_seen |= 8u; g_bg_flow |= 0x40u; break;
++    case 0x005898u: g_bg_seen |= 0x10u; break;
++    case 0x005A36u: g_bg_seen |= 0x20u; break;
++    case 0x00506Eu: g_bg_seen |= 0x40u; g_bg_flow |= 0x2000u; break;
++    case 0x0006DAu: g_bg_seen |= 0x80u; g_bg_flow |= 0x4000u; break;
++    case 0x000786u: g_bg_seen |= 0x100u; break;
++    case 0x0039ECu: g_bg_seen |= 0x200u; break;
++    case 0x000AD2u: g_bg_seen |= 0x400u; break;
++    case 0x005976u: g_bg_flow |= 1u; break;
++    case 0x005978u: g_bg_flow |= 2u; break;
++    case 0x00599Au: g_bg_flow |= 4u; break;
++    case 0x0059CAu: g_bg_flow |= 8u; break;
++    case 0x0059D2u: g_bg_flow |= 0x10u; break;
++    case 0x0027FEu: g_bg_flow |= 0x80u; break;
++    case 0x0030E2u: g_bg_flow |= 0x100u; break;
++    case 0x000C66u: g_bg_flow |= 0x200u; break;
++    case 0x000C90u: g_bg_flow |= 0x400u; break;
++    case 0x000964u: g_bg_flow |= 0x800u; break;
++    case 0x0015C4u: g_bg_flow |= 0x1000u; break;
 +    default: break;
 +    }
      if (g_rdb_break_pending) rdb_on_block_slow(block_id);

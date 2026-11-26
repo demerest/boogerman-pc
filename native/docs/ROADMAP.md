@@ -637,13 +637,30 @@ verifiable much sooner.
     * => Last RE gap: the title/sound init that seeds $FF05D8 (and a65/2BA/284) never runs; find
       its gate (likely the Z80 sound-started flag) and make it run, or seed 5D8 so warm-up
       completes. Combined with the earlier edge-ordering gate, both must be resolved for Start→game.
+  - **Session 50 (2026-11-26): oracle-grounded title assist + pad pipeline fixed; edge forms; dispatcher cadence is the last gap.**
+    * Web-oracle flag dump (web/test/flag-dump.html, f2400, byte-swapped per little-endian-word):
+      interactive title has 5D4=0F, a65=03, 2BA=0001, 25A=0001, 25E=0004, 276=0080, 278=0090,
+      and **5D8=0000 even on web** ⇒ s49's "5D8=0 blocks warm-up" was wrong: with reload 0 the
+      warm-up ticks every frame once 284&2 holds. The native gap is the init FLAGS, not 5D8.
+    * GENESIS_TITLE_ASSIST (glue.c, env-gated, f>=200) holds the gates open with those oracle
+      values (284|=9, a65|=3, 2BA=1, 25A=1, 5D4=0F). Bus-tap (PAD-TL) then exposed the pad gap:
+      V-int 6DE0 writes raw pad to 502, but main 5A36 overwrites 502 from $FF02B8 (pad-history
+      table $FFFE00+2B6, never filled natively; 2B6 doesn't wrap) ⇒ pressed edge never formed.
+      Assist mirrors 502→2B8 and holds 2B4=1 so 5A36's signed compare takes the 2B8→502 path.
+    * Edge then formed (edge=0080) but 5960 runs only on mode-8 frames while 5898 recomputes a
+      1-frame pulse each frame ⇒ press on a mode-4 frame lost. Assist forces prev 508/50A=0 so
+      the edge is level-triggered (held button reads pressed every frame); edge now persists.
+    * Still title: with gates open and edge held, 5960 early-returns mid-main because the attract
+      routine 6A00 (runs before 5960) mutates 284/5D4 between the V-int assist and the dispatcher,
+      and the boot-main mode-4/8 alternation skips the 5960 tail on half the frames (flow mask).
+      => This is a scheduler/cadence artifact, not flags or input. Dedicated next step: make the
+      guest main loop run 5960 every frame with stable gates (fix mode alternation / RTE-pending
+      bails at the scheduler level, reference-game guided), then Start→func_0063DE (mode=$10).
+    * TITLE_ASSIST kept (env-gated, off by default); on_post_reset kept; known-good title build.
   Next experiments (anticipated, in order):
-  1. Fix scheduler input alignment so the processed pressed-edge is present when the
-     title dispatcher func_005960 reads it ($598E), and re-call the dispatcher each frame
-     at title; re-test Start/A → func_0063DE (mode=$10). (dedicated effort)
-  2. Once interactive: input-script route validation (Start → level 1) vs web oracle.
-  3. M3 RAM map: `player_object`/`level_modes` from gameplay RAM diffs.
-  4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
+  1. Dedicated scheduler effort: run title dispatcher func_005960 every frame with stable gates
+     (fix boot-main mode-4/8 alternation / RTE-pending bails so the 5960 tail isn't skipped and
+     6A00 doesn't mutate gates mid-frame); re-test Start/A → func_0063DE (mode=$10).
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
