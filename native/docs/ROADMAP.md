@@ -599,6 +599,17 @@ verifiable much sooner.
       so the guest's own main loop runs the title routine each frame (fix the boot-loop
       re-entry / mode handoff at the scheduler level), not via injected calls or RAM assists.
       All drives reverted; known-good title build restored. M2 stands; Start→game open.
+  - **Session 46 (2026-11-26): genuine --input-script held Start also fails ⇒ root cause is stalled boot main loop, not input.**
+    * Used the framework's intended frame-indexed --input-script (tools/start-hold.txt,
+      P1:START 1600-1700) on the known-good build: seen stays 8. Input pipeline is fine;
+      the title-init flags ($FF05D4/A65/2BA/284) are 0 because the boot MAIN loop never
+      completes title init (it stalls in boot sound-init / mode handoff). Title renders via
+      V-int independently.
+    * => Root cause confirmed upstream of input: make the boot main loop complete title init.
+      Dedicated next step: wire Boogerman spec.wait_for_vblank to its actual vblank-wait
+      routine (reference games set it; Boogerman=0) so the fiber parks correctly and the boot
+      main loop completes, OR fix the boot sound-init completion at the scheduler level.
+      Compare Sonic1/RKA main-loop/WaitForVBlank wiring. M2 stands; Start→game open.
   Next experiments (anticipated, in order):
   1. Fix scheduler input alignment so the processed pressed-edge is present when the
      title dispatcher func_005960 reads it ($598E), and re-call the dispatcher each frame
