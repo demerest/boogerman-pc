@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..c2dff17 100644
+index 4eee55c..50b17ae 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -85,7 +85,7 @@ index 4eee55c..c2dff17 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1026,142 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,191 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -100,6 +100,55 @@ index 4eee55c..c2dff17 100644
 +            extern GenesisMachine g_machine;
 +            g_machine.bus.z80_ram[0x0FAD] = 0xFE;
 +            g_machine.bus.z80_ram[0x0FC2] = 0x01;
++        }
++    }
++    /* Boogerman SPLASH-ASSIST (s54): the splash object tree (controller $FF1A0E,
++     * continuation threads 14ABA/1AB08/15238) completes when the camera-Y scroll
++     * drains $FF069A to 0 and the children set the controller's +10 ($FF1A18).
++     * The global timeout $FF028A (decremented at $3450, expiry kills the
++     * controller via ori #8000,(A4) at $348E) runs out first at native's
++     * half-pace main loop, killing/retrying the splash forever. Hold the counter
++     * above zero ONLY while the controller is active and unfinished so the
++     * guest's own tree completes; no other state is injected. */
++    {
++        static int sassist = -1;
++        if (sassist < 0) sassist = getenv("GENESIS_SPLASH_ASSIST") != NULL;
++        extern unsigned long g_snd_frame;
++        if (sassist && g_snd_frame >= 60 && g_snd_frame < 4000) {
++            uint16_t w0 = m68k_read16(0x00FF1A0Eu);
++            uint32_t cont = m68k_read32(0x00FF1A12u) & 0xFFFFFFu;
++            /* $3450 decrements 28A per sweep step (many per frame), so top up
++             * to 0x7FFF; release once the continuation leaves the splash script
++             * (the +10 wait at 14C46 exits to 14C80+). */
++            if (!(w0 & 0x8000u) && (w0 & 0x7FFFu) == 0x58u &&
++                cont >= 0x14A00u && cont < 0x14C80u)
++                m68k_write16(0x00FF028Au, 0x7FFFu);
++            /* s54: after the splash, the title-music send (cmd 0A, $98B62)
++             * spins in the $98AC6 retry loop waiting for the Z80 to clear
++             * $A00FE4; superzazu's driver never clears it for this command
++             * (same family as the s9-s13 boot mailbox). Seed the ack each
++             * V-int, mirroring BOOT_ASSIST's 0FAD/0FC2 seeding. */
++            {
++                extern GenesisMachine g_machine;
++                g_machine.bus.z80_ram[0x0FE4] = 0x00;
++                g_machine.bus.z80_ram[0x0FAC] = 0x00;
++                /* s54: the 68K sound-service tick (func_0981FC -> 98416) only
++                 * runs its init-completion body while 0548==0 and 0524==0;
++                 * those pending flags clear only when the Z80 acks commands,
++                 * which superzazu's driver never does for the title queue
++                 * (054C stays -1, main fiber spins in the 98AA0 retry loop).
++                 * Force the service idle so the guest's own main loop proceeds;
++                 * title music stays silent until the M3 driver RE lands. */
++                m68k_write8(0x00FF054Cu, 0x00);
++                m68k_write16(0x00FF0524u, 0x0000u);
++                m68k_write8(0x00FF0548u, 0x00);
++                /* s54: the title-music driver loop polls a per-frame flag set
++                 * by its $0038 V-int handler, but superzazu's Z80 sits at
++                 * iff1=0 with the periodic IRQ sticky-pending, so the handler
++                 * never runs and the loop never exits (0FAC never cleared).
++                 * Enable interrupts so the guest's own handler runs. */
++                g_machine.z80.iff1 = 1;
++            }
 +        }
 +    }
 +    /* Boogerman TITLE-ASSIST (s50): the 68K sound/pad service init never
@@ -228,7 +277,7 @@ index 4eee55c..c2dff17 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1842,16 +2011,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +2060,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -254,7 +303,7 @@ index 4eee55c..c2dff17 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2215,28 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2264,28 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -283,7 +332,7 @@ index 4eee55c..c2dff17 100644
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2069,6 +2256,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2305,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -291,7 +340,7 @@ index 4eee55c..c2dff17 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2089,6 +2277,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2326,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);

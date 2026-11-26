@@ -728,12 +728,42 @@ verifiable much sooner.
     * => Next: find the healthy-boot writer of $FF1A18=1 / $FF0A90/92 (suspect: 098000 script VM / mode-8
       6D60 chain, gated on a Z80 SMPS ack for the splash jingle); satisfy that handshake (runner fix or
       documented SPLASH assist); re-test interactive title and Start→func_0063DE.
+  - **Session 54 (2026-11-26): splash object-thread system decoded; splash COMPLETES natively;
+    post-splash spawn seeds a camera object instead of the title script — the new lever.**
+    * New tools: tools/dump-rom.ps1 (big-endian ROM word dump for unemitted regions; PS 5.1 `-shl`
+      on [byte] truncates — cast to [int] first), tools/web-obj-probe.ps1 (oracle object-chain walk;
+      ram-dump buffer is little-endian per word), run-us-misses.ps1 -SplashAssist.
+    * Object system = cooperative threads: entry +4 long = continuation PC, +10 = done flag,
+      +16 = countdown, w0 bit15 = inactive. Splash controller $FF1A0E (w2=5): 14ABA spawn children →
+      14AF4 wait +16==0 → 14B02 stage2 → 14C30 loop (bsr 14C54 Start-skip, jsr 4970/31E0/3A14) wait
+      +10==1 → 14C80 jsr 32D8 + jmp 3450 = NORMAL death (ori #8000,(A4) at 348E; 28A subi is
+      bookkeeping, NOT a timeout kill — s53's kill-timeout theory corrected). obj2 (1AB08 tree) final
+      gate = camera-Y $FF069A==0 at 1AB80; obj3 (15238) scroll-in drains camera 2/frame via $184A;
+      obj3 completion writes controller +10 from $153E0.
+    * Native completes the splash UNASSISTED: +10=1 @f552 (pc 153E0), death @554, next-stage spawn
+      @747. But the respawned controller runs the camera routine (cont oscillates 54F6/54FC =
+      func_005466 interior) while web's title controller runs the 15xxx script (cont 15532 @f1200).
+      Title init flags only partial (a65=03/284=0002 oscillate), mode never written (md=0 at every
+      V-int), 5960/6F82/63DE never entered ⇒ Start dead.
+    * Sound service decoded (M3 core): func_0981FC tick body gated on 0548==0/0524==0; completion
+      984D0 clears 054C after 0542 reaches 0x40; 98AA0/98D24 retry loop RE-DEPOSITS the command each
+      iteration (mailbox seeding useless); Z80 stuck iff1=0 with sticky periodic IRQ in the
+      $171F-$1745 poll whose per-frame flag comes from the $0038 V-int handler ⇒ genuine per-game
+      Z80 RE, not scheduler starvation (per-line Z80 budget is full hardware rate).
+    * GENESIS_SPLASH_ASSIST added (glue.c, env-gated, off by default): hold 28A=7FFF while controller
+      cont in [14A00,14C80); seed z80 0FAC/0FE4=0; force 054C/0524/0548 idle; z80 iff1=1. Insufficient
+      alone — the post-death spawn-parameter divergence is the lever, not the handshake.
+    * Interp side-quest: post-splash flight to pc=FF0202 (executing data; stack/continuation
+      corruption on the death/spawn path) — needs a targeted trace, separate from the native path.
+    * => Next: trace the f747 respawn (3450 death tail → $6C3C branch → 2CDA spawn params) against
+      web's title-controller seed; find the flag selecting camera-object vs title-script; fix or
+      assist; re-test 5960/Start→63DE; restore assist-path regression coverage.
   Next experiments (anticipated, in order):
-  1. Decode the splash-completion path: bus-tap $FF1A18/$FF0A90/$FF0A92 writers against a healthy
-     reference (phase-matched oracle RAM watch, or interp with the wait satisfied); decode the 098000
-     script VM per-step wait (likely Z80 ack). Fix the handshake or add a documented SPLASH assist;
-     re-test mode 4→8, interactive title, and Start→func_0063DE without TITLE_ASSIST; restore assist-path
-     regression coverage (s53 regressed it).
+  1. Post-splash spawn divergence: decode func_003450 death tail ($3462-$34AE, cmp #$FE / bra $6C3C)
+     and the $6C3C path that seeds the next-stage object; bus-tap the f747 spawn params (native) vs
+     the web title-controller seed (cont 155xx, w2=5); identify the selecting flag (mode/28A/0516
+     suspect); fix the branch or add a documented spawn assist; re-test interactive title and
+     Start→func_0063DE without TITLE_ASSIST; restore assist-path regression coverage.
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
