@@ -620,6 +620,15 @@ verifiable much sooner.
       (func_0039EC/func_000AD2/func_0030E2) to find the 68K-side ready flag that never sets and
       why title init (5D4/A65/2BA/284) never runs; compare a working reference boot. on_post_reset
       kept (harmless, mirrors Sonic). M2 stands; Start→game open.
+  - **Session 48 (2026-11-26): mode-clear handoff + genuine input also fails; title init never runs.**
+    * Tested post-handler $FF0516=0 (completes the V-int→main handoff if the sub-routine RTEs
+      early) combined with genuine --input-script Start hold: title still renders, seen stays 8,
+      title-init flags remain 0 ⇒ the boot MAIN loop never executes title init regardless of the
+      mode handoff. Mode-clear reverted; on_post_reset kept.
+    * => The stall is inside the boot main loop BEFORE title init (boot sound-init / staging),
+      not the V-int handoff nor input. Dedicated next step: single-step the boot main loop
+      (func_0007xx) from reset to find the exact wait that never completes and the 68K/Z80 flag
+      it polls; seed/fix that flag. This is the last RE gap to a playable native port.
   Next experiments (anticipated, in order):
   1. Fix scheduler input alignment so the processed pressed-edge is present when the
      title dispatcher func_005960 reads it ($598E), and re-call the dispatcher each frame
