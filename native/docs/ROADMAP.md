@@ -864,13 +864,52 @@ verifiable much sooner.
       word); diff-ram.ps1 swaps web pairs before diffing.
     * => Next: s58 demo-tail yield-resume + intro stager RE; menu pad plumbing; then route
       validation; deterministic pacing; M3 sound RE to retire the assists.
+  - **Session 58 (2026-11-26): attract/demo state machine decoded; pad-pipeline root cause
+    found and assist-fed; attract-skip reaches the intro stager natively; V-int cadence
+    starvation after mode commits is the remaining core blocker.**
+    * Attract controller = obj0 (FF1A0E). 154C0-1576A state machine: phase-1 pump (154DC)
+      resumes the demo script 157D6-158D6 (4B8C = per-controller sprite-template ATTACH via
+      obj+4E table, title ptr 112EC2 — not a spawn); +4C = countdown ticked by 4970
+      (subq/bpl; FFFF = next-pass; 49AA = yield-FFFF); demo idles at 15AC2 (jsr 49AA loop) —
+      s57's "park" = intentional idle + countdown waits (6f/134f), not a stuck ack. Phase 2
+      (15500, +10=0190≈800f) pumps 158DA/15900 loop; +10 expiry → 1557A demo restart (+A=1).
+    * Intro stager 15978 (types BB-C7) seeded ONLY at 15678: attract wait 15532 polls pad
+      &8/&4 (Right/Left) or obj0+8 bit11 (demo-completion, sound-ack dependent → never fires
+      natively). Post-intro 156A4-15766 seeds 15A8C (C8-CA); level scroll-in init 15ADA→15F70
+      (FF0690=1/FF0A90=80, seed 15F76) never seeded natively; C8-CA completion = s59 lever.
+    * Pad truth: 6D96/6E16 sampler is DEAD CODE in EU (no callers). 58A0 (main 772) transfers
+      04DE→0502 + edges 050C/050E; 5A3E (main 76E) overwrites 0502 from the 2B8 mirror when
+      2BA==0. Native main loop stops completing 4/8 passes post-splash; mode freezes at 4 or
+      8 per-run (pacing nondeterminism); frozen-8 runs form no pad sample at all → s57's
+      "broken menu plumbing" was this. Engine pad phases: TH=0 carries Start/A (bits7/6),
+      TH=1 carries CBRLDU; merge ~(((p0<<2)&C0)|(p1&3F)); TH drives a 6-button protocol
+      counter (io_data/pad_th_count/pad_th_prev) that must be saved/restored around probes.
+    * Assist s58 (glue.c, env-gated): pad feed on mode-8 V-ints (two-phase port read, correct
+      merge, TH save/restore — first attempt inverted phases → 0x3F all-buttons storm);
+      retirement ONLY on confirm 0244!=0 (s57's mode-10 retirement killed the 59D2→608E menu
+      pump); hold 0246=0 while mode10-unconfirmed so 6482 skips without killing the pump.
+    * Verified s58g: RIGHT@1000 → 0502=8 → 15678 seeds 15978 @1001 → stager + 15A8C C8-CA
+      execute (f1001-1032). Intro card still NOT rendered (black @1300/2300). s58j: Start
+      accepted (mode C @1004), B@1100 → 608E re-entered every 11f while held (pump alive),
+      but V-int delivery dies ~f1020-1100 after the mode-10 commit → Right/A never sampled,
+      025E never climbs. Post-load black + intro black + this starvation likely share one
+      root: mode-10/C V-int handler cadence (s59).
+    * Tooling truths: input-script frame-index lines accept BUTTONS ONLY; any directive on a
+      numbered line (EXIT/DUMP_RAM/WRITE_RAM*) rejects the WHOLE script (s_active=0) ⇒
+      s57-confirm/s57h mixed form never ran — s57h "0244=2 alone doesn't teardown" UNVERIFIED,
+      retest with sequential form. OBJ-TL 600k cap hit ~f1148 on demo paths → added
+      GENESIS_OBJ_TL_MAX env knob. Hybrid OBJ-TL pc is stale (last interp PC) — attribute by
+      address/value, or use FORCE_INTERP (which has its own post-splash stack bug, s54).
+    * => Next: s59 V-int/main-loop cadence determinism (elevated); intro render + C8-CA→15F70
+      chain; valid-script confirm retest; then M3 sound RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Demo-tail completion (s58): trace the 15776/15900 yield-resume park (~f1263) on the EU
-     pair (which ack/flag the 49B0 resume waits on; M3 sound family) and identify the
-     FF3832/intro stager (15978+); fix or extend the documented assist; re-test demo→gameplay
-     and the interactive Start→B→confirm route (includes menu pad plumbing 58A0/5A36/2B4/286).
-  2. Deterministic boot pacing: OBJ_TL-off runs die at f65 / never leave boot; make completion
-     host-speed independent so regression runs don't need the trace overhead.
+  1. V-int/main-loop cadence (s59, elevated): post-mode-commit delivery starvation is
+     nondeterministic (frozen mode 4/8; pad sampling dies; post-load/intro black screens).
+     Make V-int delivery and main-loop completion host-speed independent; then re-test the
+     menu climb/confirm (Right×4 calls = d7 8, A confirms) and attract intro rendering.
+  2. Intro/level chain (s59): why BB-C7 objects don't draw (FF3832 staging / V-int mode-C
+     consumption; 4B8C template attach), C8-CA completion → 15ADA/15F70 scroll-in seed;
+     retest synthesized 0244=2 with a VALID sequential script (s57h was parser-rejected).
   3. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284 bit2 service
      tick (2B6 pad history), 054C/0524/0548 acks, Z80 iff1/$0038 handler; audio fidelity.
   4. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs; route

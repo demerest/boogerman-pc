@@ -1,0 +1,6 @@
+# s58: hold RIGHT across the attract phase-2 wait (15532 polls pad &8/&4 ->
+# 15678 intro stager 15978). Bypasses the demo-completion ack (obj0+8 bit11).
+# Frame-index lines accept BUTTONS only; any directive (EXIT/DUMP_RAM/...)
+# on a frame-index line rejects the WHOLE script. Exit via --exit-at-frame.
+1000 RIGHT
+1400 -

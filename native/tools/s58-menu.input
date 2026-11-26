@@ -1,0 +1,10 @@
+# s58 (frame-index form, proven delivery): Start -> 59D2 C; hold B so the
+# 59D2 loop pumps 608E/menu; RIGHT window climbs d7/025E; A at 8 confirms.
+1000 START
+1040 -
+1100 B
+1110 B+RIGHT
+1140 B
+1200 B+A
+1210 B
+1500 -
