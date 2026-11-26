@@ -678,12 +678,31 @@ verifiable much sooner.
       Interplay splash (title-object init needs a65/284). => Next: promote the object-handler
       targets (read spawn constants / bus-tap the object table) so the guest's own title init runs.
     * game.toml comment corrected: vint_routine ptr table at ROM $4E22 (decimal 20002).
+  - **Session 52 (2026-11-26): object-handler promotion TESTED and RULED OUT; built interpreter-coverage
+    diff pipeline; real stall = second func_0030E2 display-list walk (mode 4→8), object spawn/init stride.**
+    * Implemented MOVEP in runner/m68k_interp.c (exec case; cycle entry already existed). Boogerman uses
+      MOVEP at $4F6A (op $0388) which previously HALTed GENESIS_FORCE_INTERP; now the clean-room
+      interpreter drives the whole boot. Added GENESIS_STATE_TL (glue.c) per-120-frame PC+gate+Z80 dump.
+    * New pipeline: run with GENESIS_FORCE_INTERP=1 + --exec-coverage-out, then tools/diff-coverage.ps1
+      subtracts the emitted rdb_on_insn PC set from the interpreter's executed-PC set → unemitted runs.
+      (PS 5.1 pipeline/ToArray quirks forced an imperative List-based implementation.)
+    * RESULT: the unemitted executed set is only 138 PCs in 114 tiny runs (max 5 insns) = jump-table /
+      interior fragments, NOT whole missing functions. Identical with/without TITLE_ASSIST and Start.
+      Promoting these would split emitted parents (invalid extra seeds). => object-handler promotion via
+      [functions] extra is NOT the lever; game.toml left unchanged.
+    * STATE-TL + probe-objtable.ps1: object table $FF1A0E IS initialized (status $8058, stride $58); mode
+      oscillates 0↔4 (splash runs). func_0006DA writes mode 4 at $79E then mode 8 at $7DE SEQUENTIALLY;
+      native stalls in the SECOND func_0030E2 walk ($7BE) between those writes on a spawned splash object
+      with a malformed/zero stride. FORCE_INTERP stalls at the same mode-4 point. So the blocker is the
+      object spawn/init stride/handler seeding at splash — upstream of the title dispatcher, common to
+      native+interp, not a recompiler coverage gap.
+    * => Next: bus-tap object-table ($FF1A0E+) writes during the mode-4 splash to identify the spawn/init
+      routine that sets strides/handlers; promote THAT real function entry; re-test mode 4→8 and Start.
   Next experiments (anticipated, in order):
-  1. Promote the title/object handler functions reached via the unresolved indirect JMPs
-     (0031D8/003A12/000A5E/0070B8) so the guest's OWN title init sets a65/284/25E/276/278 and the
-     interactive title + Start→func_0063DE (mode=$10) work without TITLE_ASSIST. Read object-spawn
-     handler constants / bus-tap the object table ($FF225A+) to enumerate targets; add to
-     [functions] extra or [[jump_table]]; re-test Start/A.
+  1. Bus-tap object-table ($FF1A0E+) writes during the mode-4 splash (rdb bus ring / PAD-TL-style tap) to
+     find the object spawn/init routine that seeds strides/handlers; the second func_0030E2 walk spins on
+     a zero-stride object. Promote that real function entry ([functions] extra), NOT the interior
+     jump-table fragments; re-test mode 4→8, interactive title, and Start→func_0063DE without TITLE_ASSIST.
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
