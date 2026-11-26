@@ -792,14 +792,53 @@ verifiable much sooner.
     * => Next: EU-pair trace of the 6F82 VM byte consumption + 49B0 yield/resume stack cells
       (FF01F0-FA, object+48) vs web phase-matched; find the stuck opcode/ack; fix the codegen stack
       idiom or add a documented VM assist; re-test Start→63DE; deterministic pacing for OBJ_TL-off runs.
+  - **Session 56 (2026-11-26): VM-stall hypothesis REFUTED; Start gate chain decoded (correct
+    polarities); TITLE_ASSIST fixed; Start accepted (mode 0C); native EU title screen renders.**
+    * Script tracks the oracle: EU native obj1 cont phases 14B2A→14C7C (intro) → 154C0/154EE
+      (camera, f737-925 — the s55 "oscillation" was the authentic camera phase) → 15532 (attract
+      wait). Web handler values match phase-for-phase (f760=154C0, f900=154EE, f1500=15532).
+      15532 loop reads pad direction bits directly; Start goes through main-loop dispatcher 5968
+      (called at 7FE every mode-8 frame; its body is read-only until the gates pass, which is why
+      entry traces looked "dead").
+    * Gate chain (EU 5968, correct polarities — s41 had two inverted): 5D4==0F && A65 bit0 &&
+      2BA==0 && (284&9)==0 && 050C&80. 2BA=1 is the attract-DEMO marker (55CE sets it when A65
+      bit1); 284 bit2 is the warm-up tick 6A36 consumes (6A94/6AAE: bit2 set + 5D4==0F → clear
+      bits1+2, keep 5D4; bit2 clear → 6AB8 DECREMENTS 5D4 → gate1 sees 0E). Native pad/sound
+      service never sets bit2 (2B6 history never wraps) and A65 stays 0 until a late indirect
+      byte-copy (143C-1444, sound-status block; web A65=0E early) ⇒ the gate flags are an M3
+      sound-init dependency, not a codegen bug.
+    * TITLE_ASSIST fixed: 284 | 4 ONLY (bit2 tick; bits0/3 must stay clear for gate4), 2BA held 0
+      (old assist forced 1 and blocked Start itself), A65|3, 5D4/5D6 holds unchanged. With assist,
+      Start@1000 (interactive window shifts to f928-1145) is accepted: 59B2 284|10 @f1004,
+      59D2 mode=0C; capture shows the native EU title (logo/START/toilet/copyright) — first
+      native title visual. Right-half scroll garble during the Start loop is cosmetic at this stage.
+    * Next blocker (s57): mode-C V-int handler (table 4E22 idx6 = 6054) runs every frame
+      (649A-64E8 push chain, staging write FF1506=0160) but never completes to mode 10; Start
+      (level-triggered by assist) re-commits mode C every 5 frames. Attract-demo path
+      (countdown→1557A→+48=15776) likewise parks after f1831 (black screen) while web runs the
+      demo by f2400. Both are level-init/sound-completion dependencies.
+    * Tooling: web-obj-probe gained +48/+4C, stack1EC, sound and gate cells; l() needed a [long]
+      cast (PS 5.1 int*int overflow promotes to Double → X6 format error). web/test/ram-shot.html:
+      frame-exact web screenshots via 2D dump of BP.core.lastVideo (headless-safe). Verified
+      chain-trace method: OBJ-TL JSR-push attribution (stack write v=return-addr, pc=jsr site) —
+      e.g. pc=7FE v=802 proves the 5968 call. CALLT misses inlined/hybrid callees; the new
+      GENESIS_INSN_TL insn-watch never fired (attribution mystery, LTCG suspect) — experimental.
+    * Pacing: OBJ_TL-off runs still never leave boot (s56g); keep OBJ_TL on for regression runs.
+      Deterministic-pacing fix remains open.
+    * => Next: mode-C level-init completion (6054→64xx staging consumer / completion flag) native
+      vs web; then Start→level-1 route; deterministic pacing; M3 sound RE to retire the assists.
   Next experiments (anticipated, in order):
-  1. Title-VM stall (s56): on the EU same-ROM pair, trace func_006F82 inline-bytecode consumption and
-     the 49B0 yield/resume stack protocol (FF01F0-FA pushes/pops, object+48) native vs web
-     phase-matched; identify the opcode/ack where the native script pointer stops advancing (camera
-     yield oscillation 54BA/54C0 vs web attract 154C0); fix the codegen stack idiom (s53 family) or
-     add a documented VM-assist; re-test interactive title and Start→func_0063DE without TITLE_ASSIST.
-     Also make boot pacing deterministic (OBJ_TL-off runs currently die at f65; audio-queue yield
-     suspect) so regression runs don't depend on host speed.
+  1. Level-init completion (s57): trace the mode-C V-int handler 6054→64xx on the EU pair — what
+     consumes the FF1506 staging and which completion flag/poll never clears natively (sound/DMA
+     family); compare web at a Start-matched phase (ram-shot + probe). Fix or extend the documented
+     assist; re-test Start→level 1 (mode 10) and the attract-demo park (15776). Then route
+     validation (scrolling/collision/transitions) vs web.
+  2. Deterministic boot pacing: OBJ_TL-off runs die at f65 / never leave boot; make completion
+     host-speed independent so regression runs don't need the trace overhead.
+  3. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284 bit2 service tick
+     (2B6 pad history), 054C/0524/0548 acks, Z80 iff1/$0038 handler; audio fidelity.
+  4. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
+  5. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
   2. Once interactive: input-script route validation (Start → level 1) vs web oracle;
      verify scrolling/collision/transitions; audio check.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.

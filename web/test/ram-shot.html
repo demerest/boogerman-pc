@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>ram shot</title></head>
+<body style="margin:0;background:#000">
+<canvas id="shot" width="320" height="224" style="image-rendering:pixelated"></canvas>
+<div id="out">waiting</div>
+<script src="../vendor/gpgx/gpgx.web.js"></script>
+<script src="../vendor/gpgx/gpgx.wasm.js"></script>
+<script src="../rom/boogerman.gen.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/hooks.js"></script>
+<script src="../js/patches.js"></script>
+<script src="../js/shaders.js"></script>
+<script src="../js/audio.js"></script>
+<script src="../js/input.js"></script>
+<script src="../js/video.js"></script>
+<script src="../js/cheats.js"></script>
+<script src="../js/states.js"></script>
+<script src="../js/mods.js"></script>
+<script src="../js/core.js"></script>
+<script>
+(async function () {
+  try {
+    await BP.core.init({ silent: true });
+    BP.core.loadGame(BP.util.b64ToBytes(window.BP_ROM_B64), 'boogerman.gen');
+    const target = parseInt(new URLSearchParams(location.search).get('frames') || '180', 10);
+    let n = 0;
+    function step() {
+      BP.core.run();
+      if (++n >= target) {
+        const lv = BP.core.lastVideo;
+        const U8 = BP.core.heapU8();
+        const c = document.getElementById('shot');
+        c.width = lv.width; c.height = lv.height;
+        const ctx = c.getContext('2d');
+        const img = ctx.createImageData(lv.width, lv.height);
+        const D = img.data;
+        for (let y = 0; y < lv.height; y++) {
+          let s = lv.ptr + y * lv.pitch;
+          let d = y * lv.width * 4;
+          for (let x = 0; x < lv.width; x++) {
+            const v = U8[s] | (U8[s + 1] << 8); s += 2;
+            const r = (v >> 11) & 31, g = (v >> 5) & 63, b = v & 31;
+            D[d] = (r << 3) | (r >> 2);
+            D[d + 1] = (g << 2) | (g >> 4);
+            D[d + 2] = (b << 3) | (b >> 2);
+            D[d + 3] = 255;
+            d += 4;
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+        let regs = '';
+        const rd = BP.core.romdev;
+        if (rd && rd.getreg) {
+          for (let i = 0; i < 24; i++) {
+            try { regs += i + ':' + (rd.getreg(i) >>> 0).toString(16) + ' '; }
+            catch (e) { regs += i + ':err '; }
+          }
+        }
+        document.getElementById('out').textContent = 'SHOTDONE ' + regs;
+        document.title = 'SHOT DONE';
+        return;
+      }
+      setTimeout(step, 0);
+    }
+    setTimeout(step, 0);
+  } catch (e) {
+    document.getElementById('out').textContent = 'ERR ' + e.message;
+  }
+})();
+</script>
+</body>
+</html>
