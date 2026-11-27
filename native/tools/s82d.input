@@ -1,0 +1,74 @@
+# s82d: cam-locked route v2. Slope wall at 0527 blocks walking => boost at
+# 04E0 (before wall) clears slope enemy; hops over slope/bridge; grounded
+# flicks 0C30/0C90 at bridge enemy; survival hops to 14A0.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16 0xFF0698 0x0300
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x03C0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x04E0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x0501
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s82d\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s82d\p1.png
+WAIT_RAM16 0xFF0698 0x06C0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x07B0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x08A0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x0990
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x0A80
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x0B70
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x0C30
+PRESS A 6
+WAIT_RAM16 0xFF0698 0x0C90
+PRESS A 6
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s82d\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s82d\p2.png
+WAIT_RAM16 0xFF0698 0x0D20
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x0E10
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x0F00
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x0FF0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x10E0
+PRESS B 8
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s82d\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s82d\p3.png
+WAIT_RAM16 0xFF0698 0x11D0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x12C0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x13B0
+PRESS B 8
+WAIT_RAM16 0xFF0698 0x14A0
+PRESS B 8
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s82d\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s82d\p4.png
+RELEASE
+WAIT 400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s82d\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s82d\end.png
+EXIT

@@ -1558,12 +1558,33 @@ verifiable much sooner.
       s81a-g-disasm. NO engine change; gitlinks stay 9907e77f40/6f705f2.
     * => Next: s82 complete the route to exit/scroll-limit (per-obstacle stomp/flick scripting
       using 003744 stomp condition; obstacle 3 at ~0CAB); then M3 sound RE.
+  - **Session 82 (2026-11-27): obstacle map + cam-locked probing method; thorn cluster is the
+    true first blocker; death-fade locks input. Route to exit still open (s83).**
+    * Cam-locked method: WAIT_RAM16 on cam 0698 (values on the 3-grid, cam steps 3/frame) makes
+      each action fire at a stable WORLD position regardless of capture drift. Fixed-count
+      cadences are NOT phase-stable: DUMP_RAM/SCREENSHOT consume guest frames, so the same
+      script prefix lands at different cam across variants (s81n9 g4=0499 vs s82a m1=03D9).
+    * Obstacle map (cam X): (1) THORN-BUSH cluster ~02AF-0350 (green+brown spikes, NOT a pit) —
+      kills EVERY cadence at ~f7110 (deathflag 003778); single B8 jump and single boost both
+      land in it (boost airtime ~85f covers ~0x100). (2) Slope WALL at 0527 (cannot walk up;
+      cam freezes) with yellow slope enemy ~05A0-0780 — needs boost. (3) Bridge over water
+      ~0C00-0CAB with red walker (obstacle 3, kills at 0C78). Max scroll reached 0CAB.
+    * B=jump VERIFIED on flat (s82g: FF050C pulse→00903A flag 1A16=1→Y arc E8→AE→land). But once
+      deathflag 0266=1 (death-fade) input is IGNORED and the corpse slides; cam-locked stages
+      are consumed on respawn ⇒ route stalls at the wall. Fixed cadence survives respawn
+      (keeps jumping). ⇒ cam-locked alone insufficient; must avoid the thorn contact outright.
+    * Score BCD lives at 0237-0239 (written by 0037C0 add routine), NOT 0230-34. lives=0 respawn
+      resets cam to 00D7 (level start; grinning tree = start decor), score cleared later.
+    * Tooling: s82a-k.input; s82a/b/c/d/e/f/g/h/i/j/k captures. NO engine change; gitlinks stay
+      9907e77f40/6f705f2.
+    * => Next: s83 clear the thorn cluster (double-boost / stomp / flick-on-thorn test) then
+      slope+bridge to exit/scroll-limit; then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s82): complete the level route to exit/scroll-limit — per-obstacle
-     stomp/flick/boost scripting (stomp condition 003744; obstacle 3 ~0CAB); blocks 1-2 solved
-     s81 (A=flick gated 023C, C=burp, DOWN-air=fart boost); second-54FC parity confirmed s81.
-     End-card=respawn confirmed s80; death/respawn chain pinned s79. Native port is PLAYABLE as
-     of s78 (B=jump).
+  1. Gameplay polish (s83): complete the level route to exit/scroll-limit — first clear the
+     thorn cluster ~02AF-0350 (double-boost/stomp; single jump/boost lands in it), then slope
+     wall 0527 (boost) + bridge red walker ~0C78 (flick/stomp). Cam-locked method + obstacle map
+     pinned s82; death-fade locks input (avoid contact, don't rely on respawn). Blocks 1-2
+     solved s81. Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

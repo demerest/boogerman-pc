@@ -1,0 +1,22 @@
+# s82j: capture pit-1 hazard zone (~02AF) and slope wall (0527).
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16 0xFF0698 0x0240
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s82j\pit.png
+WAIT_RAM16 0xFF0698 0x02A0
+PRESS B 8
+WAIT 20
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s82j\pitjump.png
+WAIT_RAM16 0xFF0698 0x04E0
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s82j\slope.png
+EXIT

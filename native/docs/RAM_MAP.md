@@ -363,3 +363,24 @@ words c7f0 c3f1 c33a 0342 c33a c0e4 c8e5 0000 ⇒ high bytes IDENTICAL. Earlier 
 silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - Tooling: s81-{probe,atk2,long,stopC,boost,combo,burp,early}.input; s81n1-n9; s81w1 (web wt);
   s81a-g-disasm. No engine change; gitlinks stay 9907e77f40/6f705f2.
+
+## Obstacle map + cam-locked probing (s82, 2026-11-27, US)
+- Cam-locked method: WAIT_RAM16 0xFF0698 <val> with val on the 3-grid (cam steps 3/frame while
+  running) fires each action at a stable WORLD position, immune to capture drift. Fixed-count
+  cadences drift: DUMP_RAM/SCREENSHOT consume guest frames (s81n9 g4 cam0499 vs s82a m1 cam03D9
+  for the same prefix). Use cam-locked for terrain, fixed cadence to survive respawn.
+- Obstacle map (cam X 0698): (1) THORN-BUSH cluster ~02AF-0350 (green+brown spike bushes, not a
+  pit) — the TRUE first blocker; kills all cadences ~f7110 (003778→0266=1). Single B8 jump and
+  single fart boost both land in it (boost airtime ~85f ≈ 0x100 world). (2) Slope WALL at 0527
+  (walking freezes cam; must boost) + yellow slope enemy ~05A0-0780. (3) Bridge over water
+  ~0C00-0CAB + red walker (obstacle 3, contact death at 0C78). Max scroll reached 0CAB.
+- B=jump confirmed on flat: s82g FF050C pressed-edge (v=10)→00903A sets 1A16=1→Y(1A26) arc
+  E8→AE→land (~30f airtime). During death-fade (0266=1) input is IGNORED; corpse slides and cam
+  freezes at the wall; cam-locked stages already consumed ⇒ stall. Avoid contact outright.
+- Score BCD bytes = 0237/0238/0239 (0037C0 add routine stores D3→0239,D2→0238,D1→0237), NOT
+  0230-34. lives 0 respawn: cam→00D7 (start), score cleared by reinit later; grinning tree is
+  start-area decor (not an exit marker).
+- Player ctx FF1A0E: +8=1A16 flags (jump bit1 via 00903A), +24=1A26 Y, +56=1A46 vert vel
+  (ground clamp 004600=0; 00273C writes 0900). Physics taps fire every 2f (30Hz).
+- Tooling: s82a-k.input; s82a-k captures (bins+pngs+err.log taps). No engine change; gitlinks
+  stay 9907e77f40/6f705f2. ⇒ s83: clear thorns (double-boost/stomp) then slope+bridge to exit.
