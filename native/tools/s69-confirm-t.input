@@ -1,0 +1,18 @@
+# s69t: START HOLD 200f at staging+600 as start-confirm (hold vs tap).
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 600
+HOLD START
+WAIT 200
+RELEASE
+WAIT 150
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69t\g0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69t\g0.png
+WAIT 400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69t\g1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69t\g1.png
+EXIT

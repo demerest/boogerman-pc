@@ -1267,11 +1267,37 @@ verifiable much sooner.
     * => Next: s69 true pause trigger + health/lives + damage/death/level-exit and
       scroll-limit validation vs web-US (clean config); phase-aligned second-span
       compare; M3 sound RE to retire remaining assists.
+  - **Session 69 (2026-11-27): s68's "deterministic entry / gameplay" was a FALSE
+    COMMIT (released START before staging). Corrected entry + mode map established;
+    the intro→play handoff and pause live in interp-only code → s70 disassembly.**
+    * s68/s69a-h entry released START at commit+2 (before the +30f staging), so the
+      guest never handed off; the "gameplay" camera/scroll seen in s68d/e was the
+      attract demo / limbo, not a committed level. CORRECTED entry: WAIT 300 after
+      post-demo title, HOLD START until WAIT_RAM16 0254=1 (staging at commit+30),
+      then RELEASE. Verified native commit f2345 / staging f2375 (s69i).
+    * Mode map (0244, mirrored 0254): 0=boot, 1=load/intro, 3=gameplay, 34/35=attract
+      demos. 1506=160 title V-int / 180 level V-int. 0632=intro countdown (title stays
+      on screen during it). 0516=4/8 game loop. Mode 3 with 0516=4 but frozen
+      06D0/0222/0632 = PAUSED gameplay (reached only by the multi-press mash).
+    * No-input after a true commit aborts to demo at ~staging+1100 (web f3589 ==
+      native s69m). START tap/hold during intro = abort to title. Single B/C/A/UP/
+      DOWN/RIGHT/LEFT taps or holds at +300/+600/+911/+1000 do NOT confirm play; only
+      the cumulative mash (RIGHT,UP,B,DOWN,…) reached mode 3. Confirm is therefore a
+      multi-press / interp state machine, not a single button.
+    * 068C/068E are camera scratch (written from 06BC−0698 in the scroll routine,
+      cleared by init 000AD2), NOT health/hearts. Discard as health candidates.
+    * Tooling: s69-native.ps1 (clean default, -TitleAssist to repro), s69-web.ps1
+      (web-US full-RAM → native-order bin), s69-{pause,confirm,title,death}-*.input.
+    * => Next: s70 disassemble the interp intro/pause state machine (01562E caller,
+      0632/0244 writers) to find the minimal play-confirm + pause trigger; then
+      health/lives, damage/death/level-exit/scroll-limit validation vs web-US.
   Next experiments (anticipated, in order):
-  1. Gameplay fidelity (s69): with TITLE_ASSIST OFF, identify the true pause trigger
-     (held START quits to title), health/lives vars, and validate collision damage,
-     death, level exit and camera scroll limits vs web-US; phase-aligned re-compare
-     of the second 54FC spawn span. Entry + camera + scroll done (s68).
+  1. Gameplay entry + pause (s70): the intro→play handoff and pause are interp-only
+     (01562E/0632/0244=3 not in emitted C). Build a minimal 68k disassembler over the
+     US ROM intro region (or bisect the web mash) to isolate the minimal play-confirm
+     and the pause trigger; mirror on native with the corrected entry. THEN health/
+     lives vars + damage/death/level-exit/scroll-limit validation vs web-US and the
+     phase-aligned second-54FC-span compare. Entry staging + mode map done (s69).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

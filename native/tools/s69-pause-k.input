@@ -1,0 +1,26 @@
+# s69k: corrected entry; survive by stepping LEFT away from the spawn enemy,
+# then START TAP 4f. Idle-at-spawn dies ~staging+1100 (web-confirmed), so the
+# old idle probes were confounded by death. p1/p2 freeze + level PNG = pause.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 850
+HOLD LEFT 120
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69k\idle.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69k\idle.png
+PRESS START 4
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69k\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69k\p1.png
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69k\p2.bin
+PRESS START 4
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69k\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69k\r1.png
+EXIT

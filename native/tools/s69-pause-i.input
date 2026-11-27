@@ -1,0 +1,26 @@
+# s69i: CORRECTED entry (web-matched): title must settle ~300f post-demo before
+# Start; HOLD through staging (0254=1 at commit+33 on web) then RELEASE.
+# s68/s69a-h flaw: WAIT 30 + release at commit+2 = false commit (title service
+# never handed off; hybrid/demo confounds). 0632=0 after staging = intro end.
+# Idle player dies ~5s after intro (web 3589 game-over), so press early.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT_RAM16 0xFF0632 0x0000
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69i\idle.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69i\idle.png
+PRESS START 4
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69i\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69i\p1.png
+WAIT 90
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69i\p2.bin
+PRESS START 4
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69i\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69i\r1.png
+EXIT

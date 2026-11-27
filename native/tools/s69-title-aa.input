@@ -1,0 +1,15 @@
+# s69aa: menu hypothesis — A tap AT TITLE (no START).
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+PRESS A 4
+WAIT 200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69aa\g0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69aa\g0.png
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69aa\g1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69aa\g1.png
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69aa\g2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69aa\g2.png
+EXIT

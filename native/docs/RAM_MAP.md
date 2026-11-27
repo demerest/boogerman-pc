@@ -92,14 +92,31 @@ With the assist OFF the level plays and the true gameplay vars are:
 | anim ticker | $FF06D0 | +2/~6f in gameplay | advances in-level; 0 in the TITLE_ASSIST hybrid |
 | intro countdown | $FF0632 | decrements during level intro | START held during intro aborts to title |
 
-- **Deterministic entry (assist OFF):** WAIT_RAM16 0244=34 (demo commit) →
-  WAIT_RAM16 1506=160 (post-demo title) → WAIT 30 → HOLD START →
-  WAIT_RAM16 0244=1 → RELEASE. Commits at exactly f2074 (s68d == s68e) under
-  lockstep. The guest's own service opens the title natively; TITLE_ASSIST is
-  NOT required and is HARMFUL (its per-V-int 284/A65/2BA writes keep the title
-  supervisor alive after commit → hybrid title-display/level-controller state).
-- **START semantics:** a HELD Start (40f) in-level quits to title; the s67
+- **Deterministic entry (assist OFF) — SUPERSEDED by s69 (false commit):** the
+  s68 recipe (WAIT 30 → HOLD START → WAIT_RAM16 0244=1 → RELEASE) released START
+  at commit+2, BEFORE the +30f staging, so the guest never handed off to a level;
+  s68d/e "gameplay" was attract-demo/limbo. Corrected entry (s69): WAIT 300 after
+  post-demo title → HOLD START → WAIT_RAM16 0254=1 (staging) → RELEASE. TITLE_ASSIST
+  still NOT required and HARMFUL (per-V-int 284/A65/2BA writes keep the title
+  supervisor alive after commit → hybrid).
+- **START semantics:** START tap/hold during the intro aborts to title; the s67
   "pause freeze" (object/camera frozen + audio ticking) is the TITLE-idle
-  signature, not pause. True gameplay pause trigger/timing still TODO (s69).
-- `player_object` base, health and lives still TODO (s69): HUD hearts candidate
-  068C/068E, timer 0632; need damage/death diffs to confirm.
+  signature, not pause. True gameplay pause trigger/timing still TODO (s70).
+- `player_object` base, health and lives still TODO (s70). 068C/068E are NOT
+  health (camera scratch, see s69); timer 0632 = intro countdown.
+
+## Gameplay-phase findings (s69, 2026-11-27, US, clean config) — mode map
+
+| Field | Address | Shape | Evidence |
+|---|---|---|---|
+| game mode | $FF0244 (mirror $FF0254) | word | 0=boot, 1=load/intro, 3=gameplay, 34/35=attract demos (web+native OBJ-TL) |
+| V-int routine | $FF1506 | word | 160=title, 180=level (staging writes 180 at commit+30) |
+| intro countdown | $FF0632 | word | title stays on screen while it counts; no-input aborts to demo ~staging+1100 |
+| game loop mode | $FF0516 | word | 4/8 in gameplay; mode 3 + 0516=4 + frozen 06D0/0222/0632 = PAUSED |
+| anim ticker | $FF06D0 | word | ticks in play; frozen when paused / in intro |
+| camera scratch | $FF068C/$FF068E | words | written from 06BC−0698 (scroll routine), cleared by init 000AD2 — NOT health |
+
+- Corrected entry verified native: commit f2345 / staging f2375 (s69i). No-input
+  abort to demo matches web (f3589). Single-button taps/holds do NOT confirm play;
+  only a cumulative multi-press mash reached mode 3 → intro/pause state machine is
+  interp-only (01562E/0632/0244=3 absent from emitted C) → s70 disassembly.

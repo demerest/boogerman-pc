@@ -1,0 +1,28 @@
+# s69n: corrected entry + START confirm INSIDE the intro window. Web+native
+# abort to demo at ~staging+1100 with no input; 0632 hits 0 ~staging+955.
+# Confirm at +1000, then pause-test in true gameplay (tap START at ~+1300).
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 1000
+PRESS START 4
+WAIT 150
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69n\g0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69n\g0.png
+WAIT 150
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69n\g1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69n\g1.png
+PRESS START 4
+WAIT 80
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69n\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69n\p1.png
+WAIT 80
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69n\p2.bin
+PRESS START 4
+WAIT 80
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69n\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69n\r1.png
+EXIT

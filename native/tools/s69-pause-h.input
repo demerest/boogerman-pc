@@ -1,0 +1,23 @@
+# s69h: START TAP 4f truly post-intro at idle (0254=1 handoff anchor + WAIT 200).
+# s68e's post-intro tap (after walking) was a no-op; retest at clean idle.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 30
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT_RAM16 0xFF0254 0x0001
+WAIT 200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69h\idle.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69h\idle.png
+PRESS START 4
+WAIT 100
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69h\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69h\p1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69h\p2.bin
+PRESS START 4
+WAIT 100
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69h\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69h\r1.png
+EXIT

@@ -1,0 +1,16 @@
+# s69y: menu hypothesis — B tap AT TITLE (no START). Title shows START/PASS
+# signs; s41: A->6060, START->6F82. Real game confirm may be A/B/C at title.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+PRESS B 4
+WAIT 200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69y\g0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69y\g0.png
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69y\g1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69y\g1.png
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69y\g2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69y\g2.png
+EXIT

@@ -1,0 +1,24 @@
+# s69a: true-pause probe. Clean entry (s68), settle idle post-intro, then a
+# 3-frame START TAP (s68 showed 40f HOLD quits to title). p1 vs p2 must freeze
+# the object/camera region while audio ticks if pause engaged; r1 must advance.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 30
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT_RAM16 0xFF0632 0x0000
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69a\idle.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69a\idle.png
+PRESS START 3
+WAIT 100
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69a\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69a\p1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69a\p2.bin
+PRESS START 3
+WAIT 100
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69a\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69a\r1.png
+EXIT

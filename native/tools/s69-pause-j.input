@@ -1,0 +1,22 @@
+# s69j: corrected entry (see s69-pause-i.input); START HOLD 40f post-intro.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT_RAM16 0xFF0632 0x0000
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69j\idle.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69j\idle.png
+PRESS START 40
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69j\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69j\p1.png
+WAIT 90
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69j\p2.bin
+PRESS START 40
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69j\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69j\r1.png
+EXIT

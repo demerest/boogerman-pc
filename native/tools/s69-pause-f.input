@@ -1,0 +1,22 @@
+# s69f: START HOLD 40f truly post-intro (WAIT 600 after commit; s68f/g and
+# s69a-d presses actually landed during the intro abort window).
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 30
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69f\idle.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69f\idle.png
+PRESS START 40
+WAIT 100
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69f\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69f\p1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69f\p2.bin
+PRESS START 40
+WAIT 100
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69f\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69f\r1.png
+EXIT

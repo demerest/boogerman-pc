@@ -1,0 +1,16 @@
+# s69p: C tap at staging+1000 as start-confirm.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 1000
+PRESS C 4
+WAIT 150
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69p\g0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69p\g0.png
+WAIT 150
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s69p\g1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s69p\g1.png
+EXIT
