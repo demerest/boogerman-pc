@@ -1446,11 +1446,35 @@ verifiable much sooner.
     * => Next: s76 root-cause native object-logic divergence (FF0100 allocator gate;
       raw-scan 00FF0100/01B2 refs), then damage/death/respawn + level-exit/scroll-limit
       vs web-US + second-54FC; M3 sound RE.
+  - **Session 76 (2026-11-27): object-logic divergence LOCALIZED to the interp-only
+    level-object SPAWN (upstream of dispatcher); gate hypotheses ruled out.**
+    * Phase-aligned entry dumps (s76n1 e0-e3 vs s76w0 @6184): web mode-10 entry already
+      has 22 objects (0180=0016) + handler/ctx entries; native 0180 stays 0 at +0/60/300/800.
+      So the level-object spawn NEVER runs natively (not populated-then-cleared).
+    * FF0100-01FF layout: (state,handler-ROM-ptr) pairs + long RAM ctx ptrs (FF1A0E player,
+      FF220E/FF182E/FF2222 props) + 0180=count/0182; 01F6/01FA/01FE = system-coroutine resume
+      PCs (web 0C3E/0BEC/07C2 vs nat 0C3E/48C4/079A at entry).
+    * Dispatcher $000BEC gated by FF0A48-0A4E; at +800 0A48=0008 on BOTH yet web 0180=0013,
+      nat 0 ⇒ dispatcher runs on both; native simply has NO objects ⇒ root cause is the
+      SPAWN/allocator, NOT a dispatcher gate.
+    * Ruled out: 0284 (nat =5 at entry decays 5→2→0 by +300; web =0; forcing 0 via
+      s76-gate.input did NOT populate table). 0A48-0A4E equal at entry (0) and +800 (8).
+    * Spawn is INTERP-ONLY: no emitted-C immediates for handlers 8D2E/8AF8/83CE/8674/81E4;
+      no LEA/MOVEA.L #FF01xx base loads; OBJ-TL shows emitted boot writes to 0180/01B2 (=0)
+      but never the field count/player-ctx. Raw-scan 00FF01xx = 224 hits (mostly data/HUD
+      cursor bound FF01E0 @0072EC/007306 = text renderer, dead end).
+    * Guest yield $004970: +4C countdown dec/scheduler-pass, +48 resume JMP; native resume
+      chain diverged at boot ⇒ spawn coroutine never resumed. s77 = trace resume chain
+      (01F6/01FA/01FE) boot→field + interpreter coverage to locate & promote the spawn block.
+    * Tooling: s76-{entry,gate}.input; s76a/b/c-disasm; s76n1/n2, s76w0. NO engine change;
+      gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s77 locate+promote interp-only level-spawn (trace coroutine resume chain),
+      then damage/death/respawn + level-exit/scroll-limit vs web-US + second-54FC; M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay RE (s76): root-cause native object-logic divergence (FF0100-01FF empty;
-     find the allocator + its gate via raw ROM scan), then damage/death/respawn +
-     level-exit/scroll-limit vs web-US (clean config); phase-aligned second-54FC-span
-     compare; pause settled (none).
+  1. Gameplay RE (s77): locate + promote the interp-only level-object spawn (trace guest
+     coroutine resume chain 01F6/01FA/01FE boot→field; interpreter coverage leads), then
+     damage/death/respawn + level-exit/scroll-limit vs web-US (clean config); phase-aligned
+     second-54FC-span compare; pause settled (none).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

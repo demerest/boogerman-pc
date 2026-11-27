@@ -215,3 +215,21 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
   web ram() buffer is little-endian per word ⇒ guest byte g lives at buffer g^1
   (ramWrite8(a^1,v)); the first hook version hit 023F instead of 023E.
 - Tooling: s75-{kill,half,meter,hit2}.input; -Wr on s72-web.ps1/s73-webdump.ps1.
+
+## Object-logic divergence localized (s76, 2026-11-27, US) — spawn never runs natively
+
+| Field | Address | Shape | Evidence |
+|---|---|---|---|
+| active logic table | $FF0100-01FF | (state,handler) pairs + long ctx ptrs | web entry 0180=0016 (22 objs); native 0180=0 at +0/60/300/800 ⇒ spawn never runs (s76n1 vs s76w0) |
+| object count | $FF0180 / 0182 | word | web 0016/002C entry, 0013/002C +800; native always 0 |
+| player ctx in table | $FF01B0/01B2 | long | web FF1A0E; native 8B80 (boot ROM ptr) — player logic runs outside the table |
+| system-coroutine resume PCs | $FF01F6/01FA/01FE | words | web 0C3E/0BEC/07C2 vs nat 0C3E/48C4/079A at entry (resume chain diverged at boot) |
+| object dispatcher | $000BEC | code | gates FF0A48-0A4E; JSR 17A0/175E/181C/17DA; runs on BOTH (0A48=8 at +800) ⇒ not the gate |
+| guest yield | $004970 | code | +4C countdown dec/pass, +48 resume JMP (A1); +4C=FFFF parks |
+
+- Root cause = the INTERP-ONLY level-object SPAWN upstream of the dispatcher. Ruled out:
+  0284 (nat =5 at entry decays→0 by +300; forcing 0 didn't populate), 0A48-0A4E (equal both).
+- No emitted-C handler immediates (8D2E/8AF8/83CE/8674/81E4); no LEA/MOVEA.L #FF01xx;
+  OBJ-TL emitted boot writes 0180/01B2=0 only. FF01E0 @0072EC/007306 = HUD text cursor bound
+  (dead end). s77 = trace resume chain + interpreter coverage to locate & promote the spawn.
+- Tooling: s76-{entry,gate}.input; s76a/b/c-disasm; s76n1/n2, s76w0.

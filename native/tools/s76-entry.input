@@ -1,0 +1,19 @@
+# s76: phase-aligned object-logic table compare at mode-10 entry (+0/+60/+300/+800).
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s76n1\e0.bin
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s76n1\e1.bin
+WAIT 240
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s76n1\e2.bin
+WAIT 500
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s76n1\e3.bin
+EXIT

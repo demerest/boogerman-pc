@@ -1,0 +1,19 @@
+# s76: causal probe — clear 0284 (left =5 by crawl natively, =0 on web) at field entry.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WRITE_RAM16 0xFF0284 0x0000
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s76n2\g1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s76n2\g1.png
+WAIT 500
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s76n2\g2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s76n2\g2.png
+EXIT
