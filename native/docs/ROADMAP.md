@@ -1748,12 +1748,45 @@ verifiable much sooner.
     * Tooling: s89a-n.input; s89a-n captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
     * => Next: s90 repeat unpress+early-drift climbs past the toilet ledge, identify the genuine
       level-1 exit trigger, verify level-2 load; then M3 sound/Z80 RE to retire assists.
+  - **Session 90 (2026-11-28): club step + canopy crossed ALIVE (score 1250, both club-walkers
+    flick-killed); stop-and-flick cadence reached a SECOND toilet alive; level named FLATULENT
+    SWAMPS LEVEL 1. Genuine level-1 clear / level-2 load STILL UNVERIFIED (s91). NEW: windowed
+    replay launcher (BoogermanReplay-US.bat + tools/replay-best.input) so the user can watch/play
+    the best alive route between sessions.**
+    * TOILET-TOP HOP (s90a/b): the toilet is a SOLID standable platform (top Y=0x81 vs ledge
+      0xA1; span ~11A0-11C4). From ledge right of it: unpress RIGHT W6 + boost drift-LEFT W24
+      lands LEFT of it (X=116E); drift-RIGHT W14 lands ON top; W30 overshoots (rides off the
+      right edge back to ledge); from the top boost drift-RIGHT W20 lands on the club step
+      (X=11E2). Drift speed ~3px/f ⇒ calibrate drift frames to target span, not to feel.
+    * CANOPY IS THE ROUTE: the club step's right end holds a leech trap (X~128x; s90b blind push
+      died @10561 at X=1283). ANY jump from the club step — plain B8 without DOWN boost too
+      (s90f) — rises onto the canopy grass platform above it; landing amid its two patrolling
+      club-walkers = contact death (s90c @10625, s90d @10585). Air-flicks whiff at descent
+      height (only 1 kill +50); spending ammo on grounded flicks before the hop starves them.
+    * CANOPY WALKERS KILLED ALIVE (s90g): short drift W20 lands on the canopy LEFT edge, left of
+      the walkers; GROUNDED flicks at same height kill both as they approach (+50 @10543,
+      +50 @10615 ⇒ score 1250). The bridge stop-flick recipe generalizes to canopy patrols.
+    * STOP-AND-FLICK CADENCE (s90h, NO death): W30 push + stop + 2 flicks, repeated, carried past
+      the canopy and down the slope to a SECOND toilet alive (h5/h7). Blind W100 pushes die
+      (s90g @10903 on the next walker).
+    * SECOND TOILET (s90i): standable top; DOWN beside / jump-on / DOWN-on-top produce NO 0244
+      setter / no clear; push right died @11131; the respawn intro card names the level:
+      FLATULENT SWAMPS LEVEL 1. No 0244 setter after @6086 in ANY s90 run ⇒ genuine clear /
+      level-2 load STILL UNVERIFIED ⇒ s91.
+    * USER REPLAY TOOLING: native/BoogermanReplay-US.bat runs the exe with --input-script
+      tools/replay-best.input and NO --capture-out/--exit-at-frame ⇒ SDL window SHOWN and paced
+      (main.c:3187), sound on; script pads MERGE with live keyboard (main.c:991-1010) so the
+      user can grab controls mid-replay or after it ends (no EXIT op ⇒ window stays open).
+      replay-best.input now carries the s90h alive route through the second toilet.
+    * Tooling: s90a-i.input; s90a-i captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s91 continue the stop-and-flick cadence past the second toilet, identify the
+      genuine level-1 exit trigger, verify level-2 load; then M3 sound/Z80 RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Gameplay (s90): repeat the s89m climb cadence (unpress LEFT W6 + settle 60 + boost drift-from-
-     jump+10) at each step face past the toilet ledge, identify the genuine level-1 exit trigger
-     (toilet contact/DOWN/jump-on do NOT clear), verify level-2 load natively. s89 solved the wall-3
-     leech trap (lunge-whiff bypass) and reached the exit ledge alive. Native port is PLAYABLE as of
-     s78 (B=jump).
+  1. Gameplay (s91): continue the s90h stop-and-flick cadence (W30 push + stop + 2 flicks) past
+     the second toilet on the slope, identify the genuine level-1 exit trigger (neither toilet's
+     contact/DOWN/jump-on/DOWN-on-top clears), verify level-2 load natively. s90 crossed the club
+     step + canopy alive (score 1250) and named the level (FLATULENT SWAMPS LEVEL 1). Native port
+     is PLAYABLE as of s78 (B=jump); user can watch the best route via BoogermanReplay-US.bat.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

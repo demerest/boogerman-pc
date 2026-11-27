@@ -531,3 +531,26 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   climb cadence per step and hunts the real exit trigger. No 0244 setter after @6086 in any s89 run.
 - Tooling: s89a-n.input; s89a-n captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
   ⇒ s90: per-step climbs past the toilet, genuine level-1 exit trigger + level-2 load; then M3.
+
+## s90: club step + canopy crossed ALIVE (score 1250); second toilet reached; clear UNVERIFIED (2026-11-28, US)
+- TOILET IS A SOLID PLATFORM: top Y=0x81 (0027D8) vs ledge ground Y=0xA1 / clamp 0x98 (0045F4);
+  span ~11A0-11C4. Hop calibration (drift ~3px/f): from ledge right of it unpress RIGHT W6 + boost
+  drift-LEFT W24 → lands LEFT of it (X=116E); drift-RIGHT W14 → ON top; W30 overshoots (rides off
+  right edge); from top boost drift-RIGHT W20 → club step (X=11E2). s90a t1/t2, s90b u1/u2.
+- CLUB STEP RIGHT END = leech trap X~128x (s90b blind push died @10561 at X=1283). ANY jump from the
+  club step (plain B8, no DOWN boost, s90f) rises onto the CANOPY grass platform above ⇒ landing
+  amid its two patrolling club-walkers = contact death (s90c @10625, s90d @10585). Air-flicks whiff
+  at descent height (1 kill +50 @10543 only); grounded flicks before the hop starve ammo (00 at landing).
+- CANOPY WALKERS KILLED ALIVE (s90g): boost drift-from-jump+10 W20 lands on canopy LEFT edge left of
+  the walkers; GROUNDED flicks at same height kill both as they approach (+50 @10543, +50 @10615 ⇒
+  score 1250). Bridge stop-flick recipe generalizes to canopy patrols.
+- STOP-AND-FLICK CADENCE (s90h, NO death): W30 push + stop + 2 flicks repeated → past canopy, down
+  the slope, alive beside a SECOND toilet (h5/h7). Blind W100 pushes die (s90g @10903).
+- SECOND TOILET (s90i): standable top (i3); DOWN beside / jump-on / DOWN-on-top = NO 0244 setter /
+  no clear; push right died @11131; respawn intro card names the level: FLATULENT SWAMPS LEVEL 1.
+  No 0244 setter after @6086 in any s90 run ⇒ genuine clear / level-2 load STILL UNVERIFIED ⇒ s91.
+- USER REPLAY: native/BoogermanReplay-US.bat + native/tools/replay-best.input (s90h route).
+  --input-script WITHOUT --capture-out ⇒ SDL window SHOWN + paced (main.c:3187); script pads MERGE
+  with live keyboard (main.c:991-1010) ⇒ user can take over mid/after replay; no EXIT ⇒ stays open.
+- Tooling: s90a-i.input; s90a-i captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
+  ⇒ s91: stop-and-flick past the second toilet, genuine exit trigger + level-2 load; then M3.

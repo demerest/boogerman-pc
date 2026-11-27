@@ -1,0 +1,302 @@
+# s90f: s90c prefix through u2 (alive on club step, ammo 04). s90c landed amid
+# TWO club-walkers on the higher grass platform: one air-flick kill (+50 @10577,
+# score 1130) then contact death @10625 with ammo 00 (u3 grounded flicks wasted
+# 2 of 4). FIX: skip u3 flicks; spend ALL 4 ammo as air-flicks during the bypass
+# descent to clear the walkers before landing, then push right hunting the exit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\p1.png
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\p2.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\p3.png
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\p4.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\p5.png
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\p6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\p6.png
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\q1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\q1.png
+# --- walk into trunk-wall 2 (cam freezes 0E87) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\s0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\s0.png
+# --- wall-2: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\w1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\w1.png
+# --- approach wall-3 left face (X=100B) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\w2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\w2.png
+# --- boost1 from w2 with AIR-FLICKS over the trap during descent (lunge whiffs) ---
+WAIT 60
+HOLD RIGHT
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 34
+PRESS A 6
+WAIT 6
+PRESS A 6
+WAIT 6
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\m1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\m1.png
+# --- cross trunk-4: settle 60, vertical boost + W12 ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\m2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\m2.png
+# --- flick + push to the ledge foot ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\m3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\m3.png
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\m4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\m4.png
+# --- ledge climb: unpress LEFT W6, settle 60, boost drift-from-jump+10 W40 ---
+HOLD LEFT
+WAIT 6
+RELEASE
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\n2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\n2.png
+# --- hop left of toilet: unpress RIGHT W6, boost drift-LEFT W24 ---
+HOLD RIGHT
+WAIT 6
+RELEASE
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD LEFT
+WAIT 24
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\t1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\t1.png
+# --- short drift-RIGHT W14 onto the toilet TOP ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 14
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\u1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\u1.png
+# --- from toilet top: boost drift-RIGHT W20 onto the club step (NO flicks: save ammo) ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 20
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\u2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\u2.png
+# --- PLAIN jump (no DOWN boost) + drift W40: stay BELOW the canopy, land past
+# the club-step leech trap (X~128x) while it is retracted ---
+WAIT 60
+HOLD RIGHT
+PRESS B 8
+WAIT 10
+HOLD RIGHT
+WAIT 58
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\f1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\f1.png
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\f2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\f2.png
+HOLD RIGHT
+WAIT 100
+RELEASE
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\f3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\f3.png
+WAIT 200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s90f\f4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s90f\f4.png
+EXIT
