@@ -1291,13 +1291,48 @@ verifiable much sooner.
     * => Next: s70 disassemble the interp intro/pause state machine (01562E caller,
       0632/0244 writers) to find the minimal play-confirm + pause trigger; then
       health/lives, damage/death/level-exit/scroll-limit validation vs web-US.
+  - **Session 70 (2026-11-27): built a minimal 68k disassembler over the US ROM and
+    decoded the attract/title state machines + all mode writers. CORRECTS s69: 0632 is
+    the TITLE attract timer (not an intro countdown) and 06D0 ticks at title idle. The
+    post-Start "intro" is a limbo that aborts to demo; mode-3 is written only by the
+    attract coroutine (15606), gated by obj0+10/+22/0254. Minimal play-confirm NOT yet
+    isolated (blind mash bisect failed) → s71 live obj0 trace.**
+    * Tooling: tools/s70-disasm.html + s70-disasm.ps1 (headless-Chrome 68k disassembler
+      over web/rom/boogerman_us.gen.js; -Scan finds MOVE.W #imm,(addr) writers; else
+      disassembles [start,end)). tools/s70-wt.ps1 parses ram-shot WT timelines.
+      Decoder covers MOVE/MOVEA/MOVEM/LEA/PEA/imm-ops/bit-ops/shifts/branches/DBcc/Scc/
+      JMP/JSR/LINK/etc; unknown → dc.w. Extension-word order src-before-dst verified.
+    * Mode writers (US, -Scan): 0244=3 @015606, =2 @01561A/00612A/00A2CC/018B3E,
+      =34 @01562E/008268, =1 @005AAC/014C6E/015E46, =0 @000762/005C8E/09BC22,
+      =37 @005C6E, =10 @01AE4A. 1506=160 @0064B2 / =90 @0064BE. 0632/06D0 have NO
+      immediate-absolute writers (register/other forms).
+    * Attract coroutine (obj0=A4=FF1A0E), 154C4-15730: +10=phase, +16=attract countdown
+      (init 190), +22=progress counter, +8=flags, +4C=yield, +48=resume. Phase-1 (154EA)
+      polls pad B(bit1)→1554A, Right(bit3)/Left(bit2)→15642 (intro stager), +8 bit11
+      (demo-done). +16 expiry→+10=1. Phase-2 (15560): +10==1→1562E demo(34); else
+      0254==0 & +22<200 (or 0254!=0 & +22<C0)→155AC clears player vars + 15606 mode 3;
+      +22>=threshold→1561A mode 2. So mode-3 needs the coroutine in phase-2 with +10!=1.
+    * Title dispatcher 5960 (US): needs 05D4==0F AND A65 bit0 AND 2BA==0 AND 284&9==0,
+      then Start-edge→6F82/menu; A-edge→6060. On US web 25E/5D4/A65/2BA never coincide
+      stock ⇒ START/A/B at first title do NOTHING (s70wS1/A1/B1 identical to no-input).
+    * Start-commit 5A36: needs 2BA!=0, Start-held(0502&80), 284&4==0 → ORI#5,0284 +
+      0244=1 @5AAC. (2BA must be set by the pad-history mirror; wt under-reported it.)
+    * CORRECTED semantics: 0632 cycles 5f→0→60 at TITLE idle (attract timer), 06D0 ticks
+      there too; both keep cycling post-Start (limbo) until abort→demo @~staging+1100.
+      So s69's "intro countdown ~950f" was the title timer continuing, not a level intro.
+    * Web empirical: first-title START/A/B no-op; post-demo RIGHT/LEFT no-op; first-attract
+      B-hold no-op, RIGHT-hold only restarts attract; post-Start+RIGHT-hold(300f) aborts to
+      demo (s70wSR 244=34@3625); reconstructed 8-press mash did NOT reach 3 (s69 mash is
+      timing-sensitive; exact frames not persisted).
+    * => Next: s71 recover exact s69 mash + live-trace obj0+10/+22/0254 (and 2BA) to find
+      the minimal mode-3 branch condition; mirror on native; then pause trigger; then
+      health/lives + damage/death/level-exit/scroll-limit vs web-US.
   Next experiments (anticipated, in order):
-  1. Gameplay entry + pause (s70): the intro→play handoff and pause are interp-only
-     (01562E/0632/0244=3 not in emitted C). Build a minimal 68k disassembler over the
-     US ROM intro region (or bisect the web mash) to isolate the minimal play-confirm
-     and the pause trigger; mirror on native with the corrected entry. THEN health/
-     lives vars + damage/death/level-exit/scroll-limit validation vs web-US and the
-     phase-aligned second-54FC-span compare. Entry staging + mode map done (s69).
+  1. Gameplay entry + pause (s71): disassembler + state-machine decode done (s70).
+     Recover the exact s69 web mash and live-trace obj0+10/+22/0254/2BA to isolate the
+     minimal mode-3 (play-confirm) branch and the pause trigger; mirror on native with
+     the corrected entry. THEN health/lives vars + damage/death/level-exit/scroll-limit
+     validation vs web-US and the phase-aligned second-54FC-span compare.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

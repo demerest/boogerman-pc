@@ -102,8 +102,8 @@ With the assist OFF the level plays and the true gameplay vars are:
 - **START semantics:** START tap/hold during the intro aborts to title; the s67
   "pause freeze" (object/camera frozen + audio ticking) is the TITLE-idle
   signature, not pause. True gameplay pause trigger/timing still TODO (s70).
-- `player_object` base, health and lives still TODO (s70). 068C/068E are NOT
-  health (camera scratch, see s69); timer 0632 = intro countdown.
+- `player_object` base, health and lives still TODO (s71). 068C/068E are NOT
+  health (camera scratch, see s69); 0632 = title attract timer (s70), not intro.
 
 ## Gameplay-phase findings (s69, 2026-11-27, US, clean config) — mode map
 
@@ -111,12 +111,34 @@ With the assist OFF the level plays and the true gameplay vars are:
 |---|---|---|---|
 | game mode | $FF0244 (mirror $FF0254) | word | 0=boot, 1=load/intro, 3=gameplay, 34/35=attract demos (web+native OBJ-TL) |
 | V-int routine | $FF1506 | word | 160=title, 180=level (staging writes 180 at commit+30) |
-| intro countdown | $FF0632 | word | title stays on screen while it counts; no-input aborts to demo ~staging+1100 |
+| title attract timer | $FF0632 | word | CORRECTED s70: cycles 5f→0→60 at TITLE idle (not an intro countdown); keeps cycling post-Start limbo until abort→demo ~staging+1100 |
 | game loop mode | $FF0516 | word | 4/8 in gameplay; mode 3 + 0516=4 + frozen 06D0/0222/0632 = PAUSED |
-| anim ticker | $FF06D0 | word | ticks in play; frozen when paused / in intro |
+| anim ticker | $FF06D0 | word | CORRECTED s70: ticks at title idle too; frozen only when paused |
 | camera scratch | $FF068C/$FF068E | words | written from 06BC−0698 (scroll routine), cleared by init 000AD2 — NOT health |
 
 - Corrected entry verified native: commit f2345 / staging f2375 (s69i). No-input
   abort to demo matches web (f3589). Single-button taps/holds do NOT confirm play;
   only a cumulative multi-press mash reached mode 3 → intro/pause state machine is
   interp-only (01562E/0632/0244=3 absent from emitted C) → s70 disassembly.
+
+## US code-address findings (s70, 2026-11-27) — disassembler decode
+
+Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
+(-Scan = immediate-writer search; else [start,end) hex). US ROM addresses.
+
+| Symbol | Address | Meaning |
+|---|---|---|
+| mode-3 (play) writer | $015606 | MOVE.W #3,(FF0244); attract coroutine phase-2, gated obj0+10!=1 & 0254==0 & obj0+22<200 |
+| mode-2 writer | $01561A | same coroutine, obj0+22>=threshold |
+| demo commit | $01562E | MOVE.W #34,(FF0244); obj0+10==1 |
+| attract coroutine | $0154C4-15730 | obj0=A4=FF1A0E; +10 phase, +16 attract countdown, +22 progress, +8 flags, +4C yield, +48 resume |
+| attract pad poll | $015506-1553C | B(bit1)→1554A; Right(bit3)/Left(bit2)→15642 intro stager |
+| Start commit | $005AAC | MOVE.W #1,(FF0244); via 5A36 needs 2BA!=0 + Start-held + 284&4==0 |
+| title dispatcher | $005960 | gates 05D4==0F & A65 bit0 & 2BA==0 & 284&9==0; never coincide on US stock |
+| menu A-confirm | $006060 / $00612A | 612A writes 0244=2 |
+| 1506 title/level | $0064B2 / $0064BE | #160 / #90 |
+
+- 0632/06D0 have no immediate-absolute writers (register/other forms); 0632 is the
+  title attract timer, 06D0 ticks at title idle (corrects s69).
+- Minimal play-confirm NOT isolated: reconstructed mash failed; s69 mash timing-sensitive.
+  s71 = recover exact mash + live-trace obj0+10/+22/0254/2BA.
