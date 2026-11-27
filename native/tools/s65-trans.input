@@ -1,0 +1,14 @@
+# s65 transitions: phase-matched to web script 3@2100:40,7@2600:600,8@2900:40,
+# 3@3300:40,7@3800:300 with the +350f native boot offset. Right hold drives
+# scroll to the limit; A jumps; Start in-level probes pause; Right after
+# pause probes resume.
+2450 START
+2490 -
+2950 RIGHT
+3250 RIGHT+A
+3290 RIGHT
+3550 -
+3650 START
+3690 -
+4150 RIGHT
+4450 -

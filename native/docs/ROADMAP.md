@@ -1135,11 +1135,51 @@ verifiable much sooner.
       run-us-misses logs live in captures-us/<Tag>/err.log (per-tag dir).
     * => Next: s65 phase/timing alignment + transitions/death/pause validation;
       M3 sound RE to retire assists.
+  - **Session 65 (2026-11-27): Gameplay-fidelity diagnosis. Native PLAYS the
+    level on the new build (s65l PNG @4500: jump pose, enemy, score 000400).
+    The "growing offset" splits into (1) an intermittent whole-guest FREEZE
+    and (2) a 3.3x spawn-window stretch; the pre-spawn pipeline is
+    phase-aligned once the boot offset is removed.**
+    * Freeze root cause: the 68K music driver takes the Z80 bus (98A30:
+      move.b #0,(A11100)) and enters the service tick (981FC) which never
+      completes under the cooperative 68K/Z80 interleave — a host-timing
+      race. Live-catch evidence: SR=0x2009 (IPL 0), rdb func=098A30,
+      crash_trail ends 98B52 cmd-copy -> 98A30 -> 983CE -> 981FA; no
+      read-side parks, Z80 not halted. NOT recomp codegen (interp freezes
+      too), NOT pacing mode (accurate freezes too).
+    * Trace-volume coupling: the wide OBJ-TL HI=2400 tap (~600k fprintf
+      lines during boot) slows the host enough to hit the race
+      near-deterministically (s65a/b/c/g/h/j all froze ~f1000-1600); the
+      narrow OBJ_TL_ADDRS tap is stable (s65k/s65l clean; s64d was clean).
+      Measurement rule: use ADDRS lists, not wide HI, for gameplay runs.
+    * Engine hardening (submodule 596b892, carried in segagenesisrecomp.diff):
+      sound_ack_note() acks A00FE4/A00FAC + 0524/0548/054C the instant the
+      guest sets them (SPLASH_ASSIST-gated). Necessary but not sufficient
+      alone; the interleave starvation fix itself is s66/M3 engine work.
+    * Phase table (s65k vs web-US, input-relative): commit +58 both ports;
+      548A/54B8/54FC at +349 constant (= the boot/input offset); spawn
+      window 54FC->5572 native 800f vs web 54FC->5662 240f ⇒ the growth is
+      an object-cadence gap in the spawn loop. Main loop + V-int mode
+      writes are FULL pace on both (0516 = 2 writes/frame); the half-pace
+      seen in s64 was object-level only.
+    * Boot pace is host-load dependent: identical pre-input configs
+      diverged ~275f before the first press (s65k vs s65l) ⇒ fixed-frame
+      transition probes cannot land reliably; s66 must phase-lock inputs
+      to observed RAM phases. Web oracle also shows run-to-run input-phase
+      variance under headless virtual time (webE vs web2/web3).
+    * Pause/death/level-exit/damage/scroll-limit validation deferred to s66
+      with phase-locked probes (s65l's pause press landed pre-control).
+    * Tooling: s65-phases.ps1 (cont/timer/scroll/spawn parser for OBJ-TL and
+      web WT), s65-probe.ps1 (live freeze catch + rdb func tally),
+      run-us-misses -Accurate; ram-shot watches += 19DE/698/69A.
+    * => Next: s66 engine interleave fix + spawn cadence + phase-locked
+      transition validation; M3 sound RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Gameplay fidelity (s65): quantify the native-vs-web level-pipeline offset
-     (constant ~350f pre-54B8, growing after); find the stall source (scheduler
-     cadence vs spawn-loop yields) and align; validate transitions (pause,
-     death, level exit), collision damage, and camera scroll limits vs web-US.
+  1. Gameplay fidelity (s66): fix the scheduler Z80 bus-hold starvation
+     (98A30 bus take -> 981FC park) engine-side; align the spawn-window
+     object cadence (native 800f vs web 240f); stabilize boot pace;
+     phase-locked input probes to validate pause, death, level exit,
+     collision damage, and camera scroll limits vs web-US.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

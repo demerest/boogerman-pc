@@ -1,5 +1,5 @@
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..f9a7e1c 100644
+index 4eee55c..28b6913 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -444,7 +444,7 @@ index 4eee55c..f9a7e1c 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2405,62 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2405,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -498,6 +498,32 @@ index 4eee55c..f9a7e1c 100644
 +            (unsigned long)g_frame_count, g_cpu.PC & 0xFFFFFFu, addr, val, size);
 +}
 +
++/* s65: immediate sound-ack emulation (SPLASH_ASSIST-gated). The 68K music
++ * send (98B62 cmd 0A -> 98A30 -> 981FC) spins MID-FRAME for Z80 acks that
++ * superzazu never issues; the s54 per-V-int seeding is too late for a spin
++ * that never reaches the next V-int (host-timing race => s65 freeze), and
++ * acks one frame late halve the main-loop pace. Ack the mailbox/service
++ * flags the instant the guest sets them; audio stays silent until M3. */
++static int s_ack_assist = -1;
++static void sound_ack_note(uint32_t addr, uint32_t val)
++{
++    if (s_ack_assist < 0) s_ack_assist = getenv("GENESIS_SPLASH_ASSIST") != NULL;
++    if (!s_ack_assist || !val) return;
++    if (addr >= 0xA00000u && addr < 0xA02000u) {
++        uint32_t o = addr & 0x1FFFu;
++        if (o == 0x0FE4u || o == 0x0FACu) {
++            extern GenesisMachine g_machine;
++            g_machine.bus.z80_ram[o] = 0;
++        }
++    } else if (addr >= 0xFF0000u && addr < 0xFF0000u + 0x10000u) {
++        uint32_t o = addr & 0xFFFFu;
++        if ((o >= 0x0524u && o <= 0x0525u) ||
++            (o >= 0x0548u && o <= 0x0549u) ||
++            (o >= 0x054Cu && o <= 0x054Du))
++            g_ram[o] = 0;
++    }
++}
++
  void m68k_write16(uint32_t byte_addr, uint16_t val)
  {
      byte_addr &= 0xFFFFFFu;
@@ -507,7 +533,15 @@ index 4eee55c..f9a7e1c 100644
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2069,6 +2480,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2062,6 +2499,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
+         g_mem_write_trace_fn(byte_addr + 1u, (uint8_t)val,        g_audio_cycle_counter);
+     }
+     gbus_write16(&g_machine.bus, byte_addr, val);
++    sound_ack_note(byte_addr, val);
+ }
+ 
+ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2507,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -515,7 +549,15 @@ index 4eee55c..f9a7e1c 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2089,6 +2501,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2082,6 +2521,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+     if (g_mem_write_trace_fn)
+         g_mem_write_trace_fn(byte_addr, val, g_audio_cycle_counter);
+     gbus_write8(&g_machine.bus, byte_addr, val);
++    sound_ack_note(byte_addr, val);
+ }
+ 
+ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2529,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);
