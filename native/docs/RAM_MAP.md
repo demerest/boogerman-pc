@@ -424,3 +424,22 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - s82 "max scroll 0CAB" wrong: no s82 run passed 065F. Bridge/exit UNREACHED natively.
 - Tooling: s84a-j.input; s84a-j captures; s84d1/d2 disasm. ⇒ s85: cross plat2 (flick range from
   stand / boost-from-distance stomp / spike dodge) then bridge + exit/scroll-limit.
+
+## plat2 crossing solved + water/bridge area (s85, 2026-11-27, US)
+- FLICK RANGE: grounded flick from stand at cam 05C0 whiffs at ~0x7D (crested uphill right); at
+  cam ~0600 (enemy3 at player's feet, gap ~0x40-0x50) it kills (+50). Flick travels at PLAYER
+  height ⇒ misses the higher crested head; uphill enemies need a BOOST-STOMP, not a flick.
+- CROSSING RECIPE (s85c/d, deterministic, alive, score 300): [s84 prefix: flicks 0480/04A0/04C8 +
+  boost1@04E0 + WAIT70 + boost2] + WAIT24 RELEASE + WAIT10 + HOLD RIGHT W25 + RELEASE + WAIT4 +
+  PRESS A6 (kills enemy3 ~+40f) + WAIT6 + PRESS B8 W6 DOWN6 (boost-stomp crested) + W60 + W90 +
+  HOLD RIGHT W60 + W60 ⇒ descends to water/bridge platform cam ~0745.
+- Crested walker uphill right (~06F0) throws red spikes that arc but FALL SHORT at cam 05C0 ⇒
+  standing at 05C0 is safe; the spike threat only bites at close range.
+- WATER/BRIDGE AREA cam ~0700-0B2x (NOT 0C00; s82 0CAB wrong): lower green platform over water with
+  wooden plank bridge + left spitter bush; higher right platform with nest + green spikes bush;
+  small fire-walker platform bottom-right; giant-mouth plant top-right. Wall freeze at cam ~0A7x
+  (lower platform right edge). Boost up-right advances to ~0B2x but descent contacts fire-walker /
+  spike ⇒ 00372C death 8455 (s85e). Bridge red walker ~0C78 + exit/scroll-limit STILL unreached.
+- Tooling: s85a-e.input; s85a-e captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
+  ⇒ s86: water/bridge platforming (kill fire-walker, avoid higher-platform spikes) to bridge
+  walker ~0C78 + exit/scroll-limit.

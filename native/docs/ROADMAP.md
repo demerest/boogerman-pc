@@ -1632,12 +1632,26 @@ verifiable much sooner.
       change; gitlinks stay 9907e77f40/6f705f2.
     * => Next: s85 cross plat2 (measure flick range from stand; boost-from-distance to stomp crested
       walker; or web-oracle-guided cadence), then bridge walker + exit/scroll-limit; then M3 sound RE.
+  - **Session 85 (2026-11-27): plat2 enemy cluster CROSSED (flick enemy3 + boost-stomp crested);
+    native route advanced 065F→~0B2x into water/bridge area; bridge walker + exit roll to s86.**
+    * FLICK RANGE: grounded flick from stand 05C0 whiffs at ~0x7D; at ~0600 (gap ~0x40-0x50) kills
+      enemy3 (+50). Flick travels at player height ⇒ misses the higher crested head; uphill enemies
+      need BOOST-STOMP. Crested spikes fall short at 05C0 ⇒ standing there is safe.
+    * CROSSING RECIPE (s85c/d, alive, score 300): s84 prefix + WAIT24 RELEASE + W10 + HOLD RIGHT W25
+      + RELEASE + W4 + A6 (enemy3) + W6 + B8/W6/DOWN6 (boost-stomp crested) + W60 + W90 + HOLD RIGHT
+      W60 + W60 ⇒ water/bridge platform cam ~0745. Then A6×2 + HOLD RIGHT W100×2 + boost ⇒ cam ~0A7x.
+    * WATER/BRIDGE AREA cam ~0700-0B2x (not 0C00): lower platform over water + plank bridge + left
+      spitter; higher right platform nest + spikes bush; fire-walker platform bottom-right. Wall at
+      ~0A7x; boost up-right → ~0B2x but descent contacts fire-walker/spike ⇒ death 8455 (s85e).
+      Bridge red walker ~0C78 + exit/scroll-limit STILL unreached natively.
+    * Tooling: s85a-e.input; s85a-e captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s86 water/bridge platforming (kill fire-walker, avoid higher-platform spikes) to
+      bridge walker ~0C78 + exit/scroll-limit; then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s85): cross the plat2 enemy cluster (cam 0620-0680) — measure grounded flick
-     range from a stand, boost-from-distance to stomp the crested walker, dodge its red spikes;
-     then bridge red walker ~0C78 and exit/scroll-limit (still unreached natively). s84 mapped the
-     staircase (wall1 0527/wall2 0587) and pinned jump/boost pad mechanics + 00372C=death. Blocks
-     1-2 solved s81. Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay polish (s86): water/bridge platforming from cam ~0A7x — kill the fire-walker, avoid the
+     higher-platform spikes bush, cross to bridge red walker ~0C78 and exit/scroll-limit (still
+     unreached natively). s85 crossed the plat2 cluster (flick enemy3 + boost-stomp crested) and
+     mapped the water area to ~0B2x. Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
