@@ -1647,11 +1647,31 @@ verifiable much sooner.
     * Tooling: s85a-e.input; s85a-e captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
     * => Next: s86 water/bridge platforming (kill fire-walker, avoid higher-platform spikes) to
       bridge walker ~0C78 + exit/scroll-limit; then M3 sound RE.
+  - **Session 86 (2026-11-28): water/bridge CROSSED and level-1 EXIT/scroll-limit (cam 0CAE) REACHED
+    natively; bridge red walker ~0C78 reached; level-complete transition fires. Trunk-wall + ledge
+    double-boost cadence pinned; yellow slope-walker boost-stomped; fire-walker bypassed (optional).**
+    * The "pit" right of the lower platform at cam 0A75 is a SOLID dark trunk column (screen x~203-244),
+      NOT open air: RIGHT held ⇒ no movement and no vert-vel writes; grounded flicks whiff (fire-walker
+      sits beyond it and LOWER). Route must go OVER it via the higher ledge, not walk off.
+    * Higher ledge: left part = nest (safe landing); right part = green spikes bush = FATAL from above
+      (s85e/s86d landing deaths 8455/8495). Double-boost drifts tuned: boost1 HOLD RIGHT W40 lands on
+      nest (cam ~0B1x); boost2 (after ~+40f re-boost gate) HOLD RIGHT W50 clears spikes and lands ledge
+      right / slope top (cam ~0B6x). W20/W40 too short (land back on lower / trunk); W100 overshoots
+      onto spikes (death).
+    * Yellow slope-walker (ledge right, patrols down-slope): flick whiffs (it is LOWER than player
+      flick height); BOOST-STOMP with HOLD RIGHT W30 drift kills it (+50 @8539). Then walk down-slope.
+    * Fire-walker (orange flame, small platform bottom-right at cam ~0A7x) BYPASSED via the ledge; never
+      killed (optional objective, not required for the route).
+    * BRIDGE reached natively cam ~0C7x-0C9x (plank bridge over water); red walker ~0C78 visible on it
+      (not killed); score 750. Scroll-limit/EXIT cam 0CAE @8651 (matches s82 web ~0CAB); reaching it
+      triggers level-complete → level-card transition (mode 10 @8869). Level-1 exit REACHED natively.
+    * Tooling: s86a-f.input; s86a-f captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s87 verify level-complete→level-2 load natively + optional red-walker kill / exit cadence
+      polish; then M3 sound/Z80 RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s86): water/bridge platforming from cam ~0A7x — kill the fire-walker, avoid the
-     higher-platform spikes bush, cross to bridge red walker ~0C78 and exit/scroll-limit (still
-     unreached natively). s85 crossed the plat2 cluster (flick enemy3 + boost-stomp crested) and
-     mapped the water area to ~0B2x. Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay polish (s87): verify the level-complete→level-2 load natively (card transition @8869 in
+     s86f), optional bridge red-walker kill and exit-cadence polish. s86 crossed the water/bridge area
+     and reached the level-1 exit/scroll-limit cam 0CAE. Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

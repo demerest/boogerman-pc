@@ -1,0 +1,97 @@
+# s86c: s85d prefix to cam ~0A7x trunk-wall; boost1 short-drift onto higher ledge
+# nest (left of spikes), boost2 over spikes bush, then push right toward bridge.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 20
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s86c\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s86c\p1.png
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s86c\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s86c\p2.png
+HOLD RIGHT
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s86c\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s86c\p3.png
+HOLD RIGHT
+WAIT 100
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s86c\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s86c\p4.png
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s86c\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s86c\p5.png
+EXIT

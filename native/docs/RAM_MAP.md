@@ -443,3 +443,23 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - Tooling: s85a-e.input; s85a-e captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
   ⇒ s86: water/bridge platforming (kill fire-walker, avoid higher-platform spikes) to bridge
   walker ~0C78 + exit/scroll-limit.
+
+## Water/bridge crossed + level-1 exit reached (s86, 2026-11-28, US)
+- TRUNK-WALL: the "pit" right of the lower platform at cam 0A75 (screen x~203-244) is a SOLID dark
+  trunk column, not open air. RIGHT held ⇒ no movement, no vert-vel writes; grounded flicks whiff
+  (fire-walker beyond it and LOWER than flick height). Route goes OVER it via the higher ledge.
+- LEDGE DOUBLE-BOOST CADENCE (s86d/f, from cam 0A7x stand): boost1 = B8 W6 DOWN6 + HOLD RIGHT W40 +
+  RELEASE W60 ⇒ lands on ledge LEFT nest (cam ~0B1x). WAIT ~40 (re-boost gate). boost2 = B8 W6 DOWN6
+  + HOLD RIGHT W50 + RELEASE W60 ⇒ clears the green spikes bush and lands ledge right / slope top
+  (cam ~0B6x). Drift tuning: W20/W40 too short (land back on lower / trunk); W100 overshoots ONTO
+  spikes = 00372C death (s85e 8455, s86d 8495). Spikes are FATAL from above.
+- YELLOW SLOPE-WALKER (ledge right, patrols down-slope): flick whiffs (lower than player flick
+  height); BOOST-STOMP = B8 W6 DOWN6 + HOLD RIGHT W30 + RELEASE W60 kills (+50 @8539). Then walk
+  down-slope to the bridge.
+- FIRE-WALKER (orange flame, small platform bottom-right at cam ~0A7x): BYPASSED via the ledge;
+  never killed (optional, not on the critical route).
+- BRIDGE + EXIT: plank bridge reached natively cam ~0C7x-0C9x; red walker ~0C78 visible on it (not
+  killed); score 750. Scroll-limit/EXIT cam 0CAE @8651 (≈ s82 web 0CAB); reaching it fires
+  level-complete → level-card transition (mode 10 @8869). Level-1 exit REACHED natively, no death.
+- Tooling: s86a-f.input; s86a-f captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
+  ⇒ s87: verify level-complete→level-2 load natively; optional red-walker kill / exit-cadence polish.
