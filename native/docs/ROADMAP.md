@@ -1540,11 +1540,30 @@ verifiable much sooner.
       9907e77f40/6f705f2.
     * => Next: s81 identify the 0575 obstacle / correct attack or jump-on-enemy (or derive a working
       route from web-US) to reach exit/scroll-limit; phase-aligned second-54FC; then M3 sound RE.
+  - **Session 81 (2026-11-27): attack buttons RE'd (A=flick/C=burp/DOWN-air=fart boost); blocks 1-2
+    solved; route to cam 0CAB; second-54FC span parity confirmed.**
+    * Player action dispatcher = interp 0080AE-0092xx (ctx A4=FF1A0E). Idle 008156: A-edge→009EF2
+      flick gated 023C>0 (ammo); C-edge→009806 burp charge gated 023E≥4; DOWN→008642; UP→00842E;
+      A+B+C→0082AA. Walk 0089C6: A-edge→008F10 flick, no C. Jump: DOWN-air→009168/009180 fart
+      boost (vel EF70); A-air→0091E4 flick. s80 "A inert" = A pressed mid-air (no A test there).
+    * Block 1 (cam 0575) SOLVED: grounded flick (s81n3 ammo 20→1C, score 600, cam 062C; s81n5
+      passes alive lives 2). Obstacle 2 = slope enemy ~065F (flick whiffs uphill): fart boost
+      clears it (s81n6 cam 07AD). s81n9 (flick 3→boost) passes both: cam 0C78 @jump35 lives 1;
+      dies at obstacle 3 ~0CAB ⇒ full route to exit open (s82). Stomp pinned 003744 (player
+      above enemy ⇒ kill; else player death flag 0266=1).
+    * Second-54FC span phase-aligned MATCH: native @6224 (mode10+168) bytes C7 C3 C3 03 C3 C0 C8
+      00 = web @6354 (mode10+170) high bytes; writers 001440/001476. GOTCHA: OBJ_TL_HI default
+      0x2212 filters taps >2212 — raise HI to tap 54FC.
+    * Tooling: s81-{probe,atk2,long,stopC,boost,combo,burp,early}.input; s81n1-n9; s81w1;
+      s81a-g-disasm. NO engine change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s82 complete the route to exit/scroll-limit (per-obstacle stomp/flick scripting
+      using 003744 stomp condition; obstacle 3 at ~0CAB); then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s81): solve the forward block at cam 0575 (identify obstacle / attack button /
-     jump-on-enemy, or derive a working route from web-US) to reach the exit/scroll-limit;
-     phase-aligned second-54FC-span compare; pause settled (none). End-card=respawn confirmed s80;
-     death/respawn chain pinned s79. Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay polish (s82): complete the level route to exit/scroll-limit — per-obstacle
+     stomp/flick/boost scripting (stomp condition 003744; obstacle 3 ~0CAB); blocks 1-2 solved
+     s81 (A=flick gated 023C, C=burp, DOWN-air=fart boost); second-54FC parity confirmed s81.
+     End-card=respawn confirmed s80; death/respawn chain pinned s79. Native port is PLAYABLE as
+     of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

@@ -327,3 +327,39 @@ pit. B8/WAIT40 dies there; B12/WAIT36 (s80n3) gets STUCK at 0575 then dies; A at
 inert (identical to no-attack). Full route to exit/scroll-limit NOT solved ⇒ s81 (identify the
 0575 obstacle / correct attack or jump-on-enemy, or derive a working route from web-US).
 - Tooling: s80-{long,atk,jump12}.input; s80n1/n2/n3; s80w1 (web wt). No engine change.
+
+## Attack/fart mechanics RE + blocks 1-2 solved (s81, 2026-11-27, US)
+
+Player field action dispatcher = interp state machine 0080AE-0092xx (A4 = player ctx FF1A0E;
+main loop 00077A → 002752 → 0026D4 physics). Pad sources: FF0502 held, FF050C pressed-edge,
+FF050E combo. Buttons: **A = flick** (snot projectile, ammo byte 023C), **C = burp** (charge,
+health 023E), **DOWN mid-air = fart boost**, B = jump (reconfirms s78).
+- Idle 008156: A-edge (050C&40) → 009EF2 flick gated 023C>0; C-edge (&20) → 009806 burp charge
+  (held-C stages anim B38E→B47E→B588, gated 023E≥4); DOWN held → 008642; UP held → 00842E;
+  050E&70==70 (A+B+C) → 0082AA. LEFT/RIGHT held branches to walk BEFORE A/C tests.
+- Walk 0089C6: B-edge → 00902A jump; A-edge → 008F10 flick (gated 023C>0); NO C while walking.
+- Jump states: B-edge re-jump 00902A; DOWN held mid-air → 009168/009180 FART BOOST (upward vel
+  EF70); A-edge mid-air → flick 0091E4 (gated ammo).
+- s80 "A inert" EXPLAINED: s80n2 pressed A mid-air (jump states have no A test) ⇒ never fired.
+- Stomp/hit resolution 003744: player ctx+24 vs enemy+38 — player above ⇒ enemy killed
+  ((48,A0)=0); else if target is player (A0==1A0E) and 0248==0 ⇒ 0266=1 (player death flag).
+
+Route results (cam 0698 / lives 022E):
+- Block 1 (cam 0575, enemy past first pit) SOLVED by grounded flick: s81n3 (B8/WAIT60/A6/WAIT10)
+  ammo 20→1C, score 600, cam 062C @jump24. s81n5 (8 survival B8/WAIT40 + flick) passes block 1
+  alive (cam 065F @jump16, lives 2).
+- Obstacle 2 = slope enemy at cam ~065F-0680 (point-blank, higher ground; horizontal flick
+  whiffs). Fart boost clears it when phased from distance: s81n6 cam 07AD @jump32 (lives 1).
+  s81n9 (flick 3 then boost B8/WAIT6/DOWN6/WAIT48/A6/WAIT10) passes BOTH: cam 07AD @jump19
+  lives 2, cam 0C78 @jump35 lives 1; end dies at obstacle 3 ~0CAB (death card). Full route to
+  exit/scroll-limit still open ⇒ s82 (per-obstacle stomp/flick scripting; stomp condition above).
+- s81n7 (flick 4→boost) and s81n8 (stop+charged burp at slope base) die at obstacle 2 (transition
+  phase / already adjacent when stopping).
+
+Second-54FC-span compare, phase-aligned: native field-entry span @6224 (mode10 6056+168),
+writers 001440/001476, bytes 54FC..550A = C7 C3 C3 03 C3 C0 C8 00; web @6354 (mode10 6184+170)
+words c7f0 c3f1 c33a 0342 c33a c0e4 c8e5 0000 ⇒ high bytes IDENTICAL. Earlier spans align too
+(boot f23/web25; clear 1984/1996; demo 2924/3051). GOTCHA: GENESIS_OBJ_TL_HI default 0x2212
+silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
+- Tooling: s81-{probe,atk2,long,stopC,boost,combo,burp,early}.input; s81n1-n9; s81w1 (web wt);
+  s81a-g-disasm. No engine change; gitlinks stay 9907e77f40/6f705f2.
