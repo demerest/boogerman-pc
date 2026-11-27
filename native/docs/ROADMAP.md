@@ -1203,11 +1203,46 @@ verifiable much sooner.
     * => Next: s67 phase-matched transition validation (pause, death, level exit,
       collision damage, camera scroll limits) vs web-US using corrected probes;
       re-compare the second spawn span phase-matched; M3 sound RE to retire assists.
+  - **Session 67 (2026-11-27): Phase-locked input scripting + pause validation.
+    Pause freezes gameplay RAM natively; first spawn span aligns 242f web==native.
+    Camera/health vars and reliable auto-entry deferred to s68.**
+    * Phase-locked inputs work with NO engine change: input_script already has
+      WAIT_RAM8/16, PRESS/HOLD/RELEASE, DUMP_RAM, SCREENSHOT. Scripts anchor to RAM
+      phases (hold-Start-until-WAIT_RAM16 0244=1) instead of fixed frames, removing
+      boot-pace variance (pause run committed 0244=1 @2755, pc=005AAC).
+    * Pause VALIDATED native: across a 120f pause the object table ($FF0100-01FF)
+      and camera/HUD ($FF0600-06FF) are byte-identical (0 word diffs); only the
+      level-controller yield timer ($FF1Axx) and audio/service counters
+      (0286/0288/052C/052E/0544/0560/0562/056C/056E/0578) keep ticking — music
+      continues during pause, gameplay halted. Web-US shows the same signature
+      (06D0 anim ticker + 0632 intro countdown freeze, 0516 V-int continues).
+    * Spawn span phase-matched: native first 54FC@2710->5662@2952 = 242f equals
+      web-US W6 first 54FC@3559->5662@3801 = 242f. The s65/s66 "second span 800f"
+      gap is an INPUT-PHASE mismatch (the pause press lands INSIDE native's 2nd
+      span but BEFORE web's 2nd span), not an engine cadence bug; a phase-aligned
+      input schedule is needed to compare it (s68).
+    * Measurement traps corrected: (a) a gameplay script MUST include a title->game
+      entry press or it stalls at title and the observed "gameplay" is the attract
+      demo; (b) 0698 and 06A0 are NOT the gameplay camera (06A0/06A2 track the
+      attract demo; 064E-0674 are background/water anim oscillators); (c) 5D4=0F is
+      a boot stage (~f101), not title-ready, and A65=3 is post-commit, so neither
+      anchors the entry.
+    * Entry reliability finding: hold-Start-until-commit committed in the pause run
+      but NOT in the scroll run (boot-variance / pressed-edge interaction) — auto-
+      entry must be made deterministic (s68).
+    * Tooling: s67-web.ps1 (US dump/shot + wtx custom watches), s67-diffram.ps1
+      (full-RAM word diff), s67-scroll.ps1 (per-addr timelines/clamps), s67-native.ps1
+      + s67-{pause,scroll,walk}.input; ram-dump.html gained ?rom=us&script=,
+      ram-shot.html gained ?wtx=. RAM_MAP.md gained the s67 gameplay-phase table.
+    * => Next: s68 deterministic auto-entry + gameplay camera/health/lives discovery,
+      then scroll-limit / damage / death / level-exit validation and a phase-aligned
+      second-span compare; M3 sound RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Gameplay fidelity (s67): phase-locked input probes (trigger off observed RAM
-     phases, not fixed frames) to validate pause, death, level exit, collision
-     damage, and camera scroll limits vs web-US; phase-matched re-compare of the
-     second 54FC spawn span. No engine freeze fix needed (s66 disproven).
+  1. Gameplay fidelity (s68): make the title->game auto-entry deterministic; identify
+     the gameplay camera/health/lives vars (outside the boot watchlist); validate
+     camera scroll limits, collision damage, death and level exit vs web-US;
+     phase-aligned re-compare of the second 54FC spawn span. Pause already validated
+     (s67); no engine freeze fix needed (s66 disproven).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

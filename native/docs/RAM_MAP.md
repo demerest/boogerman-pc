@@ -65,3 +65,23 @@ revisit (candidate: find a true longword counter, or adapter-side shim).
   `game_mode` in both game.toml).
 - `player_object`, `plc_pending`, `level_modes` remain TODO: they require
   gameplay-phase (post-Start) RAM diffs, i.e. M4 route validation.
+
+## Gameplay-phase findings (s67, 2026-11-27, US)
+
+From phase-locked native runs (WAIT_RAM16-anchored) + web-US full-RAM diffs:
+
+| Field | Address | Shape | Evidence |
+|---|---|---|---|
+| pause freeze set | $FF0100-01FF, $FF0600-06FF | object table + camera/HUD | identical across a 120f pause (0 word diffs) |
+| pause continues | $FF1A00+ (1A1E/1A5A/1A7C/1A86/1A88/1ACE/1AD4/1ADE/1AE0) | level-controller yield timer | still ticks during pause |
+| pause continues (audio) | 0286/0288/052C/052E/0544/0560/0562/056C/056E/0578 | sound/service counters | music keeps running during pause |
+| anim ticker | $FF06D0 | +2/~6f, freezes on pause | web WT pause signature |
+| intro countdown | $FF0632 | decrements, freezes on pause | web WT pause signature |
+| background anim | $FF064E-0674 | oscillators (water/sway) | NOT the camera (change every ~100f regardless of input) |
+| demo camera | $FF06A0/06A2 (mirrors 06AC/06AE) | attract-demo scroll | tracks the attract demo, NOT gameplay; gameplay camera still TODO |
+| player fields (candidate) | 0216-0228 | position/velocity | walk-vs-idle full-RAM diff |
+
+`player_object`, gameplay camera, health and lives remain TODO (s68): the
+gameplay camera/health vars are outside the boot/title watchlist and 0698/06A0
+proved to be demo/intro-only. Precise scroll-limit / damage / death validation
+needs them identified first.

@@ -5,7 +5,12 @@
 <div id="out">waiting</div>
 <script src="../vendor/gpgx/gpgx.web.js"></script>
 <script src="../vendor/gpgx/gpgx.wasm.js"></script>
-<script src="../rom/boogerman.gen.js"></script>
+<script>
+  /* s67: ?rom=us selects the region-matched US oracle dump (local-only). */
+  document.write('<script src="../rom/' +
+    (new URLSearchParams(location.search).get('rom') === 'us' ? 'boogerman_us.gen.js' : 'boogerman.gen.js') +
+    '"><\/script>');
+</script>
 <script src="../js/util.js"></script>
 <script src="../js/hooks.js"></script>
 <script src="../js/patches.js"></script>
@@ -23,8 +28,15 @@
     await BP.core.init({ silent: true });
     BP.core.loadGame(BP.util.b64ToBytes(window.BP_ROM_B64), 'boogerman.gen');
     const target = parseInt(new URLSearchParams(location.search).get('frames') || '180', 10);
+    /* s67: optional press timeline "lrId@frame:hold,..." (LR.START=3, LR.RIGHT=7). */
+    const presses = (new URLSearchParams(location.search).get('script') || '')
+      .split(',').filter(Boolean).map(s => {
+        const [id, rest] = s.split('@'); const [st, hold] = rest.split(':');
+        return { id: parseInt(id, 10), st: parseInt(st, 10), hold: parseInt(hold || '40', 10) };
+      });
     let n = 0;
     function step() {
+      for (const p of presses) BP.input.setVirtual(0, p.id, n >= p.st && n < p.st + p.hold);
       BP.core.run();
       if (++n >= target) {
         const ram = BP.core.ram();

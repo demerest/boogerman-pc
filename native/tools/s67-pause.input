@@ -1,0 +1,20 @@
+# s67 pause: phase-locked title->game entry, then +500f ~ web pause@2600.
+# pause1 vs pause2 (120f apart) must be identical in object/camera region;
+# resume dump must show the animation ticker (06D0) advancing again.
+WAIT_RAM8 0xFF05D4 0x0F
+WAIT 200
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT 500
+PRESS START 4
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s67npause\pause1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s67npause\pause1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s67npause\pause2.bin
+PRESS START 4
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s67npause\resume.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s67npause\resume.png
+EXIT

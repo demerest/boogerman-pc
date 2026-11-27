@@ -1,0 +1,19 @@
+# s67 scroll limits: phase-locked title->game entry, +500f, hold RIGHT 600f
+# then LEFT 600f. OBJ-TL ADDRS tap records camera clamp plateaus.
+WAIT_RAM8 0xFF05D4 0x0F
+WAIT 200
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT 500
+HOLD RIGHT
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s67nscroll\right.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s67nscroll\right.png
+RELEASE
+HOLD LEFT
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s67nscroll\left.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s67nscroll\left.png
+RELEASE
+EXIT

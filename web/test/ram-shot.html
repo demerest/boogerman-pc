@@ -49,6 +49,9 @@
     /* s64: wtFull=1 watches the entire 134-byte level header 0A50..0AD6. */
     if (new URLSearchParams(location.search).get('wtFull'))
       for (let a = 0xA50; a <= 0xAD6; a += 2) wtAddrs.push(a);
+    /* s67: wtx=hex,hex,... appends custom watch addresses (pause/health discovery). */
+    for (const t of (new URLSearchParams(location.search).get('wtx') || '').split(',').filter(Boolean))
+      wtAddrs.push(parseInt(t, 16));
     const wtPrev = {}; const wtLog = [];
     const gateFrames = [900, 1000, 1050, 1100, 1150, 1200, 1400, 1800, 2399];
     /* web ram() is little-endian per word: ramRead16 returns byte-swapped words. */

@@ -1,0 +1,14 @@
+# s67 walk: phase-locked title->game entry, +500f, hold RIGHT 1400f into
+# enemies/pits. OBJ-TL ADDRS tap records health/lives/camera deltas.
+WAIT_RAM8 0xFF05D4 0x0F
+WAIT 200
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT 500
+HOLD RIGHT
+WAIT 1400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s67nwalk\walk.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s67nwalk\walk.png
+RELEASE
+EXIT
