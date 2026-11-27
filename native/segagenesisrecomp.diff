@@ -1,5 +1,53 @@
+diff --git a/runner/cmd_server.c b/runner/cmd_server.c
+index 2503230..4ef0ae4 100644
+--- a/runner/cmd_server.c
++++ b/runner/cmd_server.c
+@@ -45,6 +45,7 @@ typedef int sock_t;
+ #endif
+ 
+ #include "genesis_runtime.h"
++#include "glue.h"   /* s66: glue_sched_debug (scheduler freeze snapshot) */
+ 
+ /* =========================================================================
+  * External state we need to inspect
+@@ -869,6 +870,17 @@ static void handle_vblank_info(int id)
+     send_response(buf);
+ }
+ 
++/* s66: scheduler freeze snapshot — which yield site the game fiber is
++ * suspended at, and whether atomic interrupt service owns raster debt. */
++static void handle_sched_state(int id)
++{
++    char body[768];
++    glue_sched_debug(body, sizeof body);
++    char buf[1024];
++    snprintf(buf, sizeof buf, "{\"id\":%d,\"ok\":true,%s", id, body + 1);
++    send_response(buf);
++}
++
+ /* object_table moved to runner/sonic_extras.c. */
+ 
+ static void handle_watch(int id, const char *json)
+@@ -2169,7 +2181,7 @@ static int online_allowed(const char *cmd)
+ {
+     static const char *const ok[] = {
+         "ping", "screenshot", "get_registers", "crash_trail", "read_memory", "read_ram", "sonic_history",
+-        "vblank_info", "frame_info", "frame_range", "addr_history", "read_vram", "read_cram",
++        "vblank_info", "sched_state", "frame_info", "frame_range", "addr_history", "read_vram", "read_cram",
+         "audio_stats", "frame_performance", "get_frame", "frame_timeseries", "z80_state",
+         "read_z80_ram", "fm_state", "psg_state", "vdp_state", "vdp_events", "read_vsram",
+         "dispatch_miss_info", "rdb_range", "rdb_dump", "rdb_count", "coverage_dump", "quit" };
+@@ -2280,6 +2292,8 @@ static CmdResult dispatch_command(const char *json, uint32_t frame_num)
+         handle_sonic_history(id, json);
+     } else if (strcmp(cmd, "vblank_info") == 0) {
+         handle_vblank_info(id);
++    } else if (strcmp(cmd, "sched_state") == 0) {
++        handle_sched_state(id);
+     } else if (strcmp(cmd, "frame_info") == 0) {
+         handle_frame_info(id);
+     } else if (strcmp(cmd, "frame_range") == 0) {
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..28b6913 100644
+index 4eee55c..6cb932f 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -566,6 +614,51 @@ index 4eee55c..28b6913 100644
      z80_sync_for_68k_access(byte_addr, 4);
      /* 32-bit write = two consecutive 16-bit writes. Only matters for FM
       * bus; SMPS never uses 32-bit to write FM regs so this is defensive
+@@ -2913,3 +3355,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
+ {
+     return s_game_fiber ? fiber_stack_range(s_game_fiber, lo, top) : -1;
+ }
++
++/* s66: read-only scheduler snapshot for the TCP debug server (freeze probes).
++ * Names the yield site the suspended game fiber resumes from and whether the
++ * last switch left it inside atomic interrupt service with raster debt. */
++void glue_sched_debug(char *out, size_t cap)
++{
++    snprintf(out, cap,
++             "{\"frame\":%" PRIu64 ",\"yield_site\":%d,\"game_running\":%d,"
++             "\"in_vblank_service\":%d,\"interleave_active\":%d,"
++             "\"irq_in_progress\":%d,\"irq_cycle_debt\":%u,\"irq_debt_level\":%d,"
++             "\"cycle_budget\":%d,\"budget_cyc_seen\":%u,\"audio_cycle_counter\":%u,"
++             "\"game_yielded_vblank\":%d,\"state_parked\":%d,"
++             "\"spin_addr\":\"%06X\",\"spin_count\":%d,"
++             "\"z80poll_addr\":\"%06X\",\"z80poll_streak\":%d,"
++             "\"watchdog_counter\":%u,\"chunk_cycles\":%u,"
++             "\"own_vint_latched\":%d,\"pending_irq\":%d,\"main_cpu_divisor\":%u}",
++             g_frame_count, (int)s_yield_site, s_game_running,
++             s_in_vblank_service, s_interleave_active,
++             s_irq_in_progress, s_irq_cycle_debt, s_irq_cycle_debt_level,
++             s_cycle_budget, s_budget_cyc_seen, g_audio_cycle_counter,
++             s_game_yielded_vblank, s_state_parked,
++             s_spin_addr, s_spin_count,
++             s_z80poll_last_addr, s_z80poll_streak,
++             s_watchdog_counter, (uint32_t)s_chunk_cycles,
++             s_own_vint_latched, s_pending_irq, s_main_cpu_divisor);
++}
+diff --git a/runner/glue.h b/runner/glue.h
+index 78f00b8..761c41e 100644
+--- a/runner/glue.h
++++ b/runner/glue.h
+@@ -61,6 +61,10 @@ typedef enum {
+ } GlueYieldSite;
+ GlueYieldSite glue_yield_site(void);
+ 
++/* s66: JSON scheduler snapshot (yield site, service/debt, spin streaks) for
++ * the TCP debug server; read-only, never perturbs the schedule. */
++void glue_sched_debug(char *out, size_t cap);
++
+ /* Shutdown: signal game thread to stop (if running). */
+ void glue_shutdown(void);
+ 
 diff --git a/runner/m68k_interp.c b/runner/m68k_interp.c
 index 1290d52..31f8824 100644
 --- a/runner/m68k_interp.c

@@ -1174,12 +1174,40 @@ verifiable much sooner.
       run-us-misses -Accurate; ram-shot watches += 19DE/698/69A.
     * => Next: s66 engine interleave fix + spawn cadence + phase-locked
       transition validation; M3 sound RE to retire assists.
+  - **Session 66 (2026-11-27): s65's two headline gaps DISPROVEN as measurement
+    artifacts. Native is playable end-to-end on the wide tap; no engine freeze
+    exists. The real remaining work is phase-matched transition validation.**
+    * Freeze disproven: a wide OBJ-TL HI=2400 run to --exit-at-frame 4600
+      completes exit=0 with a live level PNG (s66wide). The s65 "freeze" was the
+      probe's criterion (crash_trail lacks V-int 004DF0) false-positiving during
+      the boot sound-upload: the last 64 blocks are all 98xxx while frames still
+      advance. Live catch with the new sched_state cmd showed frame_count
+      244->285 over 1.5s, cycle_accum climbing, in_vblank_service=0,
+      irq_cycle_debt=0, yield_site=BUDGET — a healthy guest, not a park. The
+      probe then killed a healthy run. s65's "host-timing race" was the wide tap
+      slowing the host so the 4s poll landed inside the sound-upload window.
+    * Engine debug addition (carried in segagenesisrecomp.diff): glue_sched_debug
+      + TCP `sched_state` (yield site, in_vblank_service, irq_cycle_debt,
+      interleave_active, spin/z80poll streaks, watchdog) — read-only snapshot.
+    * Probe corrected: s66-probe.ps1 now uses a vblank_info frame_count delta
+      over 1.5s as the liveness test (trail-lacks-V-int alone is NOT a freeze).
+    * Spawn-cadence re-measure (s66narrow, clean ADDRS tap, new build): Start
+      commits 5418@2509; first spawn span 54FC@2710 -> 5662@2952 = 242f, matching
+      web-US 54FC@2360 -> 5662@2600 = 240f. The s65 "800f vs 240f" compared
+      native's SECOND 54FC span (2986 -> 5572@3786) against web's FIRST
+      (->5662): mismatched transitions, not a 3.3x cadence gap. The second-span
+      difference needs a phase-matched re-compare (web capture ends in steady
+      54FC), not an engine fix.
+    * Boot-pace host-load variance (~275f pre-input) remains real but is a
+      harness/pacing property, not a fidelity bug; phase-locked probes remove it.
+    * => Next: s67 phase-matched transition validation (pause, death, level exit,
+      collision damage, camera scroll limits) vs web-US using corrected probes;
+      re-compare the second spawn span phase-matched; M3 sound RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Gameplay fidelity (s66): fix the scheduler Z80 bus-hold starvation
-     (98A30 bus take -> 981FC park) engine-side; align the spawn-window
-     object cadence (native 800f vs web 240f); stabilize boot pace;
-     phase-locked input probes to validate pause, death, level exit,
-     collision damage, and camera scroll limits vs web-US.
+  1. Gameplay fidelity (s67): phase-locked input probes (trigger off observed RAM
+     phases, not fixed frames) to validate pause, death, level exit, collision
+     damage, and camera scroll limits vs web-US; phase-matched re-compare of the
+     second 54FC spawn span. No engine freeze fix needed (s66 disproven).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
