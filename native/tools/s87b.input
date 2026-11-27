@@ -1,0 +1,132 @@
+# s87b: s86f route to bridge, then STOP before red walker (~0C78), flick + BOOST-OVER
+# it (s87a proved walking into it = fatal 00372C @8635 -> death-respawn, NOT level complete),
+# then walk right to the genuine level-end and observe level-2 load.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+HOLD RIGHT
+WAIT 60
+HOLD RIGHT
+WAIT 100
+# --- stop before red walker, flick + boost-over ---
+WAIT_RAM16_GE 0xFF0698 0x0C20
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 40
+HOLD RIGHT
+WAIT 100
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+# --- observation window past the genuine level-end ---
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s87b\p7.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s87b\p7.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s87b\p8.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s87b\p8.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s87b\p9.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s87b\p9.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s87b\p10.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s87b\p10.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s87b\p11.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s87b\p11.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s87b\p12.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s87b\p12.png
+EXIT

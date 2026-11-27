@@ -463,3 +463,23 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   level-complete → level-card transition (mode 10 @8869). Level-1 exit REACHED natively, no death.
 - Tooling: s86a-f.input; s86a-f captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
   ⇒ s87: verify level-complete→level-2 load natively; optional red-walker kill / exit-cadence polish.
+
+## s86 "exit/level-complete" RETRACTED: cam 0CAE was a DEATH-respawn (s87, 2026-11-28, US)
+- The mode-10 card @8869 is NOT a level clear. Trace: 00372C (FATAL contact) @8635 at cam ~0C6x-0C7x
+  (bridge red walker), 0035DC lives 02→01 @9059, 00508E/005096 mode/0254=10 @8869 + 002F4A object-wipe
+  @8870 = the DEATH coroutine; the "FLATULENT SWAMPS LEVEL 1" card is the respawn intro. Post-card
+  field (s87a p7-p12) = level-1 START (grinning tree, cam reset) with the yellow slope-walker
+  RESPAWNED ⇒ level REPLAY. Level-2 load still UNVERIFIED. cam 0CAE = corpse-slide / right scroll
+  clamp, not a clear trigger.
+- BRIDGE GEOMETRY (zoom s86f p4): the red/white object at the bridge right end is a "B" BONUS box,
+  NOT an exit; the plank bridge ends over open water/bush at right. The red walker (~0C78) guards
+  the bridge; walk contact = 00372C fatal. Killing/bypassing it is REQUIRED to reach a genuine
+  level-end; the s86 "optional red-walker kill" is actually mandatory.
+- TOOLING ANOMALY (s88 must resolve): a cam-locked WAIT_RAM16_GE 0698 0x0C00/0x0C20 placed after the
+  final bridge walks did NOT fire when cam first crossed it (~8591); the script only advanced on the
+  post-respawn replay run (~8736), so RELEASE/flick/boost inputs landed during death-freeze and were
+  ignored. s87a/b/c therefore all died at the identical f8635. Post-bridge cam-locked stops are
+  unreliable until understood; use fixed cadence + an early RELEASE before the bridge instead.
+- Tooling: s87a-c.input; s87a-c captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
+  ⇒ s88: resolve the post-bridge cam-wait/RELEASE anomaly, kill/bypass the red walker, reach a
+  GENUINE level-1 clear and verify level-2 load natively.

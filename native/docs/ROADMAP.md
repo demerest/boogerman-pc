@@ -1668,10 +1668,30 @@ verifiable much sooner.
     * Tooling: s86a-f.input; s86a-f captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
     * => Next: s87 verify level-complete→level-2 load natively + optional red-walker kill / exit cadence
       polish; then M3 sound/Z80 RE to retire assists.
+  - **Session 87 (2026-11-28): s86 "level-1 exit / level-complete" RETRACTED — reaching cam 0CAE was a
+    DEATH (bridge red-walker contact), not a level clear; the mode-10 card @8869 is the death→respawn
+    re-showing the level-1 intro. Level-2 load still UNVERIFIED; the red walker is the true gate (s88).**
+    * s87a extended s86f past the card: 00372C (FATAL) @8635 at cam ~0C6x-0C7x, 0035DC lives 02→01 @9059,
+      00508E/005096 mode/0254=10 @8869 + 002F4A object-wipe @8870 = the DEATH coroutine. The
+      "FLATULENT SWAMPS LEVEL 1" card is the respawn intro; post-card field (p7-p12) = level-1 START
+      (grinning tree, cam reset) with the yellow slope-walker RESPAWNED ⇒ level REPLAY, not level 2.
+      cam 0CAE is the corpse-slide / right scroll clamp, not a clear trigger.
+    * Bridge geometry (zoom s86f p4): the red/white object at the bridge right is a "B" BONUS box, NOT
+      an exit; the plank bridge ends over open water/bush. The red walker (~0C78) guards it; walk
+      contact = 00372C fatal ⇒ killing/bypassing it is REQUIRED (s86 "optional" kill is mandatory).
+    * TOOLING ANOMALY (s88 resolve): a cam-locked WAIT_RAM16_GE 0698 0x0C00/0x0C20 placed after the
+      final bridge walks did NOT fire when cam first crossed it (~8591); the script only advanced on
+      the post-respawn replay (~8736), so RELEASE/flick/boost landed in death-freeze and were ignored.
+      s87a/b/c all died at the identical f8635. Post-bridge cam-locked stops unreliable until
+      understood; use fixed cadence + an early RELEASE before the bridge instead.
+    * Tooling: s87a-c.input; s87a-c captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s88 resolve the post-bridge cam-wait/RELEASE anomaly, kill/bypass the red walker, reach
+      a GENUINE level-1 clear and verify level-2 load; then M3 sound/Z80 RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s87): verify the level-complete→level-2 load natively (card transition @8869 in
-     s86f), optional bridge red-walker kill and exit-cadence polish. s86 crossed the water/bridge area
-     and reached the level-1 exit/scroll-limit cam 0CAE. Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay (s88): resolve the post-bridge cam-wait/RELEASE anomaly (s87), kill/bypass the bridge red
+     walker (~0C78, fatal 00372C), reach a genuine level-1 clear and verify level-2 load natively.
+     s87 showed s86's "exit/level-complete" was a death-respawn (level replay). Native port is PLAYABLE
+     as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
