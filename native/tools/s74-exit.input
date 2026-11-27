@@ -1,0 +1,62 @@
+# s74: progress right with periodic jumps to reach scroll-limit / level exit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s74n3\e1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s74n3\e1.png
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+PRESS A 4
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s74n3\e2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s74n3\e2.png
+RELEASE
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s74n3\e3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s74n3\e3.png
+EXIT

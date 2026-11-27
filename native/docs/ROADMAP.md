@@ -1399,11 +1399,30 @@ verifiable much sooner.
       NO engine change (IO trace reverted); gitlinks stay 9907e77f40/6f705f2.
     * => Next: s74 health/lives + damage/death/level-exit/scroll-limit vs web-US with
       hazard targeting; second-54FC phase compare; pause; then M3 sound RE.
+  - **Session 74 (2026-11-27): gameplay-validation boundaries mapped. Native
+    input/scroll/jump confirmed (s73); progression past the first screen is
+    platforming-gated, and fall-out-of-bounds is a reposition (no life loss).
+    health/lives + death/level-exit/scroll-limit need dedicated RE or a solved input
+    route (s75); pause = no button pause (s71).**
+    * Progression: continuous RIGHT stops at first pit (X=0517); RIGHT + periodic A
+      hops (s74-exit.input, 20 hops) do NOT cross — player blocks at the first pit/wall
+      (0222/0698 stay 0517/0527). Crossing needs precise platforming, not blind scripts.
+    * Forced death attempt: WRITE_RAM16 player Y (0226/0228) below field (s74-kill.input)
+      respawns player at start (0228→0148) WITHOUT lives decrement (stay x2) ⇒
+      out-of-bounds Y is a reposition, not a death. Player world Y = 0226/0228 confirmed.
+    * Enemy-contact damage (s74-hit.input) and pit-jump (s74-death.input) did not
+      converge blind ⇒ health/lives vars still not isolated.
+    * Pause: no button pause (s71 probes); restated, not a button.
+    * second-54FC phase compare deferred (needs PC trace in mode-10) → s75.
+    * Tooling: s74-{death,hit,exit,kill}.input. NO engine change; gitlinks stay
+      9907e77f40/6f705f2.
+    * => Next: s75 RE the death/respawn + HUD routines to pin health/lives addresses (or
+      solve a rightward input route), then damage/death/level-exit/scroll-limit vs
+      web-US + second-54FC; M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay validation (s74): native input/scroll/jump validated (s73). Discover
-     health/lives vars; validate damage/death/level-exit/scroll-limit vs web-US (clean
-     config) with hazard targeting / forced pit death; phase-aligned second-54FC-span
-     compare; settle the pause question (likely no button pause).
+  1. Gameplay RE (s75): pin health/lives via the death/respawn + HUD draw routines (or a
+     solved rightward input route); validate damage/death/level-exit/scroll-limit vs
+     web-US (clean config); phase-aligned second-54FC-span compare; pause settled (none).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

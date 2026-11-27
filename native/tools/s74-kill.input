@@ -1,0 +1,27 @@
+# s74: force death by writing player Y below the field (into water) to isolate
+# lives/health via before/after dumps. Player world Y = 0226/0228 (s68).
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s74n4\base.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s74n4\base.png
+WRITE_RAM16 0xFF0226 0x0000
+WRITE_RAM16 0xFF0228 0x0200
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s74n4\d1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s74n4\d1.png
+WAIT 400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s74n4\d2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s74n4\d2.png
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s74n4\d3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s74n4\d3.png
+EXIT

@@ -179,3 +179,14 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
   Health/lives, damage/death/exit/scroll-limit, second-54FC, pause → s74.
 - Tooling: s72-web.ps1 (budget-param), s72-{field,right}.input, s72-interp.ps1;
   s73-{damage,death}.input, s73-webdump.ps1.
+
+## Gameplay-validation boundaries (s74, 2026-11-27, US)
+
+- Player world Y = $FF0226/$FF0228 (confirmed: WRITE_RAM16 below field respawns at start,
+  0228→0148). Out-of-bounds Y is a REPOSITION, not a death (lives stay x2).
+- Progression past first screen is platforming-gated: RIGHT + periodic A hops block at
+  the first pit/wall (0222/0698 stay 0517/0527); blind scripts don't cross.
+- health/lives vars NOT isolated (enemy-contact / pit-jump / forced-Y didn't converge);
+  need RE of death/respawn + HUD draw routines or a solved input route (s75).
+- Pause: no button pause (s71). second-54FC phase compare deferred (needs PC trace).
+- Tooling: s74-{death,hit,exit,kill}.input.
