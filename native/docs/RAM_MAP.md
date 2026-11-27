@@ -112,14 +112,14 @@ With the assist OFF the level plays and the true gameplay vars are:
 | game mode | $FF0244 (mirror $FF0254) | word | 0=boot, 1=load/intro, 3=gameplay, 34/35=attract demos (web+native OBJ-TL) |
 | V-int routine | $FF1506 | word | 160=title, 180=level (staging writes 180 at commit+30) |
 | title attract timer | $FF0632 | word | CORRECTED s70: cycles 5f→0→60 at TITLE idle (not an intro countdown); keeps cycling post-Start limbo until abort→demo ~staging+1100 |
-| game loop mode | $FF0516 | word | 4/8 in gameplay; mode 3 + 0516=4 + frozen 06D0/0222/0632 = PAUSED |
+| game loop mode | $FF0516 | word | 4/8 alternation in gameplay; s69 "mode3+0516=4+frozen=PAUSED" REINTERPRETED s71 as post-restart limbo/intro (no button pause found) |
 | anim ticker | $FF06D0 | word | CORRECTED s70: ticks at title idle too; frozen only when paused |
 | camera scratch | $FF068C/$FF068E | words | written from 06BC−0698 (scroll routine), cleared by init 000AD2 — NOT health |
 
 - Corrected entry verified native: commit f2345 / staging f2375 (s69i). No-input
-  abort to demo matches web (f3589). Single-button taps/holds do NOT confirm play;
-  only a cumulative multi-press mash reached mode 3 → intro/pause state machine is
-  interp-only (01562E/0632/0244=3 absent from emitted C) → s70 disassembly.
+  abort to demo matches web (f3589). s69 "only a cumulative multi-press mash reached
+  mode 3" CORRECTED s71: the pre-staging presses were attract PLAYBACK; the real
+  confirm is a single DOWN tap post-staging (see s71).
 
 ## US code-address findings (s70, 2026-11-27) — disassembler decode
 
@@ -132,7 +132,7 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
 | mode-2 writer | $01561A | same coroutine, obj0+22>=threshold |
 | demo commit | $01562E | MOVE.W #34,(FF0244); obj0+10==1 |
 | attract coroutine | $0154C4-15730 | obj0=A4=FF1A0E; +10 phase, +16 attract countdown, +22 progress, +8 flags, +4C yield, +48 resume |
-| attract pad poll | $015506-1553C | B(bit1)→1554A; Right(bit3)/Left(bit2)→15642 intro stager |
+| attract pad poll | $015506-1553C | DOWN(bit1)→1554A; Right(bit3)/Left(bit2)→15642 intro stager (s71: &2=DOWN, not B) |
 | Start commit | $005AAC | MOVE.W #1,(FF0244); via 5A36 needs 2BA!=0 + Start-held + 284&4==0 |
 | title dispatcher | $005960 | gates 05D4==0F & A65 bit0 & 2BA==0 & 284&9==0; never coincide on US stock |
 | menu A-confirm | $006060 / $00612A | 612A writes 0244=2 |
@@ -140,5 +140,25 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
 
 - 0632/06D0 have no immediate-absolute writers (register/other forms); 0632 is the
   title attract timer, 06D0 ticks at title idle (corrects s69).
-- Minimal play-confirm NOT isolated: reconstructed mash failed; s69 mash timing-sensitive.
-  s71 = recover exact mash + live-trace obj0+10/+22/0254/2BA.
+- Minimal play-confirm ISOLATED s71 (below): START + one DOWN tap.
+
+## Gameplay-entry findings (s71, 2026-11-27, US) — minimal confirm + playback
+
+- **Pad-history playback:** while 2BA=1 (post-demo title) the 5A36 mirror overwrites
+  0502 from the FFFE00 history ring each frame; only held START passes live. The
+  pre-staging RIGHT/B/DOWN/C "mash" in s69/s70 traces is guest attract playback,
+  identical across runs — user taps there are invisible.
+- **Pad bits (MD):** Up=1, DOWN=2, Left=4, Right=8, B=0x10, C=0x20, A=0x40, Start=0x80.
+  s70's "&2=B" was wrong; &2=DOWN (the phase-1 join path 1554A).
+- **Minimal play-confirm:** START hold (commit 0244=1 + staging 0254=1) then ONE DOWN
+  tap in the late-staging window → 0244=3 via 015606 (obj0+10=0, 0254=1, +22=b4<C0).
+  Web s71wK: commit 2451/staging 2484/DOWN 2900/mode3 2977. Native s71n1: commit
+  2345/staging 2375/DOWN ~2779/mode3 2854 (deterministic, s71-entry.input).
+  DOWN window late-staging (+416 ok, +116 fails); RIGHT/UP/B alone do NOT confirm.
+- **START in true gameplay = level RESTART** (re-commit 0244=1 → re-staging → limbo,
+  needs DOWN again). NOT pause, NOT quit-to-title (s68 hold-quit was false-commit).
+- **No button pause:** START/B/C/A/Mode/UP/DOWN taps/holds in-level give no
+  mode3+frozen-world pause; s69 "PAUSED" = post-restart limbo/intro.
+- **Level opening:** long lab story-crawl cutscene in mode 3 before the swamp field
+  (s71n2/n3/n4); field+scroll validated s64/s68. Skip trigger TBD (s72).
+- Tooling: tools/s71-wt.ps1 (windowed WT), s71-{entry,play,field,skip}.input.

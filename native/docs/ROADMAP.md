@@ -1327,12 +1327,45 @@ verifiable much sooner.
     * => Next: s71 recover exact s69 mash + live-trace obj0+10/+22/0254 (and 2BA) to find
       the minimal mode-3 branch condition; mirror on native; then pause trigger; then
       health/lives + damage/death/level-exit/scroll-limit vs web-US.
+  - **Session 71 (2026-11-27): ISOLATED the minimal play-confirm (START + one DOWN tap)
+    and mirrored it natively (deterministic mode-3 @2854 via 015606). Recovered the exact
+    s69 mash from s69wmash2 WT and discovered the pre-staging "mash" was the game's own
+    attract PLAYBACK (pad-history mirror), not user input. CORRECTED pad bits (&2=DOWN,
+    MD B=0x10) and START-in-level semantics (= level RESTART, not pause/quit). No pause
+    button exists among START/B/C/A/Mode/UP/DOWN; s69 "PAUSED" was the limbo/intro.**
+    * Pad-history playback: while 2BA=1 (post-demo title f2065-2523) the 5A36 mirror
+      overwrites 0502 from the FFFE00 history ring each frame; only a held START passes
+      live (5A4A bne skips the mirror). So the s69/s70 pre-staging RIGHT/B/DOWN/C pattern
+      is guest-generated attract playback, identical across runs — user taps there are
+      invisible. This is why single-button pre-staging probes "did nothing".
+    * CORRECTED s70 pad labels: 0502&2 = DOWN (not B); MD B=0x10, C=0x20, A=0x40,
+      Start=0x80, Up=1, Left=4, Right=8 (web input.js LR.B=0→MD B=0x10). Phase-1 1550C
+      &2→1554A is the DOWN join path; 15642 Right/Left = intro stager.
+    * Minimal confirm (web s71wK): START hold @2450 (commit 2451/staging 2484) + DOWN tap
+      @2900 (staging+416) → 0244=3 @2977, 0254=3 @3007, obj0 reinit level-ctrl @3053.
+      RIGHT/UP/B post-staging alone do NOT confirm (s71wD/E/F); the s69 "multi-press mash"
+      was playback + this one DOWN. DOWN window is late-staging (+416 ok, +116 fails
+      s71wN); web has run-variance, native +400 is reliable.
+    * Native mirror (s71n1, s71-entry.input): WAIT 0244=34→1506=160→WAIT300→HOLD START→
+      WAIT 0254=1→RELEASE→WAIT400→PRESS DOWN4→WAIT 0244=3. Commit 2345/staging 2375/
+      mode-3 2854 (pc 015606). Deterministic. Level opens with a LONG lab story-crawl
+      cutscene (s71n2/n3/n4) before the swamp field; field+scroll validated s64/s68.
+    * START in TRUE gameplay = level RESTART: tap or hold re-commits 0244=1 (web @3400)
+      → re-staging 254=1/1506=180 @3432 → frozen limbo (needs DOWN again). NOT pause and
+      NOT quit-to-title (s68 "hold quits" was the false-commit limbo). s71wP/R1.
+    * Pause probe: B/C/A/Mode/UP/DOWN taps and START tap/hold in-level produce no
+      mode-3+frozen-world pause; s69 "PAUSED (mode3+0516=4+frozen)" reinterpreted as the
+      post-restart limbo / intro wait. True pause trigger absent or non-button (s72).
+    * Tooling: tools/s71-wt.ps1 (windowed WT parser, -From/-To), s71-{entry,play,field,
+      skip}.input. s70-wt.ps1 reused for full timelines.
+    * => Next: s72 get past the lab cutscene reliably (find skip trigger or auto-advance),
+      then health/lives vars + damage/death/level-exit/scroll-limit validation vs web-US
+      in the true field; phase-aligned second-54FC-span compare; M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay entry + pause (s71): disassembler + state-machine decode done (s70).
-     Recover the exact s69 web mash and live-trace obj0+10/+22/0254/2BA to isolate the
-     minimal mode-3 (play-confirm) branch and the pause trigger; mirror on native with
-     the corrected entry. THEN health/lives vars + damage/death/level-exit/scroll-limit
-     validation vs web-US and the phase-aligned second-54FC-span compare.
+  1. Gameplay validation (s72): entry + minimal confirm done (s71). Reach the playable
+     swamp field past the lab cutscene; discover health/lives vars; validate damage/death/
+     level-exit/scroll-limit vs web-US (clean config); phase-aligned second-54FC-span
+     compare; settle the pause question (likely no button pause).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

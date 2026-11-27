@@ -1,0 +1,20 @@
+# s71: deterministic gameplay entry with the ISOLATED minimal confirm (s71 web):
+# post-demo title -> START hold until staging -> DOWN tap at staging+400 ->
+# mode 3 (play). START tap in-level = level RESTART (web s71wP), not pause.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s71n1\play.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s71n1\play.png
+PRESS START 3
+WAIT 100
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s71n1\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s71n1\r1.png
+EXIT

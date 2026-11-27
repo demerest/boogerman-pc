@@ -1,0 +1,21 @@
+# s71: try skipping the level-opening lab cutscene with B, then capture field+scroll.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT 200
+PRESS B 4
+WAIT 500
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s71n4\field.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s71n4\field.png
+HOLD RIGHT
+WAIT 300
+RELEASE
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s71n4\right.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s71n4\right.png
+EXIT
