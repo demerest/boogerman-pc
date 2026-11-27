@@ -1375,22 +1375,34 @@ verifiable much sooner.
     * True-field vars confirmed vs web-US idle→RIGHT diff (s72wE/F): camera X
       0698=06A0=06AC (0→0527), player X 0222/0224 (0→0517/0677), screen 0216. The s68
       vars ARE valid in the field; they read 0 during the crawl / idle-at-left edge.
-    * NEW BLOCKER: native RIGHT/LEFT/B/C (TH=1 pad phase) never reach 0502 (stays 0) in
-      the field, while START/A/DOWN/UP (TH=0 phase) work; web delivers RIGHT=8 and
-      scrolls (0222→0517). Guest flags 2BA/284/A65/5D4/1506 identical native vs web ⇒ a
-      native pad-read/IO fidelity bug, not guest state. s72n1/n2 RIGHT-hold PNGs show no
-      scroll. FORCE_INTERP=1 cannot boot (cvblank_fires=0), so localization needs an IO
-      trace, not forced interp.
-    * Deferred to s73+ (need working horizontal input): health/lives discovery,
-      damage/death/level-exit/scroll-limit vs web-US, second-54FC phase compare, pause.
+    * s72 "direction-input BLOCKER" SUPERSEDED by s73: it was a SCRIPT-SYNTAX error
+      (HOLD takes no duration; "HOLD RIGHT 800" ignored the 800), NOT an engine bug.
     * Tooling: s72-web.ps1 (budget-param ram-shot; s69-web's fixed 60s budget starves
       >~3600f), s72-field.input, s72-right.input, s72-interp.ps1.
-    * => Next: s73 fix native TH=1 pad direction input (engine pad/IO fidelity), then
-      health/lives + damage/death/level-exit/scroll-limit vs web-US, second-54FC, pause.
+  - **Session 73 (2026-11-27): s72 blocker RESOLVED as input-script syntax — native
+    horizontal play VALIDATED byte-identical to web-US. The native port IS playable
+    (scroll + jump); health/lives + damage/death/level-exit need hazard targeting (s74).**
+    * Root cause: input_script HOLD takes NO duration (holds until RELEASE); PRESS btn N
+      is the timed form. s72's "HOLD RIGHT 800" set the mask but advanced 0 frames, so
+      DUMP/EXIT fired next frame and RIGHT never held. IO trace (env-gated, added then
+      reverted) proved pad/TH model correct (START TH=0 ret=13, DOWN ret=31); pad=0008
+      simply never asserted because the hold span was 0.
+    * Corrected s72-right.input (HOLD RIGHT + WAIT 800 + RELEASE): native 0502=8 during
+      hold, player X 0222/0224=0517/0677, camera 0698=0527 — EXACTLY web-US (s72wF).
+      s73n2 r.png shows scrolled field. Native scroll/jump fidelity confirmed.
+    * Scroll behavior: continuous RIGHT stops at the first pit (player X stays 0517);
+      crossing requires jumps. RIGHT + repeated PRESS A hops platforms (s73n4) but did
+      not die (lives stay x2) ⇒ health/lives not isolated yet.
+    * Deferred to s74: health/lives vars, damage/death/level-exit/scroll-limit vs web-US
+      (target hazards / force pit death), second-54FC phase compare, pause.
+    * Tooling: s73-damage.input, s73-death.input, s73-webdump.ps1 (budget-param ram-dump).
+      NO engine change (IO trace reverted); gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s74 health/lives + damage/death/level-exit/scroll-limit vs web-US with
+      hazard targeting; second-54FC phase compare; pause; then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Native input fidelity (s73): fix the TH=1 pad phase so RIGHT/LEFT/B/C work in the
-     field (the playability blocker); then health/lives discovery + damage/death/
-     level-exit/scroll-limit vs web-US (clean config); phase-aligned second-54FC-span
+  1. Gameplay validation (s74): native input/scroll/jump validated (s73). Discover
+     health/lives vars; validate damage/death/level-exit/scroll-limit vs web-US (clean
+     config) with hazard targeting / forced pit death; phase-aligned second-54FC-span
      compare; settle the pause question (likely no button pause).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038

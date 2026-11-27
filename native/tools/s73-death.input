@@ -1,0 +1,47 @@
+# s73: field + RIGHT with repeated A jumps to hop into the pit / enemies and die,
+# isolating lives/health via before/after dumps.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n4\base.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n4\base.png
+HOLD RIGHT
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+PRESS A 4
+WAIT 50
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n4\d1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n4\d1.png
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n4\d2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n4\d2.png
+RELEASE
+EXIT

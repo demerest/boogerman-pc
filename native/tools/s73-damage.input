@@ -1,0 +1,30 @@
+# s73: field + continuous RIGHT to contact enemies/hazards (damage/death),
+# periodic dumps/shots to isolate health/lives and scroll-limit/level-exit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n3\base.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n3\base.png
+HOLD RIGHT
+WAIT 1200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n3\d1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n3\d1.png
+WAIT 1200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n3\d2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n3\d2.png
+WAIT 1200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n3\d3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n3\d3.png
+RELEASE
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n3\d4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n3\d4.png
+EXIT

@@ -1,4 +1,5 @@
-# s72: reach true field (mode 10), then long RIGHT hold to test pad delivery/scroll.
+# s72/s73: reach true field (mode 10), then RIGHT hold (HOLD + WAIT, not HOLD n)
+# to test pad delivery/scroll. HOLD takes no duration; use WAIT for the span.
 WAIT_RAM16 0xFF0244 0x0034
 WAIT_RAM16 0xFF1506 0x0160
 WAIT 300
@@ -10,7 +11,12 @@ PRESS DOWN 4
 WAIT_RAM16 0xFF0244 0x0003
 WAIT_RAM16 0xFF0244 0x0010
 WAIT 800
-HOLD RIGHT 800
-DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s72n2\r.bin
-SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s72n2\r.png
+HOLD RIGHT
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n2\r.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n2\r.png
+RELEASE
+WAIT 200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s73n2\idle2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s73n2\idle2.png
 EXIT

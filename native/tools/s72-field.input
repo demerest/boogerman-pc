@@ -1,5 +1,6 @@
 # s72: entry + minimal confirm, then wait for crawl auto-advance (0244=10),
 # screenshot mode-10, then RIGHT-hold to test true-field scroll.
+# NOTE (s73): HOLD takes no duration; use HOLD RIGHT + WAIT N (not HOLD RIGHT N).
 WAIT_RAM16 0xFF0244 0x0034
 WAIT_RAM16 0xFF1506 0x0160
 WAIT 300
@@ -14,7 +15,8 @@ WAIT 100
 DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s72n1\m10.bin
 SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s72n1\m10.png
 WAIT 500
-HOLD RIGHT 300
+HOLD RIGHT
+WAIT 300
 DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s72n1\right.bin
 SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s72n1\right.png
 RELEASE

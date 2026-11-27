@@ -172,9 +172,10 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
   call 6F82, directions ignored); +4C yield expiry → mode10 + 0284|=5.
 - **True-field vars** (web-US idle→RIGHT diff): camera X 0698=06A0=06AC; player X
   0222/0224; screen 0216. Valid in field; read 0 during crawl / idle-at-left.
-- **BLOCKER (s73):** native TH=1 pad phase (RIGHT/LEFT/B/C) never reaches 0502 in the
-  field (stays 0); TH=0 phase (START/A/DOWN/UP) works. Web delivers RIGHT=8 + scroll.
-  Guest flags identical native/web ⇒ native pad-read/IO fidelity bug. FORCE_INTERP
-  cannot boot (cvblank_fires=0). Health/lives, damage/death/exit/scroll-limit,
-  second-54FC, pause deferred until horizontal input works.
-- Tooling: s72-web.ps1 (budget-param), s72-{field,right}.input, s72-interp.ps1.
+- **s72 "blocker" SUPERSEDED s73:** it was input-script syntax (HOLD takes no duration;
+  "HOLD RIGHT 800" ignored the 800), NOT an engine bug. Corrected HOLD RIGHT + WAIT 800:
+  native 0502=8, player 0222/0224=0517/0677, cam 0698=0527 = web-US exactly. Native
+  scroll/jump VALIDATED. Continuous RIGHT stops at first pit; crossing needs jumps.
+  Health/lives, damage/death/exit/scroll-limit, second-54FC, pause → s74.
+- Tooling: s72-web.ps1 (budget-param), s72-{field,right}.input, s72-interp.ps1;
+  s73-{damage,death}.input, s73-webdump.ps1.
