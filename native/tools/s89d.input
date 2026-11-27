@@ -1,0 +1,242 @@
+# s89d: s89c prefix through z0 (right of wall-3). The red ground trap kills on ANY contact
+# incl. stomp (s89c died @9749 landing on it) => BYPASS: vertical boost + W52 drift lands in
+# the safe pocket between trap (world ~1094) and trunk-4 face (~10E3); overshoot slides down
+# trunk-4 left face into the same pocket. Then cross trunk-4 and push for the level-1 exit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\p1.png
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\p2.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\p3.png
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\p4.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\p5.png
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\p6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\p6.png
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\q1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\q1.png
+# --- walk into trunk-wall 2 (cam freezes 0E87) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\s0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\s0.png
+# --- wall-2: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\w1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\w1.png
+# --- approach wall-3 left face ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\w2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\w2.png
+# --- wall-3: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\z0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\z0.png
+# --- BYPASS the trap: settle 60, vertical boost + W52 drift into the safe pocket ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 52
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\z5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\z5.png
+# --- inch to trunk-4 face ---
+HOLD RIGHT
+WAIT 10
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\z6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\z6.png
+# --- trunk-4: settle 60, vertical boost + W12, land right, flick ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\z7.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\z7.png
+# --- push right in observed steps ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\z8.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\z8.png
+HOLD RIGHT
+WAIT 100
+RELEASE
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\z9.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\z9.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89d\z10.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89d\z10.png
+EXIT

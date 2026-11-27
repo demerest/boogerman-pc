@@ -1,0 +1,230 @@
+# s89k: s89j prefix through w2 (X=100B, jump-safe gap 137). Leech trap: walk-aggro ~46,
+# jump-aggro >=94, kills on any contact, stomp mutually fatal, flick/crouch-flick whiff
+# (height), burp inert. UNTRIED COUNTER: AIR-FLICK (0091E4) at trap height during descent.
+# boost1 drift-from-jump with two air-flicks at f~48/54 over the trap; land ~10D1; then
+# cross trunk-4 and push for the exit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\p1.png
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\p2.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\p3.png
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\p4.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\p5.png
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\p6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\p6.png
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\q1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\q1.png
+# --- walk into trunk-wall 2 (cam freezes 0E87) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\s0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\s0.png
+# --- wall-2: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\w1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\w1.png
+# --- approach wall-3 left face (X=100B) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\w2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\w2.png
+# --- boost1 from w2 with AIR-FLICKS over the trap during descent ---
+WAIT 60
+HOLD RIGHT
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 34
+PRESS A 6
+WAIT 6
+PRESS A 6
+WAIT 6
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\m1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\m1.png
+# --- cross trunk-4: settle 60, vertical boost + W12 ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\m2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\m2.png
+# --- flick + push right in observed steps ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\m3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\m3.png
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\m4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\m4.png
+HOLD RIGHT
+WAIT 100
+RELEASE
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\m5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\m5.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89k\m6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89k\m6.png
+EXIT

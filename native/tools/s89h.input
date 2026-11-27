@@ -1,0 +1,312 @@
+# s89h: s89g prefix through z0 (stand right of wall-3). Dense observation: 60 screenshots
+# at ~4f cadence covering the whole danger window (deaths observed 9683-9791 in s89a-g).
+# NO input after z0. View the shots just before the 00372C tap to SEE the killer.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\p1.png
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\p2.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\p3.png
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\p4.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\p5.png
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\p6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\p6.png
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\q1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\q1.png
+# --- walk into trunk-wall 2 (cam freezes 0E87) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\s0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\s0.png
+# --- wall-2: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\w1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\w1.png
+# --- approach wall-3 left face ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\w2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\w2.png
+# --- wall-3: settle 60, vertical boost + W12, land right, STAND ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89h\z0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\z0.png
+# --- dense observation: 60 shots @~4f, no input ---
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h01.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h02.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h03.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h04.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h05.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h06.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h07.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h08.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h09.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h10.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h11.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h12.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h13.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h14.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h15.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h16.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h17.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h18.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h19.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h20.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h21.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h22.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h23.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h24.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h25.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h26.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h27.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h28.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h29.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h30.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h31.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h32.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h33.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h34.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h35.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h36.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h37.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h38.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h39.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h40.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h41.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h42.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h43.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h44.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h45.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h46.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h47.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h48.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h49.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h50.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h51.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h52.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h53.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h54.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h55.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h56.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h57.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h58.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h59.png
+WAIT 3
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89h\h60.png
+EXIT

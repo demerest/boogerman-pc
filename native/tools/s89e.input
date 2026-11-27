@@ -1,0 +1,224 @@
+# s89e: s89d prefix through z0 (stand right of wall-3). NO INPUT: screenshot every 6f x16
+# to watch what kills a standing player there (suspect: yellow club-walker lobs green
+# projectiles left over trunk-4; s89d died @9687 mid vertical-boost with green splatter).
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\p1.png
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\p2.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\p3.png
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\p4.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\p5.png
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\p6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\p6.png
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\q1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\q1.png
+# --- walk into trunk-wall 2 (cam freezes 0E87) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\s0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\s0.png
+# --- wall-2: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\w1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\w1.png
+# --- approach wall-3 left face ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\w2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\w2.png
+# --- wall-3: settle 60, vertical boost + W12, land right, STAND ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s89e\z0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\z0.png
+# --- pure observation: 16 shots @6f, no input ---
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e01.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e02.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e03.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e04.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e05.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e06.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e07.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e08.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e09.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e10.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e11.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e12.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e13.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e14.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e15.png
+WAIT 6
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s89e\e16.png
+EXIT

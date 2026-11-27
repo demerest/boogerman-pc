@@ -508,3 +508,26 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   00508E) after @6086 in any s88 run.
 - Tooling: s88a-g.input; s88a-g captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
   ⇒ s89: per-wall observed crossings, clear the wall-3-right hazard, genuine clear + level-2 load.
+
+## s89: wall-3 leech trap SOLVED (lunge-whiff bypass); toilet exit ledge reached alive; clear UNVERIFIED (2026-11-28, US)
+- PLAYER WORLD COORDS: FF1A24 = world X (writer 00279C, every 2f), FF1A26 = Y (0027D8/0045F4).
+  Cam freezes while the player stands ⇒ screen-x arithmetic invalid; use X taps. Route X: w2 face
+  100B; leech trap 1094; trunk-4 face 10C2; pit/ledge foot 1137; toilet ledge top ~117x.
+- LEECH TRAP (red flat blob right of wall-3, STATIC): lunges when player MOVES within ~46px
+  (telegraph 10-33f) or JUMPS within >=94px; kills on ANY contact incl. stomp (s89c mutual death
+  @9749). Grounded flick + crouch-flick whiff (trap on higher slope surface); burp C inert (edges
+  register, no 009806 dispatch). Standing at gap >=94 safe indefinitely (s89e 112f / s89h 240f).
+  Lunge WHIFFS on an airborne player then RETRACTS (harmless) ⇒ BYPASS = boost from w2 (gap 137,
+  outside jump-aggro) with drift-from-jump; proceed while retracted (s89k/m/n: NO death, score 1100).
+  No safe ground pocket exists: lunge reach 46 covers trap→trunk-4 face (s89g died standing @10C2).
+- AIR-FLICK 0091E4 fires during descent (ammo dec @9515) and scored +100 beyond trunk-4; second
+  air-flick failed its vert-vel gate ((54,A4)<0100).
+- PRESSED-EDGE JUMP GATE: B-edge registers but NO Y write while pressed against a wall/step face
+  (s89l @9937) ⇒ jump ignored regardless of settle. FIX: step LEFT W6 to unpress + settle 60 + boost.
+  DRIFT TIMING: start drift while ABOVE target top (jump+10, W40); late drift (jump+32) is below the
+  top ⇒ face block ⇒ slide back (s89l climb failed, s89m succeeded).
+- EXIT LEDGE: white TOILET on ledge top; contact / PRESS DOWN / jump-on produce NO 0244 setter and
+  no clear; push right blocked at the next step face (same pressed-edge gate) ⇒ s90 repeats the
+  climb cadence per step and hunts the real exit trigger. No 0244 setter after @6086 in any s89 run.
+- Tooling: s89a-n.input; s89a-n captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
+  ⇒ s90: per-step climbs past the toilet, genuine level-1 exit trigger + level-2 load; then M3.

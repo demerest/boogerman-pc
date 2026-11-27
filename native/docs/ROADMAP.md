@@ -1718,11 +1718,42 @@ verifiable much sooner.
     * => Next: s89 per-wall observed trunk crossings (settle 60 + vertical boost + W12), clear/avoid
       the wall-3-right hazard (death @9621 cam ~100x), reach a GENUINE level-1 clear and verify
       level-2 load; then M3 sound/Z80 RE to retire assists.
+  - **Session 89 (2026-11-28): wall-3-right hazard IDENTIFIED (static red leech trap, world ~1094)
+    and BYPASSED alive (lunge-whiff); trunk-4 crossed; ledge-climb cadence solved (unpress + early
+    drift); toilet exit ledge REACHED alive (score 1100). Genuine level-1 clear / level-2 load STILL
+    UNVERIFIED: toilet contact/DOWN/jump-on do not trigger it; next step face blocks the push (s90).**
+    * TRAP MECHANICS (s89a-j): the red flat blob right of wall-3 is STATIC (s89b z0/z2/z4 identical
+      while cam frozen); apparent motion in s89a was cam catch-up. It LUNGES when the player moves
+      within ~46px (telegraph 10-33f) or JUMPS within >=94px, and kills on ANY contact incl. stomp
+      (s89c landed on it: trap died AND player died @9749). Grounded flick AND crouch-flick whiff
+      (trap sits on the higher slope surface); burp C is INERT here (edges register @9581-9622 but no
+      009806 dispatch, no cloud, no health cost). Standing at gap >=94 is safe indefinitely (s89e
+      112f, s89h 240f, no death). After a lunge it RETRACTS (s89c/d z5 trap gone) => harmless window.
+    * WORKING BYPASS (s89k/m/n, NO death): boost from w2 (X=100B, gap 137 = outside jump-aggro) with
+      drift-from-jump; the lunge leaps at the AIRBORNE player and whiffs; trap retracts; walk/boost
+      on while retracted. Air-flick (0091E4) fires during descent (ammo dec @9515) and scored +100
+      (1000->1100) on a target beyond trunk-4; a second air-flick failed its vert-vel gate.
+    * PLAYER WORLD COORDS: FF1A24 = world X (writer 00279C, 2f cadence), FF1A26 = Y. Cam freezes
+      while standing => screen-x arithmetic is INVALID; use X taps. Route X: w2 face 100B; trap
+      1094; trunk-4 face 10C2 (lunge reach 46 covers the whole "pocket" => no safe pocket exists);
+      pit/ledge foot 1137; toilet ledge top ~117x; another step face right of the toilet.
+    * PRESSED-EDGE JUMP GATE (s89l): B-edge registers (@9937) but NO Y write while pressed against a
+      wall/step face => jump ignored regardless of settle. FIX (s89m): step LEFT W6 to unpress,
+      settle 60, then boost. DRIFT TIMING: drift must start while ABOVE the target top (jump+10,
+      W40); late drift (jump+32, s89l) is below the top => face block => slide back to foot.
+    * EXIT LEDGE (s89m/n): climb lands beside the white TOILET alive; contact, PRESS DOWN and
+      jump-on it produce NO 0244 setter / no clear; push right (W60+W100) blocked at the next step
+      face (same pressed-edge gate) => s90 repeats the climb cadence per step and hunts the real
+      exit trigger. No 0244 setter after @6086 in ANY s89 run.
+    * Tooling: s89a-n.input; s89a-n captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s90 repeat unpress+early-drift climbs past the toilet ledge, identify the genuine
+      level-1 exit trigger, verify level-2 load; then M3 sound/Z80 RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Gameplay (s89): per-wall observed trunk crossings (settle >= 60f + vertical boost + HOLD RIGHT
-     W12, s88f), clear/avoid the hazard right of wall-3 (s88g death @9621 cam ~100x), reach a genuine
-     level-1 clear and verify level-2 load natively. s88 killed the bridge red walker and root-caused
-     the s87 cam-wait anomaly (script ordering). Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay (s90): repeat the s89m climb cadence (unpress LEFT W6 + settle 60 + boost drift-from-
+     jump+10) at each step face past the toilet ledge, identify the genuine level-1 exit trigger
+     (toilet contact/DOWN/jump-on do NOT clear), verify level-2 load natively. s89 solved the wall-3
+     leech trap (lunge-whiff bypass) and reached the exit ledge alive. Native port is PLAYABLE as of
+     s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
