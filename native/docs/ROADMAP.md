@@ -1361,9 +1361,35 @@ verifiable much sooner.
     * => Next: s72 get past the lab cutscene reliably (find skip trigger or auto-advance),
       then health/lives vars + damage/death/level-exit/scroll-limit validation vs web-US
       in the true field; phase-aligned second-54FC-span compare; M3 sound RE.
+  - **Session 72 (2026-11-27): s71 mode-3 "play" CORRECTED — 0244=3 is the lab
+    story-crawl (fixed ~3200f, auto-advance, NO button skip); 0244=10 ($01AE4A) is the
+    TRUE gameplay mode (level card "FLATULENT SWAMPS LEVEL 1" then the swamp field).
+    Native field reached deterministically; but native HORIZONTAL input is dead in the
+    field (TH=1 pad phase), the remaining playability blocker.**
+    * Mode map corrected: 3=crawl, 10=field. Native timeline (s72n2): demo 1815 (01562E)
+      / START commit 2345 (005AAC) / mode3 2854 (015606) / mode10 6056 (01AE4A); crawl
+      3202f ≈ web 3207 (web mode3 2977 → mode10 6184). Crawl auto-advances; B/C/A taps
+      mid-crawl do NOT skip (web s72wB/C/D all 6184). s72-field.input reaches the field.
+    * Crawl coroutine $01AE16-01AE4A: +38 countdown, pad poll 01AE70 (only buttons
+      >=0x0F call 6F82; directions ignored), +4C yield expiry → 01AE4A mode10 + 0284|=5.
+    * True-field vars confirmed vs web-US idle→RIGHT diff (s72wE/F): camera X
+      0698=06A0=06AC (0→0527), player X 0222/0224 (0→0517/0677), screen 0216. The s68
+      vars ARE valid in the field; they read 0 during the crawl / idle-at-left edge.
+    * NEW BLOCKER: native RIGHT/LEFT/B/C (TH=1 pad phase) never reach 0502 (stays 0) in
+      the field, while START/A/DOWN/UP (TH=0 phase) work; web delivers RIGHT=8 and
+      scrolls (0222→0517). Guest flags 2BA/284/A65/5D4/1506 identical native vs web ⇒ a
+      native pad-read/IO fidelity bug, not guest state. s72n1/n2 RIGHT-hold PNGs show no
+      scroll. FORCE_INTERP=1 cannot boot (cvblank_fires=0), so localization needs an IO
+      trace, not forced interp.
+    * Deferred to s73+ (need working horizontal input): health/lives discovery,
+      damage/death/level-exit/scroll-limit vs web-US, second-54FC phase compare, pause.
+    * Tooling: s72-web.ps1 (budget-param ram-shot; s69-web's fixed 60s budget starves
+      >~3600f), s72-field.input, s72-right.input, s72-interp.ps1.
+    * => Next: s73 fix native TH=1 pad direction input (engine pad/IO fidelity), then
+      health/lives + damage/death/level-exit/scroll-limit vs web-US, second-54FC, pause.
   Next experiments (anticipated, in order):
-  1. Gameplay validation (s72): entry + minimal confirm done (s71). Reach the playable
-     swamp field past the lab cutscene; discover health/lives vars; validate damage/death/
+  1. Native input fidelity (s73): fix the TH=1 pad phase so RIGHT/LEFT/B/C work in the
+     field (the playability blocker); then health/lives discovery + damage/death/
      level-exit/scroll-limit vs web-US (clean config); phase-aligned second-54FC-span
      compare; settle the pause question (likely no button pause).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284

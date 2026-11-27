@@ -109,7 +109,7 @@ With the assist OFF the level plays and the true gameplay vars are:
 
 | Field | Address | Shape | Evidence |
 |---|---|---|---|
-| game mode | $FF0244 (mirror $FF0254) | word | 0=boot, 1=load/intro, 3=gameplay, 34/35=attract demos (web+native OBJ-TL) |
+| game mode | $FF0244 (mirror $FF0254) | word | 0=boot, 1=load/intro, 3=lab crawl, 10=field gameplay (s72), 34/35=attract demos (web+native OBJ-TL) |
 | V-int routine | $FF1506 | word | 160=title, 180=level (staging writes 180 at commit+30) |
 | title attract timer | $FF0632 | word | CORRECTED s70: cycles 5f→0→60 at TITLE idle (not an intro countdown); keeps cycling post-Start limbo until abort→demo ~staging+1100 |
 | game loop mode | $FF0516 | word | 4/8 alternation in gameplay; s69 "mode3+0516=4+frozen=PAUSED" REINTERPRETED s71 as post-restart limbo/intro (no button pause found) |
@@ -160,5 +160,21 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
 - **No button pause:** START/B/C/A/Mode/UP/DOWN taps/holds in-level give no
   mode3+frozen-world pause; s69 "PAUSED" = post-restart limbo/intro.
 - **Level opening:** long lab story-crawl cutscene in mode 3 before the swamp field
-  (s71n2/n3/n4); field+scroll validated s64/s68. Skip trigger TBD (s72).
+  (s71n2/n3/n4). s64/s68 "field+scroll" was the attract DEMO, not user field (s72).
 - Tooling: tools/s71-wt.ps1 (windowed WT), s71-{entry,play,field,skip}.input.
+
+## Gameplay-phase findings (s72, 2026-11-27, US) — true field = mode 10
+
+- **Mode map corrected:** 0244=3 = lab story-crawl (fixed ~3200f, auto-advance, NO
+  button skip); 0244=10 ($01AE4A) = TRUE gameplay (level card then swamp field).
+  Native: demo 1815/commit 2345/mode3 2854/mode10 6056 (crawl 3202f ≈ web 3207).
+- **Crawl coroutine** $01AE16-01AE4A: +38 countdown; pad poll 01AE70 (buttons >=0x0F
+  call 6F82, directions ignored); +4C yield expiry → mode10 + 0284|=5.
+- **True-field vars** (web-US idle→RIGHT diff): camera X 0698=06A0=06AC; player X
+  0222/0224; screen 0216. Valid in field; read 0 during crawl / idle-at-left.
+- **BLOCKER (s73):** native TH=1 pad phase (RIGHT/LEFT/B/C) never reaches 0502 in the
+  field (stays 0); TH=0 phase (START/A/DOWN/UP) works. Web delivers RIGHT=8 + scroll.
+  Guest flags identical native/web ⇒ native pad-read/IO fidelity bug. FORCE_INTERP
+  cannot boot (cvblank_fires=0). Health/lives, damage/death/exit/scroll-limit,
+  second-54FC, pause deferred until horizontal input works.
+- Tooling: s72-web.ps1 (budget-param), s72-{field,right}.input, s72-interp.ps1.
