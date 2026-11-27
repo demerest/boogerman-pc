@@ -16,3 +16,13 @@ To run the web port from a fresh clone:
 
 Other regions/versions may work but are untested; the cheat pack and RAM map
 in `native/docs/RAM_MAP.md` target the EU release.
+
+## US oracle (s64)
+
+If `Boogerman (U) [!].gen` is also present (repo root or `web/`), the embed
+script additionally writes `rom/boogerman_us.gen.js` (also never committed).
+`web/test/ram-shot.html?rom=us` then runs the US dump as a region-matched
+oracle for the native US port; add `wtFull=1` to watch the whole level header
+0A50..0AD6. The core reads the region from the cartridge header (US = NTSC),
+so web-US frame numbers differ from web-EU — compare by phase
+(0244/0254/1506 events), not by raw frame.

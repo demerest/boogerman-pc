@@ -8,6 +8,7 @@
 *.state
 *.srm
 web/rom/boogerman.gen.js
+web/rom/boogerman_us.gen.js
 # Static-recompilation output is derived from the ROM code: build-time only.
 native/generated/
 native/build/

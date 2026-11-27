@@ -1100,12 +1100,46 @@ verifiable much sooner.
       += 0A50/52/54/56/5E. OBJ-TL addresses are full 24-bit (a=FF0A58), grep accordingly.
     * => Next: s64 build a US web oracle; compare full 134-byte header + 0A7E; if
       native diverges, fix backref codegen; else trace the level-controller spawn gate.
+  - **Session 64 (2026-11-27): US web oracle + level-load RESOLVED. The native
+    port LOADS and PLAYS the level world. Full 134-byte level header is
+    byte-identical to the region-matched US oracle (0 diffs); 0A7E=FFFF is
+    authentic US data (web identical — the 5268 bmi skip happens on web too);
+    the controller state machine 541C→5484/548A→54B8→54FC tracks web with a
+    constant ~350-frame offset; s62's "camera loop / level never loads" was a
+    capture-timing artifact. Right/A probes @3950+ scroll (0698 AB→34A), jump,
+    and score 000350 natively.**
+    * Oracle: web/rom/boogerman_us.gen.js (gitignored) via embed-assets.ps1 US
+      block; ram-shot.html ?rom=us (document.write rom loader) + wtFull=1 (whole
+      0A50..0AD6) + 5D4/5D6/686/688 watches. web-US phases: demo commit @1825,
+      post-demo title @2057/2065, Start@2100 → 0244=1, 0254=1/1506=180 @2131.
+    * s64-headerdiff.ps1 (web WT words vs native OBJ-TL byte/word assembly):
+      0 diffs across all 67 words incl. the backref tail 0A60..0AD6 ⇒ the 1454+
+      backref codegen is CORRECT; no engine fix needed.
+    * Service decode US 6A00-6B00: 284 bit1 + 5D4==F → 5B4 byte countdown (6A28);
+      bit2 path increments (6AA4); 5D6 wrap → 5D4 phase. Native runs it
+      identically (5B4 D→0 @2545 = web 2196 + 349).
+    * Controller: obj base a4=1A0E; +4C=1A5A yield timer, +48=1A56 resume,
+      1A14 cont (31E0 = move.l (sp)+,(4,a4) pops a return address; mid-block
+      re-entry points 548A/54B2 are intentional ori.b-skip tricks). The 54B8
+      wait releases on 1A5A=FFFF (49AA) at +148 frames on BOTH ports; the 157xx
+      family is the level entity spawn loop (types 1EF..214 via 4B8C).
+    * Gameplay: s64-play.input (Start@2450; RIGHT@3950, RIGHT+A@4250) → PNG @4400
+      shows scrolled forest, jump pose, score 000350; web-US counterpart
+      (3@2100:40,7@2600:300,8@2900:40) VID scrolls likewise. s62's probes
+      @2600-3200 landed pre-level natively — that was the whole "failure".
+    * Remaining: native level pipeline runs ~350-1000 frames behind web (offset
+      grows after 54B8); quantify/align in s65; boot assists still active (M3).
+    * Tooling: s64-webdump.ps1 (MODES/GATES/WT/VID parser), s64-abscan.ps1
+      (abs-operand scan), s64-headerdiff.ps1. PS gotcha: a typed [string]$Web
+      param constrains the case-insensitive $web local (rename locals).
+      run-us-misses logs live in captures-us/<Tag>/err.log (per-tag dir).
+    * => Next: s65 phase/timing alignment + transitions/death/pause validation;
+      M3 sound RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Level-world load (s64): build a region-matched US web oracle (embed US dump as
-     a separate rom js + ram-shot variant) so obj-cont/header comparison is valid.
-     Compare the full 0A50..0AD6 header + 0A7E/0A80 vs native; if native backref
-     output diverges, fix the 1454+ codegen; else trace why obj0 stays camera and
-     the 5268 bmi skips (0A7E=FF). Then validate mode-10 scroll/player/collision.
+  1. Gameplay fidelity (s65): quantify the native-vs-web level-pipeline offset
+     (constant ~350f pre-54B8, growing after); find the stall source (scheduler
+     cadence vs spawn-loop yields) and align; validate transitions (pause,
+     death, level exit), collision damage, and camera scroll limits vs web-US.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

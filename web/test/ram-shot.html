@@ -6,7 +6,12 @@
 <div id="out">waiting</div>
 <script src="../vendor/gpgx/gpgx.web.js"></script>
 <script src="../vendor/gpgx/gpgx.wasm.js"></script>
-<script src="../rom/boogerman.gen.js"></script>
+<script>
+  /* s64: ?rom=us selects the region-matched US oracle dump (local-only). */
+  document.write('<script src="../rom/' +
+    (new URLSearchParams(location.search).get('rom') === 'us' ? 'boogerman_us.gen.js' : 'boogerman.gen.js') +
+    '"><\/script>');
+</script>
 <script src="../js/util.js"></script>
 <script src="../js/hooks.js"></script>
 <script src="../js/patches.js"></script>
@@ -37,10 +42,13 @@
     const wt = new URLSearchParams(location.search).get('wt');
     const wtAddrs = [0x244, 0x254, 0x284, 0x50C, 0x502, 0x516, 0x246, 0x690, 0xA90, 0x1506, 0x1A56, 0x36EE, 0x3736, 0x25E, 0x5B4,
       0x2B4, 0x2BA, 0xA62, 0x288, 0x3832, 0x3834, 0x3836, 0x3838, 0x202,
-      0x1A5A, 0x1A18, 0x1A24, 0x54C, 0x524, 0x548,
+      0x1A5A, 0x1A18, 0x1A24, 0x54C, 0x524, 0x548, 0x5D4, 0x5D6, 0x686, 0x688,
       0x1A14, 0x1A6A, 0x1AC2, 0x1B1A,
       0xA58, 0xA5A, 0xA5C, 0x27E, 0x280,
       0xA50, 0xA52, 0xA54, 0xA56, 0xA5E];
+    /* s64: wtFull=1 watches the entire 134-byte level header 0A50..0AD6. */
+    if (new URLSearchParams(location.search).get('wtFull'))
+      for (let a = 0xA50; a <= 0xAD6; a += 2) wtAddrs.push(a);
     const wtPrev = {}; const wtLog = [];
     const gateFrames = [900, 1000, 1050, 1100, 1150, 1200, 1400, 1800, 2399];
     /* web ram() is little-endian per word: ramRead16 returns byte-swapped words. */

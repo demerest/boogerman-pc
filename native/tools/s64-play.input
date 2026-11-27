@@ -1,0 +1,9 @@
+# s64: Start-late commit (@2452); level world visible natively by ~4000.
+# Gameplay probes placed AFTER the native level switch: Right hold drives
+# scroll, A jumps. Phase-matched web-US counterpart: 3@2100:40,7@2600:300,8@2900:40.
+2450 START
+2490 -
+3950 RIGHT
+4250 RIGHT+A
+4290 RIGHT
+4400 -

@@ -22,6 +22,18 @@ New-Item -ItemType Directory -Force $romDir | Out-Null
 [IO.File]::WriteAllText((Join-Path $romDir 'boogerman.gen.js'), "window.BP_ROM_B64='" + $b64r + "';window.BP_ROM_NAME='Boogerman (E) [!].gen';", $enc)
 Write-Output ('Embedded ROM: ' + $r.Length + ' bytes -> ' + $b64r.Length + ' base64 chars')
 
+# s64: optional region-matched US oracle dump (ram-shot.html?rom=us).
+$romPathUs = Join-Path $root 'Boogerman (U) [!].gen'
+if (-not (Test-Path -LiteralPath $romPathUs)) {
+    $romPathUs = Join-Path (Split-Path -Parent $root) 'Boogerman (U) [!].gen'
+}
+if (Test-Path -LiteralPath $romPathUs) {
+    $ru = [IO.File]::ReadAllBytes($romPathUs)
+    $b64u = [Convert]::ToBase64String($ru)
+    [IO.File]::WriteAllText((Join-Path $romDir 'boogerman_us.gen.js'), "window.BP_ROM_B64='" + $b64u + "';window.BP_ROM_NAME='Boogerman (U) [!].gen';", $enc)
+    Write-Output ('Embedded US ROM: ' + $ru.Length + ' bytes -> ' + $b64u.Length + ' base64 chars')
+}
+
 # Header facts for the docs / sanity check.
 function Ascii($off, $len) {
     $s = [Text.Encoding]::ASCII.GetString($r, $off, $len)
