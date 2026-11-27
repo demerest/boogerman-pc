@@ -1,0 +1,104 @@
+# s84a: s83n safe block (boost 04E0, alive at gap edge 057C) then BOOST per gap:
+# gap-crossing boost from the edge, fixed-cadence walk/hop cycles mid-span,
+# bridge flicks/hop, walk to scroll-limit. Dumps before risky GE waits.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 110
+RELEASE
+WAIT 20
+HOLD RIGHT
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 110
+RELEASE
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84a\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84a\p1.png
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84a\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84a\p2.png
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84a\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84a\p3.png
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C30
+PRESS A 6
+WAIT 20
+WAIT_RAM16_GE 0xFF0698 0x0C60
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0C90
+PRESS A 6
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84a\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84a\p4.png
+HOLD RIGHT
+WAIT 400
+RELEASE
+WAIT 200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84a\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84a\end.png
+EXIT

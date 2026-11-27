@@ -1605,13 +1605,39 @@ verifiable much sooner.
     * Tooling: s83a-o.input; s83a-o captures. Gitlinks stay 9907e77f40/6f705f2.
     * => Next: s84 cycles with BOOST (B8/W6/DOWN6) per gap/step instead of plain hop (or stomp
       platform-1 enemy then walk); then bridge walker + exit/scroll-limit; then M3 sound RE.
+  - **Session 84 (2026-11-27): slope staircase mapped (wall1 0527 / wall2 0587); s83 "safe block /
+    gap" RETRACTED (it was a death-freeze); 00372C=death vs 003778=hurt; spitter killed by 3 flicks;
+    jump/boost pad mechanics pinned; plat2 enemy cluster blocks route (s85).**
+    * s83n "alive at gap edge 057C" was WRONG: 00A1F6 is the DEATH coroutine (zero vel, yield to
+      fade, lives check 00A234); 002F4A 1A46=FFFF is the death object-table wipe. The 057C/0587
+      "cam freezes" were death-freeze / wall-stop, not a safe ledge. There is NO fall-gap at
+      0580-0630; past wall2 the slope is walkable until the plat2 enemy cluster.
+    * HIT TYPES: 003778 store = survivable hurt (thorn, knockback 00A0AA, resume); 00372C store =
+      FATAL contact → 00A1F6 death-freeze → object wipe → 0035DC lives dec (~+200f). Health 023E
+      does NOT decrement on either (death is flag-driven, not HP). s82 "max scroll 0CAB" was wrong;
+      no s82 run passed 065F (s82a-k last cam ≤065F). Bridge/exit still UNREACHED natively.
+    * SLOPE = 2 walls then plat2: wall1 cam 0527 (boost1 @04E0 clears, lands ~0531); walk to wall2
+      cam 0587 (freeze); boost2 at wall2 (after re-boost gate) clears, lands ~05A2; then plat2
+      enemy cluster cam ~0620-0680 = enemy3 (small thorn-walker, same height) + crested walker
+      (uphill, throws red spike projectiles). Walk contact = 00372C death.
+    * SPITTER (slope-base bush ~0510-0530, bubbles arc onto plat1 landing zone) killed by grounded
+      flicks at 0480/04A0/04C8 (3 presses; the killing shot fires ~7319 mid-boost1). With it dead,
+      boost1 landing is safe and slope walkable. 2 flicks (drop 04C8) ⇒ death 7341.
+    * JUMP/BOOST PAD MECHANICS (FF0502/050C taps): B1 (1-frame) is INVISIBLE to the edge register
+      (no jump). B≥2 jumps; B-held-in-air OR DOWN-held-in-air ⇒ boost EF70 (009158/009194) at +2-4f.
+      So B8/W6/DOWN6 = boost; a "plain hop" is NOT simply B2 (it auto-boosts). 009168 (DOWN-held-at-
+      jump, anim CC16) is the no-boost variant but DOWN-held-in-air still boosts. Stomp cadence with
+      plain hops not yet achieved; plat2 crossing deferred to s85.
+    * Tooling: s84a-j.input; s84a-j captures; s84d1/d2 disasm (00A1C0-280, 002F00-90). NO engine
+      change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s85 cross plat2 (measure flick range from stand; boost-from-distance to stomp crested
+      walker; or web-oracle-guided cadence), then bridge walker + exit/scroll-limit; then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s84): complete the level route to exit/scroll-limit — walk/release/BOOST
-     cycles across the slope staircase (gap 0580-0630 needs boost, plain hop lands in it; s83n
-     RELEASE-after-landing is the safe block), then bridge red walker ~0C78 (flick/stomp) and
-     exit/scroll-limit. Hurt input-ignore windows + knockback cam-offset break documented s83;
-     use fixed cadence + RELEASE, not cam-locked hops, after any hurt. Blocks 1-2 solved s81.
-     Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay polish (s85): cross the plat2 enemy cluster (cam 0620-0680) — measure grounded flick
+     range from a stand, boost-from-distance to stomp the crested walker, dodge its red spikes;
+     then bridge red walker ~0C78 and exit/scroll-limit (still unreached natively). s84 mapped the
+     staircase (wall1 0527/wall2 0587) and pinned jump/boost pad mechanics + 00372C=death. Blocks
+     1-2 solved s81. Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

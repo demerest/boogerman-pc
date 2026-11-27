@@ -1,0 +1,70 @@
+# s84j: plat2 via stomp cadence. B2 = plain hop (B-held>=4f boosts). Continuous
+# HOLD RIGHT + B2 hop every 40f to land on enemy3/crested heads. Dumps map
+# progress; boost3 (B8) at next wall after the staircase.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+PRESS DOWN 8
+WAIT 2
+PRESS B 2
+WAIT 40
+PRESS DOWN 8
+WAIT 2
+PRESS B 2
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84j\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84j\p1.png
+PRESS DOWN 8
+WAIT 2
+PRESS B 2
+WAIT 40
+PRESS DOWN 8
+WAIT 2
+PRESS B 2
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84j\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84j\p2.png
+PRESS DOWN 8
+WAIT 2
+PRESS B 2
+WAIT 40
+PRESS DOWN 8
+WAIT 2
+PRESS B 2
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84j\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84j\p3.png
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84j\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84j\p4.png
+WAIT 90
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84j\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84j\p5.png
+EXIT

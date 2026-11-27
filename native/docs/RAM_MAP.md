@@ -394,13 +394,33 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - Hurt ⇒ ~20-30f input-ignore (swallowed flicks/B8 proven by ammo 023C taps 00F0AC) AND knockback
   shifts player screen-x ⇒ cam-locked ≠ world-locked after hurt. Use fixed cadence + RELEASE.
 - Slope staircase: plat 1 top cam 0527-0580 (~80px step; hop apex ~40px; single boost 04E0 lands
-  on top ~0560); GAP cam 0580-0630 (fall death ~7761); plat 2 + enemy 2 ~065F-0680 (higher ground,
-  horizontal flick whiffs). Landing hurt 7337 ⇒ ignore window swallows gap hop ⇒ fall.
+  on top ~0560); GAP cam 0580-0630 (fall death ~7761) [RETRACTED s84: no fall-gap; 0587 is wall2];
+  plat 2 + enemy 2 ~065F-0680 (higher ground, horizontal flick whiffs). Landing hurt 7337 ⇒ ignore
+  window swallows gap hop ⇒ fall [RETRACTED s84: 7337/7341 = 00372C fatal spitter contact].
 - Re-boost allowed (1A46=EF70 twice) but anim-gated ~+64f ⇒ no tight double-boost; double-boost
   from ≤0480 hits wall side (cam freeze 0527).
-- SAFE BLOCK s83n: boost 04E0 + WAIT110 + RELEASE ⇒ alive standing at edge 057C. s83o
-  walk/release/hop cycles run fully but plain hop reach ~0x5A lands IN gap ⇒ gaps need BOOST.
+- SAFE BLOCK s83n: boost 04E0 + WAIT110 + RELEASE ⇒ alive standing at edge 057C [RETRACTED s84:
+  057C was a death-freeze, not a safe ledge]. s83o walk/release/hop cycles run fully but plain hop
+  reach ~0x5A lands IN gap ⇒ gaps need BOOST [RETRACTED s84: no gap; deaths were spitter contact].
 - Tap decoders: ammo 023C (00F0AC dec) = flick fired; score 0239 (0037F2) = kill; 0266 pulse
   003778/00372C = hurt; 0035DC = lives dec (respawn-init 007FA6).
 - Tooling: s83a-o.input; s83a-o captures. Gitlinks stay 9907e77f40/6f705f2. ⇒ s84: boost-per-gap
   cycles (or stomp plat-1 enemy) then bridge + exit/scroll-limit.
+
+## Route corrections + staircase map (s84, 2026-11-27, US)
+- 00A1F6 = DEATH coroutine (zero vel 56/A4, yield 4970 to fade, lives check 00A234). 002F4A
+  1A46=FFFF = death object-table wipe (FF1A0E..FF220E). s83 "safe block/alive at 057C" and
+  "gap 0580-0630 fall death" RETRACTED: those cam freezes were death-freeze / wall-stop.
+- HIT TYPES: 003778 = survivable hurt (thorn; knockback 00A0AA; resume). 00372C = FATAL contact
+  → 00A1F6 → wipe → 0035DC lives dec ~+200f. Health 023E unchanged by either (flag-driven death).
+- SLOPE: wall1 cam 0527 (boost1 @04E0 lands ~0531); walk→wall2 cam 0587 (freeze); boost2 at wall2
+  (post re-boost gate) lands ~05A2; plat2 enemy cluster cam 0620-0680 = enemy3 (thorn-walker, same
+  height) + crested walker (uphill, throws red spikes). Walk contact = 00372C death. No fall-gap.
+- SPITTER slope-base bush ~0510-0530 (bubbles arc onto plat1 landing zone): kill with grounded
+  flicks 0480/04A0/04C8 (killing shot ~7319). With it dead, boost1 landing safe + slope walkable.
+- JUMP/BOOST (FF0502/050C): B1 invisible to edge reg (no jump). B≥2 jumps; B-held-in-air OR
+  DOWN-held-in-air ⇒ boost EF70 (009158/009194) +2-4f. B8/W6/DOWN6 = boost. Plain hop not simply
+  B2 (auto-boosts); 009168 DOWN-held-at-jump = CC16 no-boost but DOWN-in-air still boosts.
+- s82 "max scroll 0CAB" wrong: no s82 run passed 065F. Bridge/exit UNREACHED natively.
+- Tooling: s84a-j.input; s84a-j captures; s84d1/d2 disasm. ⇒ s85: cross plat2 (flick range from
+  stand / boost-from-distance stomp / spike dodge) then bridge + exit/scroll-limit.

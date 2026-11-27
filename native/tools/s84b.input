@@ -1,0 +1,31 @@
+# s84b: does RELEASE-at-landing avoid the fatal spit? s84a/s83n/s83i all died
+# 00372C@~7341 -> 00A1F6 death freeze while WALKING after boost1 landing (0531).
+# Here: land, RELEASE immediately, stand 300f, dumps. No walking into the arc.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84b\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84b\p1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84b\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84b\p2.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s84b\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s84b\p3.png
+EXIT
