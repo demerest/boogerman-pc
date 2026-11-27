@@ -1064,12 +1064,48 @@ verifiable much sooner.
     * => Next: s63 find the 143C copy source buffer + its writer (jsr callers of
       142C), then fix the sound ack (M3) or env-gated assist-seed the header so
       obj0=5452 and the level loads; validate scroll/player vs web.
+  - **Session 63 (2026-11-27): level-load RE. CORRECTS s62: the 142C/13E8 LZ
+    decompressor and the 0A50 header deposit are CORRECT natively; s62's
+    "zeroed source" was a measurement artifact (read the even/zero high bytes).
+    Also discovered web oracle = EU ROM while native = US, so raw obj-cont
+    address comparison (5452 vs 5418) is region-shifted and unreliable. The
+    level-world failure is DOWNSTREAM of the header (first level stager skips on
+    0A7E=FF). An assist post_title discrimination edit regressed the Start commit
+    and was reverted (net engine change zero).**
+    * Decode: 13E8 = RAM LZ decompressor (window $FF3422, falls into 142C body);
+      13C6 = wrapper (a0=dest from caller, d0=src asset idx via table $9CBC4,
+      size=next-cur); 1496 = VDP-dest variant. 515A (US; EU 5162) = level stager:
+      d0=0244, word table $6EFE[d0]→asset idx, dest $FF0A50, bsr 13C6. Level 1 =
+      asset 5 = ROM $9F010 (size ~0x86). Literal path 143C writes (a2)+ window AND
+      (a1)+ dest (single bytes, NOT duplicated); backref path 1454+.
+    * Proof decompressor correct: s63a OBJ-TL byte writes @2484 = 0A59=B4,0A5B=91,
+      0A5D=2E (spawn params live in ODD bytes); web wt words a58=b4/a5a=91/a5c=2e
+      are the same bytes read as words (00B4/0091/002E). s62 read a=FF0A58 v=0 (the
+      zero high byte) and wrongly concluded "zeroed source". Header matches web.
+    * Region: web/rom/README.md confirms web embeds the EU dump (3,145,728 B,
+      checksum DFAE); native runs US. US spawn table $3848 idx2E=5418 (camera);
+      EU level ctrl 5452 has no US immediate/table twin ⇒ cross-port cont compare
+      invalid. Need a US web oracle for apples-to-apples level validation.
+    * Downstream gate: s63c @2484 header writes 0A7E=FF/0A80=FF; 5268 does
+      move.w 0A7E,d0; bmi ⇒ first level tilemap stager SKIPS natively. Whether US
+      backref output is wrong (codegen) or EU/US headers differ is undecidable
+      without the US oracle. 0206 (dest end) logged 00FF, also suspect.
+    * Assist experiment: restricting s60_post_title to 0254==0x22 regressed the
+      Start commit (s63b no 0244/0254 writes) ⇒ reverted. Measured: 0254=34 through
+      post-demo title, =1 at level; 1506=0x160 at title, =0x180 during load/level,
+      so the EXISTING post_title (1506==0x160) already disables title-emulation in
+      the level — it is NOT the revert-to-title cause.
+    * Tooling: tools/s63-scan.ps1 (jsr/jmp/bsr.w/bsr.s/bra/lea/movea caller scan;
+      PS5.1 [int16] cast throws >32767, use manual sign-extend). ram-shot wt addrs
+      += 0A50/52/54/56/5E. OBJ-TL addresses are full 24-bit (a=FF0A58), grep accordingly.
+    * => Next: s64 build a US web oracle; compare full 134-byte header + 0A7E; if
+      native diverges, fix backref codegen; else trace the level-controller spawn gate.
   Next experiments (anticipated, in order):
-  1. Level-world load (s63): identify the 143C copy source buffer and the stager
-     that fills it (jsr/b sr callers of 142C; level-header decompress 1496 family,
-     sound-ack gated). Fix the ack (M3) OR env-gated assist-seed the header/spawn
-     params (0A58=b4/0A5A=91/0A5C=2e) so obj0=5452; then validate mode-10 scroll,
-     player object, collision, transitions vs web (Start route, phase-matched).
+  1. Level-world load (s64): build a region-matched US web oracle (embed US dump as
+     a separate rom js + ram-shot variant) so obj-cont/header comparison is valid.
+     Compare the full 0A50..0AD6 header + 0A7E/0A80 vs native; if native backref
+     output diverges, fix the 1454+ codegen; else trace why obj0 stays camera and
+     the 5268 bmi skips (0A7E=FF). Then validate mode-10 scroll/player/collision.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
