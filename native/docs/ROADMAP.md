@@ -1687,11 +1687,42 @@ verifiable much sooner.
     * Tooling: s87a-c.input; s87a-c captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
     * => Next: s88 resolve the post-bridge cam-wait/RELEASE anomaly, kill/bypass the red walker, reach
       a GENUINE level-1 clear and verify level-2 load; then M3 sound/Z80 RE to retire assists.
+  - **Session 88 (2026-11-28): s87 cam-wait "anomaly" ROOT-CAUSED (script ordering, NOT an engine bug);
+    bridge red walker KILLED natively (+50 @8635) and bridge crossed alive; route extended over
+    trunk-wall 2 to cam ~0EF0 (wall-3) and, blind-chained, to cam ~1005. Genuine level-1 clear /
+    level-2 load STILL UNVERIFIED (s89).**
+    * ANOMALY RESOLVED: s87c pad/cam reconstruction shows RIGHT held 8576-8735 (= the script's
+      HOLD RIGHT W60 + W100); cam crossed 0C00 @8591 AND the red-walker contact death @8635 both
+      happened INSIDE those fixed WAITs, before the script ever reached the WAIT_RAM16_GE op. Cam
+      then stayed >= 0C00 (corpse stop 0CAE), so the GE fired at its FIRST evaluation @8736 — during
+      death-freeze, hence RELEASE/flicks ignored (8736+20 = p1 dump @8756). GE/RELEASE semantics are
+      correct; the fix is to place the cam-locked stop BEFORE the fatal walk. s88a did exactly that:
+      stop fired ALIVE @8592 (p1 @8602). Also: 0CAE is NOT a scroll clamp — alive cam ran to 0CFA+.
+    * RED WALKER KILLED: stand-stop at cam 0C00 + grounded flicks (00F0AC @8615/8643/8671/8731) ⇒
+      0037F2 +50 @8635 (the exact frame s87 died). Bridge crossed alive (p5: "B" box reachable),
+      score 750→850→1000 (+50 @8815); NO 00372C/003778/0035DC after the thorn hurt @7111 through
+      cam 0EF0. The s87 "mandatory gate" is now a solved obstacle, not a death sentence.
+    * ROUTE EXTENDED: grass past bridge holds a floating eye + crested walkers (adjacent contact did
+      NOT kill here, s88b q1); trunk-wall 2 freezes cam at 0E87, trunk-wall 3 at ~0FAE; s88g chain
+      reached cam ~1005 before dying @9621 (00372C; lives dec @10045) just right of wall-3.
+    * WALL-CROSSING PATTERN (s88f): VERTICAL boost (B8/W6/DOWN6, no drift) + WAIT 20 + HOLD RIGHT W12
+      lands over the trunk. The s86 ledge cadence (drift W40/W50) slams the trunk left face and slides
+      down (s88d/e) — wall-2/3 have no left nest pocket.
+    * RE-BOOST GATE: s88d B-edge registered @9175 (0058CC) but vert vel stayed 0 ⇒ jump ignored inside
+      the post-landing anim gate; a WAIT 60 settle fixes it (s88e boost @9349). Rule: settle >= 60f
+      after landing / cam-freeze before boosting.
+    * WALK-FLICK INERT: s88c flick cover while HOLD RIGHT fired only once (@9137); stand-flicks are
+      the reliable cadence (stop-flick-stop).
+    * s88g blind 3-wall chain died @9621 ⇒ crossings must be observed per-wall (s89), not chained blind.
+    * Tooling: s88a-g.input; s88a-g captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s89 per-wall observed trunk crossings (settle 60 + vertical boost + W12), clear/avoid
+      the wall-3-right hazard (death @9621 cam ~100x), reach a GENUINE level-1 clear and verify
+      level-2 load; then M3 sound/Z80 RE to retire assists.
   Next experiments (anticipated, in order):
-  1. Gameplay (s88): resolve the post-bridge cam-wait/RELEASE anomaly (s87), kill/bypass the bridge red
-     walker (~0C78, fatal 00372C), reach a genuine level-1 clear and verify level-2 load natively.
-     s87 showed s86's "exit/level-complete" was a death-respawn (level replay). Native port is PLAYABLE
-     as of s78 (B=jump).
+  1. Gameplay (s89): per-wall observed trunk crossings (settle >= 60f + vertical boost + HOLD RIGHT
+     W12, s88f), clear/avoid the hazard right of wall-3 (s88g death @9621 cam ~100x), reach a genuine
+     level-1 clear and verify level-2 load natively. s88 killed the bridge red walker and root-caused
+     the s87 cam-wait anomaly (script ordering). Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

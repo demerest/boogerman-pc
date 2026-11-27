@@ -1,0 +1,177 @@
+# s88b: s88a prefix (stop alive cam 0C00, flick-kill bridge red walker, inch to grass),
+# then boost-stomp the two crested walkers and push right to find the GENUINE level-1 exit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\p1.png
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\p2.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\p3.png
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\p4.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\p5.png
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\p6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\p6.png
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\q1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\q1.png
+# --- push right toward the real exit ---
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\q2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\q2.png
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\q3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\q3.png
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\q4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\q4.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\q5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\q5.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s88b\q6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s88b\q6.png
+EXIT

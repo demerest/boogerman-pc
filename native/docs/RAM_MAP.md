@@ -483,3 +483,28 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - Tooling: s87a-c.input; s87a-c captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
   ⇒ s88: resolve the post-bridge cam-wait/RELEASE anomaly, kill/bypass the red walker, reach a
   GENUINE level-1 clear and verify level-2 load natively.
+
+## s88: cam-wait anomaly RESOLVED (script ordering); bridge red walker KILLED; trunk-wall chain (2026-11-28, US)
+- ANOMALY ROOT CAUSE (supersedes s87 "tooling anomaly"): WAIT_RAM16_GE / RELEASE are CORRECT. In s87c
+  the pad was RIGHT-held 8576-8735 (the script's HOLD RIGHT W60 + W100); cam 0698 crossed 0C00 @8591
+  and the fatal red-walker contact @8635 both occurred INSIDE those fixed WAITs, i.e. before the
+  script reached the GE op. Cam never dropped below 0C00 afterwards, so the GE fired at its first
+  evaluation @8736 (during death-freeze) — 8736+20 = p1 dump @8756. Fix: put the cam-locked stop
+  BEFORE the walk that can kill. s88a stop fired alive @8592 (p1 @8602).
+- cam 0698 is NOT clamped at 0CAE (supersedes s87 "right scroll clamp"): alive cam ran 0CFA→0EF0→~1005.
+  0CAE was merely where the s87 corpse stopped.
+- BRIDGE RED WALKER KILLED natively: stand-stop cam 0C00, grounded flicks 00F0AC @8615/8643/8671/8731,
+  kill 0037F2 +50 @8635; bridge crossed alive, score 750→850→1000 (+50 @8815); no 00372C/003778/0035DC
+  after the thorn hurt @7111 through cam 0EF0.
+- ROUTE: grass past bridge = floating eye + crested walkers (adjacent contact NOT fatal there, s88b q1);
+  trunk-wall 2 cam-freeze 0E87; trunk-wall 3 ~0FAE; s88g blind chain reached cam ~1005 then died @9621
+  (00372C, lives dec @10045) right of wall-3 ⇒ per-wall observed crossings needed (s89).
+- WALL CROSSING (s88f): VERTICAL boost B8/W6/DOWN6 (no drift) + WAIT 20 + HOLD RIGHT W12 lands over the
+  trunk; s86 drift W40/W50 slams the trunk left face (no nest pocket at walls 2/3).
+- RE-BOOST GATE: B-edge can register (0058CC @9175) while vert vel 1A46 stays 0 ⇒ jump ignored inside
+  post-landing anim gate; WAIT 60 settle after landing/cam-freeze fixes (s88e boost @9349).
+- WALK-FLICK INERT: flicks pressed while HOLD RIGHT fired once (@9137) then never; use stop-flick-stop.
+- GENUINE level-1 clear / level-2 load STILL UNVERIFIED: no 0244 setter (01562E/005AAC/015606/01AE4A/
+  00508E) after @6086 in any s88 run.
+- Tooling: s88a-g.input; s88a-g captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
+  ⇒ s89: per-wall observed crossings, clear the wall-3-right hazard, genuine clear + level-2 load.
