@@ -1579,12 +1579,39 @@ verifiable much sooner.
       9907e77f40/6f705f2.
     * => Next: s83 clear the thorn cluster (double-boost / stomp / flick-on-thorn test) then
       slope+bridge to exit/scroll-limit; then M3 sound RE.
+  - **Session 83 (2026-11-27): WAIT_RAM16_GE opcode; thorns survivable run-through; hurt
+    input-ignore windows + knockback break cam-locked world offset; slope staircase/gap map;
+    RELEASE-after-landing safe block; route to exit still open (s84).**
+    * ENGINE TOOLING: input_script.c gained OP_WAIT_RAM16_GE (>= wait) because cam equality
+      waits stall: thorn-hurt knockback makes cam step +1/+2 (f7153-7185) and SKIP grid values
+      (032F→0331). GE is monotonic-safe while running right. Rebuilt BoogermanRecomp_us;
+      engine work carried in native/segagenesisrecomp.diff (regen base→worktree).
+    * s82 "thorn cluster kills every cadence" REFINED: run-through costs ONE hurt (0266 pulse
+      003778, cleared 2f later by 00A040), lives stay 02, health bar full; flick kills one bush
+      (+50 score 0239). s82 deaths were accumulated jump-landings in the cluster, not run-through.
+    * HURT ⇒ ~20-30f INPUT-IGNORE window (ammo 023C taps prove swallowed flicks/B8) AND knockback
+      displaces player screen-x ⇒ cam-locked ≠ world-locked after hurt (s83d-m identical guest
+      traces despite different post-boost ops). Ammo 023C taps (00F0AC dec) decode flick fires;
+      score 0239 taps (0037F2) decode kills.
+    * Slope = STAIRCASE: platform 1 top cam 0527-0580 (~80px step; plain hop apex ~40px cannot
+      climb; single boost 04E0 lands ON top ~0560), then GAP cam 0580-0630 (walk/hop-short =
+      fall death ~7761), platform 2 + enemy 2 ~065F-0680 (higher ground; horizontal flick whiffs).
+      Landing contact/projectile hurt at 7337 ⇒ ignore window swallows the gap hop ⇒ fall.
+    * Re-boost ALLOWED (vel 1A46=EF70 twice, s83f) but anim-gated ~+64f after boost1 ⇒ tight
+      double-boost impossible; double-boost from ≤0480 hits wall side (cam freezes 0527).
+    * SAFE BLOCK (s83n): boost 04E0 + WAIT110 + RELEASE ⇒ player ALIVE standing at gap edge
+      057C, no death. Walk/release/hop cycles (s83o) execute fully (p1-p4+end dumps) but plain
+      hop reach ~0x5A < gap 0x50+edge ⇒ lands IN gap ⇒ death. Gaps need BOOST per crossing.
+    * Tooling: s83a-o.input; s83a-o captures. Gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s84 cycles with BOOST (B8/W6/DOWN6) per gap/step instead of plain hop (or stomp
+      platform-1 enemy then walk); then bridge walker + exit/scroll-limit; then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s83): complete the level route to exit/scroll-limit — first clear the
-     thorn cluster ~02AF-0350 (double-boost/stomp; single jump/boost lands in it), then slope
-     wall 0527 (boost) + bridge red walker ~0C78 (flick/stomp). Cam-locked method + obstacle map
-     pinned s82; death-fade locks input (avoid contact, don't rely on respawn). Blocks 1-2
-     solved s81. Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay polish (s84): complete the level route to exit/scroll-limit — walk/release/BOOST
+     cycles across the slope staircase (gap 0580-0630 needs boost, plain hop lands in it; s83n
+     RELEASE-after-landing is the safe block), then bridge red walker ~0C78 (flick/stomp) and
+     exit/scroll-limit. Hurt input-ignore windows + knockback cam-offset break documented s83;
+     use fixed cadence + RELEASE, not cam-locked hops, after any hurt. Blocks 1-2 solved s81.
+     Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

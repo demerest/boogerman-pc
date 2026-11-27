@@ -1,0 +1,36 @@
+# s83a: flick-on-thorn test. Run right and flick (A) at cam 0240/0280/02C0/0330
+# across the thorn cluster ~02AF-0350. If flick kills bushes, running through
+# survives (0266 stays 0, lives 02, score 0237-39 rises). Else death-fade ~f7110.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16 0xFF0698 0x0240
+PRESS A 6
+WAIT_RAM16 0xFF0698 0x0280
+PRESS A 6
+WAIT_RAM16 0xFF0698 0x02C0
+PRESS A 6
+WAIT_RAM16 0xFF0698 0x0330
+PRESS A 6
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83a\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83a\p1.png
+WAIT_RAM16 0xFF0698 0x0420
+PRESS B 8
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83a\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83a\p2.png
+RELEASE
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83a\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83a\end.png
+EXIT

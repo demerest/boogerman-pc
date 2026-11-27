@@ -1,0 +1,24 @@
+# s83n: minimal isolation. Run, boost at GE 04E0, WAIT 110, RELEASE, WAIT 300,
+# dump. Tells whether RELEASE executes post-boost and where cam freezes.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 110
+RELEASE
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83n\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83n\end.png
+EXIT

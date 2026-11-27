@@ -1,0 +1,118 @@
+# s83e: full route v3. GE cam waits + landing WAITs (mid-air B re-jump stacks
+# upward vel, so never chain GE hops inside a boost flight). Thorns flicked
+# 0240-0330 (run-through hurts once, survivable). Boost 04E0 onto slope plat 1
+# (cam freezes 0580 = gap edge); hop 0570 across gap; boost 0600 over slope
+# enemy ~065F-0680 (higher ground, flick whiffs); hops 07B0-0B70; bridge walker
+# flicks 0C30/0C90 + hop 0C60; survival hops to 1860 seeking exit/scroll-limit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0240
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x0270
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x02D0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x0330
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x03C0
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 80
+WAIT_RAM16_GE 0xFF0698 0x0570
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0600
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 80
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83e\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83e\p1.png
+WAIT_RAM16_GE 0xFF0698 0x07B0
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x08A0
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0990
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0A80
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0B70
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0C30
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x0C60
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0C90
+PRESS A 6
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83e\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83e\p2.png
+WAIT_RAM16_GE 0xFF0698 0x0D20
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0E10
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0F00
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x0FF0
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x10E0
+PRESS B 8
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83e\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83e\p3.png
+WAIT_RAM16_GE 0xFF0698 0x11D0
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x12C0
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x13B0
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x14A0
+PRESS B 8
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83e\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83e\p4.png
+WAIT_RAM16_GE 0xFF0698 0x1590
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x1680
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x1770
+PRESS B 8
+WAIT 40
+WAIT_RAM16_GE 0xFF0698 0x1860
+PRESS B 8
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83e\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83e\p5.png
+RELEASE
+WAIT 400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83e\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83e\end.png
+EXIT

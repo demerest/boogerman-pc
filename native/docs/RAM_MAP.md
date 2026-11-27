@@ -384,3 +384,23 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   (ground clamp 004600=0; 00273C writes 0900). Physics taps fire every 2f (30Hz).
 - Tooling: s82a-k.input; s82a-k captures (bins+pngs+err.log taps). No engine change; gitlinks
   stay 9907e77f40/6f705f2. ⇒ s83: clear thorns (double-boost/stomp) then slope+bridge to exit.
+
+## Route mechanics refined (s83, 2026-11-27, US)
+- ENGINE TOOLING: input_script.c OP_WAIT_RAM16_GE (>= wait). Cam equality waits stall because
+  thorn-hurt knockback steps cam +1/+2 and skips 3-grid values (032F→0331, f7153-7185). GE is
+  monotonic-safe while running right. Carried in native/segagenesisrecomp.diff.
+- Thorns ~02AF-0350: run-through = ONE hurt (0266 pulse 003778→00A040 clear 2f), lives 02 kept,
+  health full; flick kills one bush (+50). s82 "kills every cadence" = accumulated jump-landings.
+- Hurt ⇒ ~20-30f input-ignore (swallowed flicks/B8 proven by ammo 023C taps 00F0AC) AND knockback
+  shifts player screen-x ⇒ cam-locked ≠ world-locked after hurt. Use fixed cadence + RELEASE.
+- Slope staircase: plat 1 top cam 0527-0580 (~80px step; hop apex ~40px; single boost 04E0 lands
+  on top ~0560); GAP cam 0580-0630 (fall death ~7761); plat 2 + enemy 2 ~065F-0680 (higher ground,
+  horizontal flick whiffs). Landing hurt 7337 ⇒ ignore window swallows gap hop ⇒ fall.
+- Re-boost allowed (1A46=EF70 twice) but anim-gated ~+64f ⇒ no tight double-boost; double-boost
+  from ≤0480 hits wall side (cam freeze 0527).
+- SAFE BLOCK s83n: boost 04E0 + WAIT110 + RELEASE ⇒ alive standing at edge 057C. s83o
+  walk/release/hop cycles run fully but plain hop reach ~0x5A lands IN gap ⇒ gaps need BOOST.
+- Tap decoders: ammo 023C (00F0AC dec) = flick fired; score 0239 (0037F2) = kill; 0266 pulse
+  003778/00372C = hurt; 0035DC = lives dec (respawn-init 007FA6).
+- Tooling: s83a-o.input; s83a-o captures. Gitlinks stay 9907e77f40/6f705f2. ⇒ s84: boost-per-gap
+  cycles (or stomp plat-1 enemy) then bridge + exit/scroll-limit.

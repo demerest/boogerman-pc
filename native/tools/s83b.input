@@ -1,0 +1,32 @@
+# s83b: double-boost over thorn cluster. Jump at cam 0240, boost (DOWN-air) at
+# +6f, second DOWN-air at +36f. Taps on 1A46 show whether vel EF70 is written
+# twice (re-boost allowed) and whether the extra airtime clears ~02AF-0350.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16 0xFF0698 0x0240
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 30
+PRESS DOWN 6
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83b\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83b\p1.png
+WAIT_RAM16 0xFF0698 0x0480
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83b\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83b\p2.png
+RELEASE
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83b\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83b\end.png
+EXIT

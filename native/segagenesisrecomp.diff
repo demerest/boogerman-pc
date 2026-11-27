@@ -665,6 +665,43 @@ index 78f00b8..761c41e 100644
  /* Shutdown: signal game thread to stop (if running). */
  void glue_shutdown(void);
  
+diff --git a/runner/input_script.c b/runner/input_script.c
+index 19d82bf..4a28959 100644
+--- a/runner/input_script.c
++++ b/runner/input_script.c
+@@ -38,6 +38,7 @@ typedef enum {
+     OP_WAIT_RAM8,
+     OP_ASSERT_RAM16,
+     OP_WAIT_RAM16,
++    OP_WAIT_RAM16_GE,  /* monotonic counters (cam X): equality misses steps */
+     OP_WRITE_RAM8,
+     OP_WRITE_RAM16,
+     OP_WRITE_RAM32,
+@@ -205,6 +206,10 @@ static int parse_line(char *line, int line_no) {
+         o->op     = !_stricmp(tok, "ASSERT_RAM16") ? OP_ASSERT_RAM16 : OP_WAIT_RAM16;
+         o->arg32  = (uint32_t)strtoul(a1, NULL, 16);
+         o->arg32b = (uint32_t)strtoul(a2, NULL, 16);
++    } else if (!_stricmp(tok, "WAIT_RAM16_GE") && n >= 3) {
++        o->op     = OP_WAIT_RAM16_GE;
++        o->arg32  = (uint32_t)strtoul(a1, NULL, 16);
++        o->arg32b = (uint32_t)strtoul(a2, NULL, 16);
+     } else if (!_stricmp(tok, "WRITE_RAM8") && n >= 3) {
+         o->op     = OP_WRITE_RAM8;
+         o->arg32  = (uint32_t)strtoul(a1, NULL, 16);
+@@ -398,6 +403,13 @@ void input_script_tick(uint64_t frame,
+                 break;
+             }
+ 
++            case OP_WAIT_RAM16_GE: {
++                uint16_t v = r16 ? r16(o->arg32) : 0;
++                if (v < (uint16_t)o->arg32b) return;
++                s_pc++;
++                break;
++            }
++
+             case OP_WRITE_RAM8:
+                 if (w8) w8(o->arg32, (uint8_t)o->arg32b);
+                 fprintf(stderr, "[input_script] WRITE_RAM8 at frame %llu ($%06X=$%02X)\n",
 diff --git a/runner/m68k_interp.c b/runner/m68k_interp.c
 index 1290d52..31f8824 100644
 --- a/runner/m68k_interp.c

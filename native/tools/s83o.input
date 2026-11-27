@@ -1,0 +1,135 @@
+# s83o: staircase via walk/release/hop cycles (s83n proved RELEASE leaves player
+# alive at gap edge 057C; knockback breaks cam->world offset so cam-locked hops
+# misland). Each cycle: walk 30f, RELEASE, hop B8 45f (never walk off an edge).
+# 14 cycles ~0xB4 each from 057C -> ~0DEC (bridge). Then flicks + hops to 1860.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 110
+RELEASE
+WAIT 40
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83o\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83o\p1.png
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83o\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83o\p2.png
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83o\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83o\p3.png
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+WAIT 30
+RELEASE
+WAIT 10
+HOLD RIGHT
+PRESS B 8
+WAIT 45
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83o\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83o\p4.png
+RELEASE
+WAIT 400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s83o\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s83o\end.png
+EXIT
