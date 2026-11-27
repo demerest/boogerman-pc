@@ -195,7 +195,7 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
 
 | Field | Address | Shape | Evidence |
 |---|---|---|---|
-| lives | $FF022E | byte BCD | HUD func_00644C draws its digits via 0066A6/A8 (BCD nibble → tile $86A8) = "x2"; dec $0035A2 (BCD -1, borrow→99), inc $0035C4 |
+| lives | $FF022E | byte BCD | HUD func_00644C draws its digits via 0066A6/A8 (BCD nibble → tile $86A8) = "x2"; INC $0035A2 (ABCD, carry→99, store $0035BC), DEC $0035C4 (SBCD, borrow→0, store $0035DC) — s75 had these swapped, corrected s79 |
 | health (visible bar) | $FF023E | byte, max 0x20 | func_006546 bar source; forced 0x10 → half bar, 0 → empty + weakened pose (s75n3); pickup $003660 (+8 BCD, clamp 0x20) |
 | health twin meter | $FF023C | byte, max 0x20 | second bar source in 006546; pickup $003640; writes do NOT change the visible bar |
 | score | $FF0230/0232/0234 | 3 BCD bytes | 00644C draws 0232; inc routines 0035E4/003600/00361C |
@@ -281,3 +281,27 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
   knob (no new trace needed).
 - Tooling: s78-{jump,route}.input; s78a/b-disasm; s78n1/n2/n3, s78w1/w2/w3/w4; -ExecCov on
   s69-native.ps1.
+
+## Death/respawn chain pinned + route progress (s79, 2026-11-27, US) — write-tap writer PCs
+
+Used the existing write tap (`GENESIS_OBJ_TL_ADDRS=22e,23e,24a,5e2,1a3e,244`) on the s78 death
+route; interp writes go through `m68k_write8/16/32` so writer PCs are real. No engine change.
+
+| Symbol | Address | Meaning |
+|---|---|---|
+| lives init | $0155AC | =02 at mode-3 commit (attract coroutine) |
+| lives INC | $0035A2 | ABCD +1, carry→99, store $0035BC (s75 called it dec — wrong) |
+| lives DEC | $0035C4 | SBCD -1, borrow→0, store $0035DC (the observed 02→01 writer) |
+| enemy-contact damage | $00FA0A | SUBI.B #4,(FF023E) then JSR 003790 (health lookup) |
+| player-hit/death handler | $003744 | LEA FF225A obj-ptr table; player check CMPI #1A0E; invuln TST 0248; death branch $003780 set obj+30=1; clear $003734 set 0 |
+| fade/respawn coroutine | $00A0xx | 00A058 state>=2?; 00A062 024A=1 + 0248=#40; resume C622; 00A0DE state!=0→0080AE→00A0EA JSR 35C4; state==0→00A156 (clear score, 00A17E 024A=FFFF, camera recenter)→00A234 lives==0 |
+| respawn/reinit | $007Fxx | 007FA6 JSR 35C4 (lives dec); 007FAC score=0; 007FB4 023C=#20; 007FBC 023E=#20 (refill); 007FCC 024A==FE?→05E2|=1+state3 else state2 (007FD8) |
+
+- Observed sequence (s79n1): 003780(+30=1)→00A062(024A=1)→003734(+30=0)→00A17E(024A=FFFF)→
+  re-init(005832/00508E/005B54)→0035DC(lives 02→01)+007FBC(health=20)+007FD8(state2). Confirms
+  s77 003680/0035A2 NOT on path; the dec is 0035C4/store 0035DC called by respawn-init 007FA6.
+- Route progress (s79n2, tighter cadence B8/WAIT40): SURVIVES (lives 2, health 32), crosses first
+  pit (cam 0698=0575 > 0517 block), score increments; end reaches a level-card boundary
+  (0244=10, 1506=232) — exit/restart transition, confirm vs web s80. s78 cadence B6/WAIT90 died on
+  enemy contact; cadence is the survival lever.
+- Tooling: s79-{death,route}.input; s79a/b/c/d/e-disasm; s79n1/n2.

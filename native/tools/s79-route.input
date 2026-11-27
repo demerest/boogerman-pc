@@ -1,0 +1,52 @@
+# s79: tighter jump cadence (B 8 / WAIT 40) to hop the first enemy + pit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s79n2\m1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s79n2\m1.png
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+PRESS B 8
+WAIT 40
+RELEASE
+WAIT 200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s79n2\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s79n2\end.png
+EXIT

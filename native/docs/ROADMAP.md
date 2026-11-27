@@ -1508,11 +1508,28 @@ verifiable much sooner.
       s69-native.ps1. Gitlinks stay 9907e77f40/6f705f2.
     * => Next: s79 pin the register-indirect lives-dec + death/respawn handler on the observed
       path; solve a full level route to the exit/scroll-limit vs web-US; then M3 sound RE.
+  - **Session 79 (2026-11-27): death/respawn chain PINNED via write-tap writer PCs (no engine
+    change); s75 lives inc/dec labels corrected; tighter jump cadence survives + crosses pit.**
+    * Used existing tap GENESIS_OBJ_TL_ADDRS=22e,23e,24a,5e2,1a3e,244 on the s78 death route;
+      interp writes go through m68k_write8/16/32 ⇒ real writer PCs. Lives DEC = $0035C4 (SBCD,
+      store $0035DC) called by respawn-init $007FA6; lives INC = $0035A2 (s75 had them swapped).
+    * Chain: enemy damage $00FA0A (SUBI.B #4,023E)→003790; player-hit handler $003744 (death
+      branch $003780 obj+30=1, clear $003734); fade/respawn coroutine $00A0xx (00A062 024A=1,
+      00A17E 024A=FFFF, →00A234 lives==0); respawn/reinit $007Fxx (007FA6 dec, 007FBC health=20,
+      007FD8 state2). Confirms s77 003680/0035A2 NOT on the observed path.
+    * Route (s79n2, B8/WAIT40): SURVIVES (lives2/health32), crosses first pit (cam 0698=0575),
+      score increments; end reaches level-card boundary (0244=10,1506=232) = exit/restart
+      transition, confirm vs web s80. s78 cadence B6/WAIT90 died on enemy contact ⇒ cadence is
+      the survival lever. Full route to exit/scroll-limit + second-54FC still open.
+    * Tooling: s79-{death,route}.input; s79a/b/c/d/e-disasm; s79n1/n2. NO engine change;
+      gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s80 solve full route to exit/scroll-limit vs web-US + confirm end-card transition;
+      phase-aligned second-54FC-span compare; then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s79): pin the register-indirect lives-dec/death-respawn handler on the
-     observed death path (s77 003680/0035A2 were not it); solve a full level route to the
-     exit/scroll-limit vs web-US (clean config); phase-aligned second-54FC-span compare;
-     pause settled (none). Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay polish (s80): solve a full level route to the exit/scroll-limit vs web-US (clean
+     config; cadence B8/WAIT40 survives s79) + confirm the end level-card transition;
+     phase-aligned second-54FC-span compare; pause settled (none). Death/respawn chain pinned
+     s79. Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
