@@ -8,7 +8,8 @@ param(
     [int]$Every = 200,
     [string]$Addrs = '516,244,254,1506,6d0,632,698,69a,222,224,24c,276,284,a65',
     [switch]$TitleAssist,
-    [switch]$NoSplashAssist
+    [switch]$NoSplashAssist,
+    [string]$ExecCov = ''
 )
 $ErrorActionPreference = 'Stop'
 $env:GENESIS_BOOT_ASSIST='1'; $env:GENESIS_LOCKSTEP='1'; $env:GENESIS_Z80_FULL_SYNC='1'
@@ -21,5 +22,6 @@ $exe="$root\native\build\Release\BoogermanRecomp_us.exe"; $rom="$root\Boogerman 
 $out="$root\native\captures-us\$Tag"
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 $a='"'+$rom+'" --exit-at-frame '+$Frames+' --input-script "'+$root+'\native\tools\'+$InputScript+'" --capture-out "'+$out+'" --capture-from '+$CaptureFrom+' --capture-to '+$Frames+' --capture-every '+$Every
+if ($ExecCov) { $a += ' --exec-coverage-out "'+$out+'\'+$ExecCov+'"' }
 $p=Start-Process -FilePath $exe -ArgumentList $a -Wait -PassThru -NoNewWindow -RedirectStandardError "$out\err.log" -RedirectStandardOutput "$out\out.log"
 "exit=$($p.ExitCode)"

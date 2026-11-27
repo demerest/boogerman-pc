@@ -1487,11 +1487,32 @@ verifiable much sooner.
     * => Next: s78 add env-gated interp block trace (or static RE level-object parser) to locate
       + promote the spawn; then damage/death via 0037C0 + level-exit/scroll-limit vs web-US +
       second-54FC; M3 sound RE.
+  - **Session 78 (2026-11-27): s75/s76 "object-logic divergence" RETRACTED (FF0100-01FF is the
+    68K stack, not a table); native port confirmed PLAYABLE (move/jump/score/death/respawn).**
+    * $FF0100-01FF = supervisor stack: only A7 imm load is 00031C LEA $FF0200,A7. The s75/s76
+      "handler ptrs / 0180 count / 01B2 player ctx / spawn never runs" were stack words. The
+      real object table $FF0AAA + player ctx $FF1A0E are byte-identical web vs native at
+      phase-aligned field entry ⇒ objects spawn and run natively.
+    * s76 compare was also phase-mismatched (web 0244=3 crawl vs nat 10 field). Correct
+      field-phase web dumps (s78w1/w2/w3) match native e0/e2/e3 on all gameplay vars; +300
+      full diff = 207 words, all stack/sound/scroll/sub-frame phase.
+    * B = JUMP (isolated s78n1; A/C/UP inert). s74 "can't cross first pit" used A — scripting
+      error, not a port bug. With B jumps (s78-route) native shows the full loop: progress,
+      score, death→fade→respawn, lives 022E 02→01. Interp damage 0037C0 executes (coverage).
+    * s77 003680/0035A2 NOT on the observed death path (register-indirect dec; refine s79);
+      00A234 = lives==0 game-over check. Native/web route outcome differs by ~128f entry
+      phase (native died, web survived) — mechanics shared.
+    * Engine fix (segagenesisrecomp.diff): --exec-coverage-out now dumps on script-EXIT (was
+      silently ignored); 7676 interp PCs for the route. Usable interp-visibility knob.
+    * Tooling: s78-{jump,route}.input; s78a/b-disasm; s78n1/n2/n3, s78w1-w4; -ExecCov on
+      s69-native.ps1. Gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s79 pin the register-indirect lives-dec + death/respawn handler on the observed
+      path; solve a full level route to the exit/scroll-limit vs web-US; then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay RE (s78): locate + promote the interp-only level-object spawn (add env-gated
-     interp block trace in engine .diff, or static RE of the level-object parser), then
-     damage/death/respawn via 0037C0/003680 + level-exit/scroll-limit vs web-US (clean config);
-     phase-aligned second-54FC-span compare; pause settled (none).
+  1. Gameplay polish (s79): pin the register-indirect lives-dec/death-respawn handler on the
+     observed death path (s77 003680/0035A2 were not it); solve a full level route to the
+     exit/scroll-limit vs web-US (clean config); phase-aligned second-54FC-span compare;
+     pause settled (none). Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

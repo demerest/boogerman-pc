@@ -1,0 +1,59 @@
+# s78: rightward route with B jumps (B = jump, isolated s78n1). Cross the
+# step-up ledges; watch health/lives for enemy contact and the scroll limit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n2\r1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s78n2\r1.png
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n2\r2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s78n2\r2.png
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n2\r3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s78n2\r3.png
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+PRESS B 6
+WAIT 90
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n2\r4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s78n2\r4.png
+RELEASE
+WAIT 200
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n2\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s78n2\end.png
+EXIT

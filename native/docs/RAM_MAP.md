@@ -201,7 +201,7 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
 | score | $FF0230/0232/0234 | 3 BCD bytes | 00644C draws 0232; inc routines 0035E4/003600/00361C |
 | death handler | $003680 | code | player obj+30 ($FF1A3E) ← 2/3, $FF024A=FE, $FF05E2|=1; invoked by the damage routine (interp-only) |
 | object table | $FF0AAA | stride 0xE, slot = obj+0xC | $00350A-3548: +0 X (screen space), +2 Y, +4/+6 size, +8 flags; ORI #8000,(10,A0) = deactivate |
-| active logic table | $FF0100-01FF | ptrs/flags | web live (handler ROM ptrs 8D2E/8AF8/83CE; 01B2=1A0E); NATIVE EMPTY ⇒ enemy-logic divergence (s76) |
+| active logic table | $FF0100-01FF | ptrs/flags | MISREAD — actually the 68K stack (s78); see correction below |
 
 - Health=0 alone NEVER kills: web-US retains a forced 0 (weakened pose only); death only
   via the damage routine → 003680 + lives dec 0035A2. Native restore-then-zero anomaly
@@ -216,7 +216,7 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
   (ramWrite8(a^1,v)); the first hook version hit 023F instead of 023E.
 - Tooling: s75-{kill,half,meter,hit2}.input; -Wr on s72-web.ps1/s73-webdump.ps1.
 
-## Object-logic divergence localized (s76, 2026-11-27, US) — spawn never runs natively
+## Object-logic divergence localized (s76, 2026-11-27, US) — SUPERSEDED by s78 (stack misread)
 
 | Field | Address | Shape | Evidence |
 |---|---|---|---|
@@ -250,3 +250,34 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
 - NO general interp trace knob (CALL_TL/INSN_TL fixed-watch, emitted-only) ⇒ s78 add env-gated
   interp block trace (engine .diff) or static RE level-object parser to locate the spawn.
 - Tooling: s77a/b/c/d-disasm.
+
+## CORRECTION + playability (s78, 2026-11-27, US) — FF0100-01FF is the STACK; port is playable
+
+- **$FF0100-01FF is the 68K supervisor STACK, not an object table.** The only A7 immediate
+  load in the ROM is `00031C: LEA $00FF0200.L,A7` (stack top FF0200, grows down). The s75/s76
+  "active logic table / handler ptrs 8D2E/8AF8/83CE / 0180=count / 01B2=player ctx" were
+  stack words (saved A-regs + JSR return addresses into the 98xxx sound service). The
+  "spawn never runs natively" root cause is RETRACTED.
+- **Real object state matches the oracle:** at phase-aligned field entry the $FF0AAA object
+  table (stride 0xE) is byte-identical web vs native, and player ctx $FF1A0E differs only in
+  the crawl resume PC (+6: web 1AE3E / nat 1AE6C). Objects spawn and run natively.
+- **s76 compare was also phase-mismatched:** s76w0 web.bin had 0244=0003 (crawl) vs native
+  e0 0244=0010 (field). Correct field-phase web dumps s78w1/w2/w3 (f6300/6600/7100) match
+  native e0/e2/e3 on 0244/0222/0226/0698/069A/0216/022E/023E/023C. Full diff at +300 = 207
+  words, all stack depth / sound queue / VDP scroll tables / sub-frame ctx phase.
+- **B = JUMP** (isolated s78n1: PRESS B raises player Y 0018→0000 and advances X; A/C/UP do
+  nothing). s74's "can't cross the first pit" used A (wrong button) — a scripting error, not
+  a port bug. Web oracle also jumps with B (id 0).
+- **Full gameplay loop validated natively (s78n2/n3, B-jump route):** progress right, score
+  increments (0230), enemy/pit death → fade-to-black → respawn at start with lives 022E
+  02→01 (HUD x2→x1). Interp apply-damage $0037C0 executes (coverage). The s77 $003680 death
+  handler / $0035A2 lives-dec were NOT on this death path (register-indirect dec; refine
+  s79); $00A234 = `CMPI.W #0,(FF022E)` lives==0 game-over check (respawn coroutine, resume
+  C664). Native vs web route outcome differs by the ~128f entry-phase offset (native died,
+  web survived) — mechanics shared, timing-sensitive.
+- **Engine fix (s78, in segagenesisrecomp.diff):** `--exec-coverage-out` was silently ignored
+  for input-script runs (script-EXIT returns before the shutdown dump). Now dumped on that
+  path too; coverage = 7676 interp PCs for the route. This is the usable interp-visibility
+  knob (no new trace needed).
+- Tooling: s78-{jump,route}.input; s78a/b-disasm; s78n1/n2/n3, s78w1/w2/w3/w4; -ExecCov on
+  s69-native.ps1.

@@ -1,0 +1,50 @@
+# s78: isolate the jump button at the first step-up ledge (X blocks at 0517).
+# Player world Y = 0226/0228; a jump reduces it transiently.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\wall.bin
+PRESS B 6
+WAIT 12
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\b1.bin
+WAIT 12
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\b2.bin
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\b3.bin
+WAIT 60
+PRESS C 6
+WAIT 12
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\c1.bin
+WAIT 12
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\c2.bin
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\c3.bin
+WAIT 60
+PRESS A 6
+WAIT 12
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\a1.bin
+WAIT 12
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\a2.bin
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\a3.bin
+WAIT 60
+PRESS UP 6
+WAIT 12
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\u1.bin
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\u2.bin
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s78n1\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s78n1\end.png
+EXIT

@@ -1,3 +1,9 @@
+diff --git a/external/m68k-recomp-core b/external/m68k-recomp-core
+--- a/external/m68k-recomp-core
++++ b/external/m68k-recomp-core
+@@ -1 +1 @@
+-Subproject commit 6f705f274f994250a473be4e11a1113e344bca8e
++Subproject commit 6f705f274f994250a473be4e11a1113e344bca8e-dirty
 diff --git a/runner/cmd_server.c b/runner/cmd_server.c
 index 2503230..4ef0ae4 100644
 --- a/runner/cmd_server.c
@@ -733,7 +739,7 @@ index 1290d52..31f8824 100644
       * servicing so a floor run keeps the 68K clock advancing and lets the VBla
       * handler fire / the game fiber yield between interpreted instructions,
 diff --git a/runner/main.c b/runner/main.c
-index 771b446..18a35fd 100644
+index 771b446..facb2c6 100644
 --- a/runner/main.c
 +++ b/runner/main.c
 @@ -1018,8 +1018,9 @@ static cc_bool input_requested_cb(void *user_data,
@@ -783,6 +789,26 @@ index 771b446..18a35fd 100644
      fprintf(stderr, "[pacer] target frame rate: %.4f fps\n", target_fps);
      int debug_port = debug_port_cli ? debug_port_cli :
                       (debug_port_from_ini ? debug_port_from_ini :
+@@ -4237,6 +4253,19 @@ session_begin:;
+                 if(!genesis_host_stream_flush_all())fprintf(stderr,"[capture] final write failed\n");
+                 genesis_replay_shutdown();
+                 report_z80_sync();
++                /* s78: the script-EXIT path returns before the ordinary
++                 * shutdown coverage dump, so --exec-coverage-out was silently
++                 * ignored for input-script runs. Dump it here too. */
++                if (exec_cov_out) {
++                    extern long m68k_interp_cov_dump(FILE *);
++                    FILE *cf = fopen(exec_cov_out, "w");
++                    if (cf) {
++                        long n = m68k_interp_cov_dump(cf);
++                        fclose(cf);
++                        fprintf(stderr, "[EXECCOV] wrote %ld executed PCs to %s\n",
++                                n, exec_cov_out);
++                    }
++                }
+                 return input_script_exit_code();
+             }
+         }
 diff --git a/runner/rb_state.c b/runner/rb_state.c
 index 3e146ce..2306f92 100644
 --- a/runner/rb_state.c
