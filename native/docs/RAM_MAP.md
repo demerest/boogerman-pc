@@ -305,3 +305,25 @@ route; interp writes go through `m68k_write8/16/32` so writer PCs are real. No e
   (0244=10, 1506=232) — exit/restart transition, confirm vs web s80. s78 cadence B6/WAIT90 died on
   enemy contact; cadence is the survival lever.
 - Tooling: s79-{death,route}.input; s79a/b/c/d/e-disasm; s79n1/n2.
+
+## End-card = death/respawn (NOT exit) + forward block at cam 0575 (s80, 2026-11-27, US)
+
+Long route (32 jumps B8/WAIT40, s80n1) with dumps every 8 resolves the s79 open question:
+the "level-card boundary" at the end of s79n2 is the **death/respawn card**, not a level exit.
+- g2 (16 jumps): alive, cam 0698=0575, player 0222=0565, lives 022E=2.
+- g3 (24 jumps): RESPAWNED at level start — cam 0698=0010, player 0222=0000, lives 022E=1.
+  A life was lost between g2 and g3; an exit would not decrement lives. The card (1506 ramp) is
+  re-shown on respawn, then gameplay resumes (g3 png = start landmark, no card).
+- Web-US same route (s80w1) also shows the card (1506=E8 @8820) immediately before its single
+  life drop (022E 2→1 @8933) ⇒ same death/respawn semantics, later phase.
+
+1506 = level-card timer (word $FF1506): at field entry ramps D1→E8 (+1/frame) via **$0072CC**,
+then holds E8 via **$0072D4**; re-ramped on respawn. 024A death/fade flag (byte): set =1 by
+**$00A062** (fade start), cleared =FF by **$005832** (init + post-fade). s80n1 tap sequence:
+00A062(024A=1)@7137 → 005832(024A=FF)@7596 → 0035DC(lives 2→1)@7787 (reconfirms DEC store).
+
+Forward block: player X stalls at ~0565 (cam 0575) — the obstacle/enemy cluster past the first
+pit. B8/WAIT40 dies there; B12/WAIT36 (s80n3) gets STUCK at 0575 then dies; A attack (s80n2) is
+inert (identical to no-attack). Full route to exit/scroll-limit NOT solved ⇒ s81 (identify the
+0575 obstacle / correct attack or jump-on-enemy, or derive a working route from web-US).
+- Tooling: s80-{long,atk,jump12}.input; s80n1/n2/n3; s80w1 (web wt). No engine change.

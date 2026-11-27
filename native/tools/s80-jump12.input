@@ -1,0 +1,90 @@
+# s80: long route (32 jumps B8/WAIT40) with dumps every 8 to find exit/scroll-limit + card meaning.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 360
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s80n3\g1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s80n3\g1.png
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s80n3\g2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s80n3\g2.png
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s80n3\g3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s80n3\g3.png
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+PRESS B 12
+WAIT 36
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s80n3\g4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s80n3\g4.png
+RELEASE
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s80n3\end.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s80n3\end.png
+EXIT

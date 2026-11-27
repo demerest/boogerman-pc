@@ -1525,11 +1525,26 @@ verifiable much sooner.
       gitlinks stay 9907e77f40/6f705f2.
     * => Next: s80 solve full route to exit/scroll-limit vs web-US + confirm end-card transition;
       phase-aligned second-54FC-span compare; then M3 sound RE.
+  - **Session 80 (2026-11-27): end-card = death/respawn (NOT exit); forward block at cam 0575;
+    full route still open.**
+    * Long route (32 jumps B8/WAIT40, s80n1) dumps every 8: g2 alive cam0575/lives2 → g3 respawned
+      cam0010/lives1 ⇒ the s79 "end card" is the respawn card (a life is lost; an exit would not
+      decrement lives). Web-US same route (s80w1) shows card @8820 then life drop @8933 ⇒ same
+      semantics, later phase. Closes the s79 exit/restart question.
+    * 1506 = level-card timer: field-entry ramp D1→E8 via 0072CC, hold E8 via 0072D4, re-ramped on
+      respawn. 024A fade flag set=1 by 00A062, cleared=FF by 005832. s80n1: 00A062@7137→005832@7596
+      →0035DC(lives2→1)@7787 (reconfirms DEC store).
+    * Forward block at player X~0565/cam0575 (enemy cluster past first pit): B8 dies, B12 stuck then
+      dies (s80n3), A attack inert (s80n2). Cadence alone does not solve the level ⇒ s81.
+    * Tooling: s80-{long,atk,jump12}.input; s80n1/n2/n3; s80w1. NO engine change; gitlinks stay
+      9907e77f40/6f705f2.
+    * => Next: s81 identify the 0575 obstacle / correct attack or jump-on-enemy (or derive a working
+      route from web-US) to reach exit/scroll-limit; phase-aligned second-54FC; then M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay polish (s80): solve a full level route to the exit/scroll-limit vs web-US (clean
-     config; cadence B8/WAIT40 survives s79) + confirm the end level-card transition;
-     phase-aligned second-54FC-span compare; pause settled (none). Death/respawn chain pinned
-     s79. Native port is PLAYABLE as of s78 (B=jump).
+  1. Gameplay polish (s81): solve the forward block at cam 0575 (identify obstacle / attack button /
+     jump-on-enemy, or derive a working route from web-US) to reach the exit/scroll-limit;
+     phase-aligned second-54FC-span compare; pause settled (none). End-card=respawn confirmed s80;
+     death/respawn chain pinned s79. Native port is PLAYABLE as of s78 (B=jump).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
