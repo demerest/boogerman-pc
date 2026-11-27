@@ -1,0 +1,33 @@
+# s68 clean gameplay probe (TITLE_ASSIST OFF): phase-anchored entry, then
+# idle / right / left full-RAM dumps for camera+player+HUD discovery, then an
+# in-level pause/resume pair to re-validate the s67 pause signature for real.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 30
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT 500
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s68e\idle.bin
+HOLD RIGHT
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s68e\right.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s68e\right.png
+RELEASE
+HOLD LEFT
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s68e\left.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s68e\left.png
+RELEASE
+WAIT 300
+PRESS START 4
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s68e\pause1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s68e\pause1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s68e\pause2.bin
+PRESS START 4
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s68e\resume.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s68e\resume.png
+EXIT

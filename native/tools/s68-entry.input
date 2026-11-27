@@ -1,0 +1,19 @@
+# s68 deterministic entry: anchor to demo commit (0244=34), then post-demo
+# interactive title (1506=160), then a FRESH Start HOLD (edge lands at title,
+# held span covers the 5D4==0F service window). s67's hold-from-boot committed
+# 0244 via 5AAC but its edge was consumed pre-title, so the title supervisor
+# never exited -> hybrid title-display/level-controller state. An 8f PRESS at
+# title (s68b) gave the edge but missed the 5D4 window -> no commit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 30
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT 500
+HOLD RIGHT
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s68d\right.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s68d\right.png
+RELEASE
+EXIT

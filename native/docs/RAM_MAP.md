@@ -66,22 +66,40 @@ revisit (candidate: find a true longword counter, or adapter-side shim).
 - `player_object`, `plc_pending`, `level_modes` remain TODO: they require
   gameplay-phase (post-Start) RAM diffs, i.e. M4 route validation.
 
-## Gameplay-phase findings (s67, 2026-11-27, US)
+## Gameplay-phase findings (s67, 2026-11-27, US) — SUPERSEDED by s68
 
-From phase-locked native runs (WAIT_RAM16-anchored) + web-US full-RAM diffs:
+s67's native runs had TITLE_ASSIST ON, which produces a hybrid (title display +
+live level controller). Its "pause freeze" and "0698/06A0 not camera" conclusions
+were measured in that hybrid / at title idle and are corrected below.
 
 | Field | Address | Shape | Evidence |
 |---|---|---|---|
-| pause freeze set | $FF0100-01FF, $FF0600-06FF | object table + camera/HUD | identical across a 120f pause (0 word diffs) |
-| pause continues | $FF1A00+ (1A1E/1A5A/1A7C/1A86/1A88/1ACE/1AD4/1ADE/1AE0) | level-controller yield timer | still ticks during pause |
-| pause continues (audio) | 0286/0288/052C/052E/0544/0560/0562/056C/056E/0578 | sound/service counters | music keeps running during pause |
-| anim ticker | $FF06D0 | +2/~6f, freezes on pause | web WT pause signature |
-| intro countdown | $FF0632 | decrements, freezes on pause | web WT pause signature |
+| title-idle freeze set | $FF0100-01FF, $FF0600-06FF | object table + camera/HUD | identical across 120f at TITLE idle (s67 called this "pause") |
+| title-idle continues (audio) | 0286/0288/052C/052E/0544/0560/0562/056C/056E/0578, $FF15xx | sound/service counters + Z80 cmd queue | keep ticking at title idle |
 | background anim | $FF064E-0674 | oscillators (water/sway) | NOT the camera (change every ~100f regardless of input) |
-| demo camera | $FF06A0/06A2 (mirrors 06AC/06AE) | attract-demo scroll | tracks the attract demo, NOT gameplay; gameplay camera still TODO |
-| player fields (candidate) | 0216-0228 | position/velocity | walk-vs-idle full-RAM diff |
 
-`player_object`, gameplay camera, health and lives remain TODO (s68): the
-gameplay camera/health vars are outside the boot/title watchlist and 0698/06A0
-proved to be demo/intro-only. Precise scroll-limit / damage / death validation
-needs them identified first.
+## Gameplay-phase findings (s68, 2026-11-27, US, TITLE_ASSIST OFF)
+
+With the assist OFF the level plays and the true gameplay vars are:
+
+| Field | Address | Shape | Evidence |
+|---|---|---|---|
+| gameplay camera X | $FF0698 = $FF06A0 = $FF06AC | word, mirrors | idle 02E3 → right-hold 05AE (+723/600f); reverses on LEFT |
+| gameplay camera Y | $FF069A = $FF06A2 = $FF06AE | word, mirrors | 0203 → 0238 under right-hold |
+| camera tertiary | $FF069C = $FF06A4 = $FF06B0 | word, mirrors | 0115 → 0221 |
+| player world pos | $FF0222/0224 (X), $FF0226/0228 (Y) | words | idle 0413/0433 → right 059E/06FE; moves with scroll |
+| player screen/vel | $FF0216/0218 | words | change with input (0043/002E idle → 0037/000E right) |
+| anim ticker | $FF06D0 | +2/~6f in gameplay | advances in-level; 0 in the TITLE_ASSIST hybrid |
+| intro countdown | $FF0632 | decrements during level intro | START held during intro aborts to title |
+
+- **Deterministic entry (assist OFF):** WAIT_RAM16 0244=34 (demo commit) →
+  WAIT_RAM16 1506=160 (post-demo title) → WAIT 30 → HOLD START →
+  WAIT_RAM16 0244=1 → RELEASE. Commits at exactly f2074 (s68d == s68e) under
+  lockstep. The guest's own service opens the title natively; TITLE_ASSIST is
+  NOT required and is HARMFUL (its per-V-int 284/A65/2BA writes keep the title
+  supervisor alive after commit → hybrid title-display/level-controller state).
+- **START semantics:** a HELD Start (40f) in-level quits to title; the s67
+  "pause freeze" (object/camera frozen + audio ticking) is the TITLE-idle
+  signature, not pause. True gameplay pause trigger/timing still TODO (s69).
+- `player_object` base, health and lives still TODO (s69): HUD hearts candidate
+  068C/068E, timer 0632; need damage/death diffs to confirm.

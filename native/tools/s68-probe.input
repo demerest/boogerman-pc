@@ -1,0 +1,14 @@
+# s68 probe: phase-locked entry, then RIGHT hold; multi-frame capture shows
+# whether the framebuffer ever leaves the title after the 0244=1 commit.
+WAIT_RAM8 0xFF05D4 0x0F
+WAIT 200
+HOLD START
+WAIT_RAM16 0xFF0244 0x0001
+RELEASE
+WAIT 500
+HOLD RIGHT
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s68a\right.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s68a\right.png
+RELEASE
+EXIT

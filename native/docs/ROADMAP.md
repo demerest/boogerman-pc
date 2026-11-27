@@ -1237,12 +1237,41 @@ verifiable much sooner.
     * => Next: s68 deterministic auto-entry + gameplay camera/health/lives discovery,
       then scroll-limit / damage / death / level-exit validation and a phase-aligned
       second-span compare; M3 sound RE to retire assists.
+  - **Session 68 (2026-11-27): ROOT CAUSE of the s67 hybrid = TITLE_ASSIST itself.
+    With it OFF, phase-anchored entry is deterministic (commits f2074 twice) and the
+    level PLAYS; gameplay camera + player pos identified; scroll validated both
+    directions. s67's "pause" was title-idle; a held START quits to title.**
+    * s67 native runs (pause/scroll) had TITLE_ASSIST=1. Its per-V-int 284/A65/2BA
+      writes keep the 15xx title supervisor alive AFTER the 5AAC commit, so the
+      guest ran the level controller (5418@2811, 0254=1/1506=180) while the display
+      stayed title and the gameplay camera/anim stayed dead (06D0=0) — a hybrid.
+      The s67 "pause freeze" (01xx/06xx identical + audio ticking) was this hybrid /
+      title-idle, NOT a gameplay pause; the "0698/06A0 not camera" dismissal was a
+      hybrid artifact.
+    * Clean config (TITLE_ASSIST OFF, keep BOOT/SPLASH assist + lockstep): entry =
+      WAIT_RAM16 0244=34 → WAIT_RAM16 1506=160 → WAIT 30 → HOLD START →
+      WAIT_RAM16 0244=1 → RELEASE. Commits at exactly f2074 (s68d == s68e). The
+      guest's own service opens the title natively; TITLE_ASSIST is unnecessary and
+      harmful for gameplay. (s68b 8f-PRESS gave the edge but the hold-from-boot s67
+      recipe lacked a title-time edge; the assist, not the edge, was the real blocker.)
+    * Gameplay camera X = 0698=06A0=06AC (idle 02E3→right 05AE, reverses on LEFT);
+      Y = 069A=06A2=06AE; tertiary 069C=06A4=06B0. Player world pos 0222/0224 (X),
+      0226/0228 (Y); screen/vel 0216/0218. right.png/left.png show scrolled forest.
+    * START semantics: HELD Start (40f) in-level quits to title (s68f/g pause1.png =
+      title); the "pause freeze set" is the title-idle set. True gameplay pause
+      trigger/timing NOT yet validated → s69. Intro countdown 0632; START during
+      intro aborts to title.
+    * Tooling: s68-native.ps1 (-NoTitleAssist/-NoSplashAssist, -CaptureFrom/-Every),
+      s68-diffbin.ps1 (native 64KB bin word reader/differ, big-endian per word),
+      s68-{entry,walk,pause}.input. RAM_MAP s67 table superseded + s68 table added.
+    * => Next: s69 true pause trigger + health/lives + damage/death/level-exit and
+      scroll-limit validation vs web-US (clean config); phase-aligned second-span
+      compare; M3 sound RE to retire remaining assists.
   Next experiments (anticipated, in order):
-  1. Gameplay fidelity (s68): make the title->game auto-entry deterministic; identify
-     the gameplay camera/health/lives vars (outside the boot watchlist); validate
-     camera scroll limits, collision damage, death and level exit vs web-US;
-     phase-aligned re-compare of the second 54FC spawn span. Pause already validated
-     (s67); no engine freeze fix needed (s66 disproven).
+  1. Gameplay fidelity (s69): with TITLE_ASSIST OFF, identify the true pause trigger
+     (held START quits to title), health/lives vars, and validate collision damage,
+     death, level exit and camera scroll limits vs web-US; phase-aligned re-compare
+     of the second 54FC spawn span. Entry + camera + scroll done (s68).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
