@@ -233,3 +233,20 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
   OBJ-TL emitted boot writes 0180/01B2=0 only. FF01E0 @0072EC/007306 = HUD text cursor bound
   (dead end). s77 = trace resume chain + interpreter coverage to locate & promote the spawn.
 - Tooling: s76-{entry,gate}.input; s76a/b/c-disasm; s76n1/n2, s76w0.
+
+## Damage/death chain + object-create pinned (s77, 2026-11-27, US) — all interp-only
+
+| Symbol | Address | Meaning |
+|---|---|---|
+| apply-damage | $0037C0 | D0=amount (0x50 at 010900); called by enemy handler before death |
+| health-setter | $003790 | D0=value (0xBF at 01112C) |
+| object create/pos | $011104 | calls 350A (X) + 3520 (Y), JMP 3450 |
+| enemy handler | $010880 | obj+16 type 40/20/01 → resume D358/D380; hit → 37C0→6F82→3680→3538 |
+| death callers | $01090E / $01CB7C | JSR 3680 (death handler) |
+
+- All absent from emitted C ⇒ interp-only. Damage/death chain fully mapped (s75 candidates
+  $00F2xx/$0123xx superseded by 0037C0).
+- Level-load "idles 579C" = completed VDP-DMA RTS, not a wait gate.
+- NO general interp trace knob (CALL_TL/INSN_TL fixed-watch, emitted-only) ⇒ s78 add env-gated
+  interp block trace (engine .diff) or static RE level-object parser to locate the spawn.
+- Tooling: s77a/b/c/d-disasm.

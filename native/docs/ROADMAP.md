@@ -1470,11 +1470,28 @@ verifiable much sooner.
       gitlinks stay 9907e77f40/6f705f2.
     * => Next: s77 locate+promote interp-only level-spawn (trace coroutine resume chain),
       then damage/death/respawn + level-exit/scroll-limit vs web-US + second-54FC; M3 sound RE.
+  - **Session 77 (2026-11-27): damage routine + object-create PINNED (interp-only); spawn
+    still never invoked natively; no general interp-trace knob exists ⇒ s78 add one.**
+    * JSR-target scan of object accessors: object create/position = $011104 (calls 350A X +
+      3520 Y, JMP 3450); death-handler callers = $01090E (enemy handler) + $01CB7C.
+    * APPLY-DAMAGE = $0037C0 (D0=amount, e.g. 0x50 at 010900); health-setter $003790 (D0=0xBF
+      at 01112C). Both + 011104 + 010880 ABSENT from emitted C ⇒ interp-only (confirms s75).
+    * Enemy handler 010880: obj+16 type 40/20/01 selects resume D358/D380; on hit calls
+      37C0→6F82→3680(death)→3538(deactivate). Damage/death chain now fully mapped.
+    * Level-load "idles 579C" = completed VDP-DMA-setup RTS (5784 loads regs BC/BD), NOT a
+      wait gate ⇒ parked-coroutine hypothesis not a sound-ack wait at 579C.
+    * NO general interpreter trace: GENESIS_CALL_TL/INSN_TL are fixed-watch lists, emitted-only
+      (reverse_debug.c). Locating the interp-only spawn caller needs an env-gated interp block
+      trace (engine .diff) or static RE of the level-object parser ⇒ s78.
+    * Tooling: s77a/b/c/d-disasm. NO engine change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s78 add env-gated interp block trace (or static RE level-object parser) to locate
+      + promote the spawn; then damage/death via 0037C0 + level-exit/scroll-limit vs web-US +
+      second-54FC; M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay RE (s77): locate + promote the interp-only level-object spawn (trace guest
-     coroutine resume chain 01F6/01FA/01FE boot→field; interpreter coverage leads), then
-     damage/death/respawn + level-exit/scroll-limit vs web-US (clean config); phase-aligned
-     second-54FC-span compare; pause settled (none).
+  1. Gameplay RE (s78): locate + promote the interp-only level-object spawn (add env-gated
+     interp block trace in engine .diff, or static RE of the level-object parser), then
+     damage/death/respawn via 0037C0/003680 + level-exit/scroll-limit vs web-US (clean config);
+     phase-aligned second-54FC-span compare; pause settled (none).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
