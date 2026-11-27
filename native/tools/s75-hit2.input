@@ -1,0 +1,29 @@
+# s75: teleport player onto the idle-screen plant enemy (object X=00F5 screen;
+# player screen offset 0x78 => world X=007D). Watch health 023E / lives 022E.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n4\base.bin
+WRITE_RAM16 0xFF0222 0x007D
+WRITE_RAM16 0xFF0224 0x01DD
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n4\t1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n4\t1.png
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n4\t2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n4\t2.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n4\t3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n4\t3.png
+WAIT 300
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n4\t4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n4\t4.png
+EXIT

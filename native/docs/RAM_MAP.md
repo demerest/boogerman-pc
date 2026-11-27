@@ -190,3 +190,28 @@ Minimal 68k disassembler: `native/tools/s70-disasm.html` + `s70-disasm.ps1`
   need RE of death/respawn + HUD draw routines or a solved input route (s75).
 - Pause: no button pause (s71). second-54FC phase compare deferred (needs PC trace).
 - Tooling: s74-{death,hit,exit,kill}.input.
+
+## Gameplay-phase findings (s75, 2026-11-27, US) — health/lives pinned + HUD/death RE
+
+| Field | Address | Shape | Evidence |
+|---|---|---|---|
+| lives | $FF022E | byte BCD | HUD func_00644C draws its digits via 0066A6/A8 (BCD nibble → tile $86A8) = "x2"; dec $0035A2 (BCD -1, borrow→99), inc $0035C4 |
+| health (visible bar) | $FF023E | byte, max 0x20 | func_006546 bar source; forced 0x10 → half bar, 0 → empty + weakened pose (s75n3); pickup $003660 (+8 BCD, clamp 0x20) |
+| health twin meter | $FF023C | byte, max 0x20 | second bar source in 006546; pickup $003640; writes do NOT change the visible bar |
+| score | $FF0230/0232/0234 | 3 BCD bytes | 00644C draws 0232; inc routines 0035E4/003600/00361C |
+| death handler | $003680 | code | player obj+30 ($FF1A3E) ← 2/3, $FF024A=FE, $FF05E2|=1; invoked by the damage routine (interp-only) |
+| object table | $FF0AAA | stride 0xE, slot = obj+0xC | $00350A-3548: +0 X (screen space), +2 Y, +4/+6 size, +8 flags; ORI #8000,(10,A0) = deactivate |
+| active logic table | $FF0100-01FF | ptrs/flags | web live (handler ROM ptrs 8D2E/8AF8/83CE; 01B2=1A0E); NATIVE EMPTY ⇒ enemy-logic divergence (s76) |
+
+- Health=0 alone NEVER kills: web-US retains a forced 0 (weakened pose only); death only
+  via the damage routine → 003680 + lives dec 0035A2. Native restore-then-zero anomaly
+  after a 0x10 write (+30: 0x20, +150: 0) = native player coroutine out of phase
+  (1A5A/1A62 differ vs web), part of the object-logic divergence, NOT a game rule.
+- HUD gate: 00644C runs when A65 bit0 clear && 0246!=0 (true in field).
+- Damage/death/spawn writers are INTERPRETER-ONLY: generated-C grep and OBJ-TL see
+  emitted code only. Raw ROM abs-operand scan (00FF023E/00FF022E) + s70-disasm located
+  $0035xx/$0036xx; damage-routine candidates $00F2xx/$0123xx (s76).
+- Web oracle measurement-only wr= hook (ram-shot/ram-dump ?wr=addrHex:valHex@frame).
+  web ram() buffer is little-endian per word ⇒ guest byte g lives at buffer g^1
+  (ramWrite8(a^1,v)); the first hook version hit 023F instead of 023E.
+- Tooling: s75-{kill,half,meter,hit2}.input; -Wr on s72-web.ps1/s73-webdump.ps1.

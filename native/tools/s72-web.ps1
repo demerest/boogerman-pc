@@ -5,11 +5,13 @@ param(
     [string]$Script = '3@2450:40,5@2900:4',
     [string]$Tag = 's72wA',
     [string]$Wtx = '244,222,698,6d0',
-    [int]$Budget = 250000
+    [int]$Budget = 250000,
+    [string]$Wr = ''
 )
 $ErrorActionPreference = 'Stop'
 $chrome = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
 $url = "file:///S:/home/dev/boogerman-pc/web/test/ram-shot.html?rom=us&frames=${Frames}&script=${Script}&wt=1&wtx=${Wtx}"
+if ($Wr) { $url += "&wr=${Wr}" }
 $tmp = "$env:TEMP\chrome-s72-$Tag"
 $out = "S:\home\dev\boogerman-pc\native\captures-us\$Tag-dom.html"
 $argline = "--headless=new --disable-gpu --no-first-run --user-data-dir=`"$tmp`" --virtual-time-budget=$Budget --timeout=120000 --dump-dom `"$url`""

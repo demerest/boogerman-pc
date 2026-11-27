@@ -1,0 +1,29 @@
+# s75: force health=0 (byte 023C, HUD bar source per func_006546) to trigger the
+# death/respawn sequence; lives byte 022E (HUD "x2" per func_00644C) should drop.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n1\base.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n1\base.png
+WRITE_RAM8 0xFF023C 0x00
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n1\d1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n1\d1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n1\d2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n1\d2.png
+WAIT 400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n1\d3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n1\d3.png
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n1\d4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n1\d4.png
+EXIT

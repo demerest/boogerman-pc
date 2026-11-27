@@ -1419,10 +1419,38 @@ verifiable much sooner.
     * => Next: s75 RE the death/respawn + HUD routines to pin health/lives addresses (or
       solve a rightward input route), then damage/death/level-exit/scroll-limit vs
       web-US + second-54FC; M3 sound RE.
+  - **Session 75 (2026-11-27): health/lives PINNED via HUD + BCD/death RE; native
+    object-logic divergence discovered (FF0100-01FF empty vs web live) = root-cause
+    lead for damage never converging; death requires the interp-only damage routine.**
+    * HUD RE: func_00644C draws lives (022E) + score-mid (0232) BCD digits via
+      0066A6/A8 (nibble → tile $86A8); func_006546 renders bars from 023C/023E via ROM
+      tables $666A/$6674; gate A65 bit0 clear && 0246!=0.
+    * health = 023E (max 0x20): forced 0x10 → half bar, 0 → empty + weakened pose
+      (s75n3 m1/k3 PNGs). 023C = twin meter (pickup $003640), not the visible bar.
+      lives = 022E BCD ("x2"); score = 0230/32/34.
+    * Raw-ROM abs-operand scan (generated-C grep + OBJ-TL see emitted code only)
+      located interp-only routines: lives dec $0035A2 / inc $0035C4; score inc
+      0035E4/3600/361C; health pickup 003640/003660 (+8 clamp 20); death handler
+      $003680 (obj+30=1A3E state 2/3, 024A=FE, 05E2|=1). Object table $FF0AAA stride
+      0xE slot=obj+0xC (+0 X screen, +2 Y, +4/6 size, +8 flags).
+    * Health=0 alone NEVER dies (web-US keeps forced value; weakened pose only) ⇒
+      death only via damage routine (interp-only; candidates $00F2xx/$0123xx) → s76.
+    * DIVERGENCE: native FF0100-01FF active-logic table EMPTY vs web live (handler
+      ptrs 8D2E/8AF8/83CE; 01B2=1A0E); native player coroutine 1A5A/1A62 out of phase;
+      native health write restored-then-zeroed while web retains ⇒ native object
+      system diverges (enemy logic absent ⇒ blind damage never converges). s76 root-cause.
+    * Web oracle wr= write-schedule hook added (ram-shot/ram-dump; guest byte g at
+      buffer g^1 — first attempt hit 023F, fixed). Phase-matched dumps s75wA/B.
+    * Tooling: s75-{kill,half,meter,hit2}.input; -Wr on s72-web/s73-webdump. NO engine
+      change; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s76 root-cause native object-logic divergence (FF0100 allocator gate;
+      raw-scan 00FF0100/01B2 refs), then damage/death/respawn + level-exit/scroll-limit
+      vs web-US + second-54FC; M3 sound RE.
   Next experiments (anticipated, in order):
-  1. Gameplay RE (s75): pin health/lives via the death/respawn + HUD draw routines (or a
-     solved rightward input route); validate damage/death/level-exit/scroll-limit vs
-     web-US (clean config); phase-aligned second-54FC-span compare; pause settled (none).
+  1. Gameplay RE (s76): root-cause native object-logic divergence (FF0100-01FF empty;
+     find the allocator + its gate via raw ROM scan), then damage/death/respawn +
+     level-exit/scroll-limit vs web-US (clean config); phase-aligned second-54FC-span
+     compare; pause settled (none).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

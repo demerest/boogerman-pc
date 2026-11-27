@@ -1,0 +1,31 @@
+# s75: 023E is the second bar source in func_006546 (visible top-right bar?).
+# Halve it (0x10) then zero it; watch bar + lives (022E) + respawn.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+WRITE_RAM8 0xFF023E 0x10
+WAIT 150
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n3\m1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n3\m1.png
+WRITE_RAM8 0xFF023E 0x00
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n3\k1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n3\k1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n3\k2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n3\k2.png
+WAIT 400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n3\k3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n3\k3.png
+WAIT 600
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n3\k4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n3\k4.png
+EXIT

@@ -3,11 +3,13 @@ param(
     [int]$Frames = 11000,
     [string]$Script = '3@2450:40,5@2900:4,7@7000:3600',
     [string]$Tag = 's73wG',
-    [int]$Budget = 220000
+    [int]$Budget = 220000,
+    [string]$Wr = ''
 )
 $ErrorActionPreference = 'Stop'
 $chrome = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
 $url = "file:///S:/home/dev/boogerman-pc/web/test/ram-dump.html?rom=us&frames=${Frames}&script=${Script}"
+if ($Wr) { $url += "&wr=${Wr}" }
 $tmp = "$env:TEMP\chrome-s73-$Tag"
 $out = "S:\home\dev\boogerman-pc\native\captures-us\$Tag-dom.html"
 $argline = "--headless=new --disable-gpu --no-first-run --user-data-dir=`"$tmp`" --virtual-time-budget=$Budget --timeout=120000 --dump-dom `"$url`""

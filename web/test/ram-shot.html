@@ -57,9 +57,17 @@
     /* web ram() is little-endian per word: ramRead16 returns byte-swapped words. */
     const sw = v => ((v & 0xFF) << 8) | (v >> 8);
     const rb = a => (a & 1) ? BP.core.ramRead16(a - 1) >> 8 : BP.core.ramRead16(a) & 0xFF;
+    /* s75: optional byte-write schedule "addrHex:valHex@frame,..." (measurement only). */
+    const writes = (new URLSearchParams(location.search).get('wr') || '')
+      .split(',').filter(Boolean).map(s => {
+        const [av, fr] = s.split('@'); const [a, v] = av.split(':');
+        return { a: parseInt(a, 16), v: parseInt(v, 16), st: parseInt(fr, 10) };
+      });
     let n = 0;
     function step() {
       for (const p of presses) BP.input.setVirtual(0, p.id, n >= p.st && n < p.st + p.hold);
+      /* ram() buffer is little-endian per word: guest byte g lives at g^1. */
+      for (const w of writes) if (n === w.st) BP.core.ramWrite8(w.a ^ 1, w.v);
       BP.core.run();
       if (wt) for (const a of wtAddrs) {
         const v = sw(BP.core.ramRead16(a));

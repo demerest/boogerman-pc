@@ -1,0 +1,20 @@
+# s75: force health=0x10 (half of max 0x20) to verify the HUD bar maps byte 023C.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+WRITE_RAM8 0xFF023C 0x10
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n2\h1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n2\h1.png
+WAIT 120
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s75n2\h2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s75n2\h2.png
+EXIT
