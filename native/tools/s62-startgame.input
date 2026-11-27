@@ -1,0 +1,10 @@
+# s62: Start-late commit (@2452) then gameplay probes during the level:
+# Right hold to drive scroll, A jumps. Phase-matched to web6.
+2450 START
+2490 -
+2600 RIGHT
+2800 RIGHT+A
+2840 RIGHT
+3000 RIGHT+A
+3040 RIGHT
+3200 -

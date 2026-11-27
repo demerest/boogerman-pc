@@ -1,0 +1,18 @@
+# s62: menu2 entry (confirm @1250) then gameplay probes: Right holds and
+# A jumps during mode-10 to test scroll accums / player response.
+1000 START
+1040 -
+1100 B
+1110 B+RIGHT
+1140 B
+1160 B+RIGHT
+1190 B
+1230 B+A
+1300 B
+2000 -
+2100 RIGHT
+2500 -
+2550 A
+2590 -
+2600 RIGHT
+3000 -

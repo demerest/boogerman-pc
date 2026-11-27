@@ -37,7 +37,9 @@
     const wt = new URLSearchParams(location.search).get('wt');
     const wtAddrs = [0x244, 0x254, 0x284, 0x50C, 0x502, 0x516, 0x246, 0x690, 0xA90, 0x1506, 0x1A56, 0x36EE, 0x3736, 0x25E, 0x5B4,
       0x2B4, 0x2BA, 0xA62, 0x288, 0x3832, 0x3834, 0x3836, 0x3838, 0x202,
-      0x1A5A, 0x1A18, 0x1A24, 0x54C, 0x524, 0x548];
+      0x1A5A, 0x1A18, 0x1A24, 0x54C, 0x524, 0x548,
+      0x1A14, 0x1A6A, 0x1AC2, 0x1B1A,
+      0xA58, 0xA5A, 0xA5C, 0x27E, 0x280];
     const wtPrev = {}; const wtLog = [];
     const gateFrames = [900, 1000, 1050, 1100, 1150, 1200, 1400, 1800, 2399];
     /* web ram() is little-endian per word: ramRead16 returns byte-swapped words. */
@@ -89,9 +91,21 @@
             catch (e) { regs += i + ':err '; }
           }
         }
+        /* s62: coarse 40x28 luminance map of the final video frame so
+         * dump-dom runs can "see" the screen state without a screenshot. */
+        let vid = '';
+        for (let by = 0; by < 28; by++) {
+          let row = '';
+          for (let bx = 0; bx < 40; bx++) {
+            const px = ((by * 8 + 4) * lv.width + (bx * 8 + 4)) * 4;
+            const l = (D[px] + D[px + 1] + D[px + 2]) / 3;
+            row += l < 24 ? '.' : l < 80 ? ':' : l < 160 ? '+' : '#';
+          }
+          vid += row + '/';
+        }
         document.getElementById('out').textContent = 'SHOTDONE ' + regs +
           ' MODES ' + modes.join(',') + ' GATES ' + gates.join(' ') +
-          (wt ? ' WT ' + wtLog.join(',') : '');
+          (wt ? ' WT ' + wtLog.join(',') : '') + ' VID ' + vid;
         document.title = 'SHOT DONE';
         return;
       }

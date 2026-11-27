@@ -1032,16 +1032,47 @@ verifiable much sooner.
       only sees emitted code. Above 4E64 the US/EU shift makes EU-generated
       labels ≠ US PCs — verify against US ROM dumps before trusting EU decodes.
     * => Next: s62 gameplay validation past level load; M3 sound RE to retire assists.
+  - **Session 62 (2026-11-27): gameplay validation. Native reaches mode-10 (menu
+    route) and Start-commit + level staging (Start route), but the level WORLD
+    never loads: the spawn-param deposit copies a zeroed source, so obj0 respawns
+    as camera (5418) instead of the level controller (5452). Web deposits
+    b4/91/2e and runs a live level. Root = the sound-ack-gated level-header
+    stager (s58 C8-CA family) never fills the copy source natively (M3).**
+    * Routes: web's 5968 menu/Start dispatcher is UNREACHABLE stock — it needs
+      2BA==0 AND A65 bit0, which never coincide (pre-demo A65=0, post-demo
+      2BA=1; gate snapshots @1800 [f 0 0 0] vs @2399 [f 3 1 0]). Web playability
+      is via Start→5A3E (2BA=1). Native menu2 works only because TITLE_ASSIST
+      forces the gates. ⇒ the Start route is the correct cross-port entry.
+    * US 5968 decoded verbatim: 5D4==F → A65 bit0 → 2BA==0 → 284&9==0 → 050C&80
+      (Start edge) → 6F82 + mode-C/5D4=8; A→6060; confirms s56 polarities.
+    * Start route phase-matched: native commit 0244=1 @2452, 5076 staging
+      0254=1/1506=180 @2484 (web 2480). Then BOTH teardown objects (~2502/2508).
+      Web obj0 → 5452→54C0→54EE→5532→5698/56D6/571C (level controller; ASCII
+      video @3000 = live level scene). Native obj0 → 5418/541C then 5484/548A
+      camera loop; PNG @2900 = TITLE screen. Scroll accums 0690/0A90 never
+      seeded natively (menu route too).
+    * ROOT: spawn params. Web @2480 writes 0A58=b4/0A5A=91/0A5C=2e (type 2E =
+      level controller). Native @2484 the 143C byte-copy loop (move.b (a0)+,d1;
+      move.b d1,(a1)+/(a1); dbra) writes 0A58/5A/5C=0 — the source buffer is
+      zeroed because the level-header decompress/stager (sound-ack gated, s58
+      intro-stager/C8-CA) never ran. Spawn template ROM[3848+d3*4] then picks
+      camera (5418) not level (5452). 027E/0280=2d/10 match both ports.
+    * Tooling: ram-shot.html gained a coarse 40x28 luminance VID map (dump-dom
+      can "see" the screen) + object-cont (1A14/1A6A/1AC2/1B1A, stride 58) and
+      spawn-param (A58/A5A/A5C/27E/280) wt addrs; native PNG capture confirms
+      screen state. tools/s62-startgame.input / s62-gameplay.input added.
+    * => Next: s63 find the 143C copy source buffer + its writer (jsr callers of
+      142C), then fix the sound ack (M3) or env-gated assist-seed the header so
+      obj0=5452 and the level loads; validate scroll/player vs web.
   Next experiments (anticipated, in order):
-  1. Gameplay validation (s62): past the 0254=1/1506=180 level staging — level-1
-     play (mode-10 scroll handler, player object/025E, collision, transitions)
-     vs web oracle with phase-matched inputs; menu2 + startlate routes as the
-     entry scripts. Demo-end timing fidelity (native ~2268 vs web 2030) only if
-     it blocks route timing.
+  1. Level-world load (s63): identify the 143C copy source buffer and the stager
+     that fills it (jsr/b sr callers of 142C; level-header decompress 1496 family,
+     sound-ack gated). Fix the ack (M3) OR env-gated assist-seed the header/spawn
+     params (0A58=b4/0A5A=91/0A5C=2e) so obj0=5452; then validate mode-10 scroll,
+     player object, collision, transitions vs web (Start route, phase-matched).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
-     handler; retire the s59/s60/s61 emulations (marker, countdown release,
-     idle-service 284); audio fidelity.
+     handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
   3. M3 RAM map: identify `player_object`/`level_modes` from gameplay-phase RAM diffs.
   4. M4 polish; M5 Linux/Steam Deck build (gcc/ninja/SDL2, gamescope), controller map.
 - **M3 — RE pass.** Establish `[ram_layout]`: game_mode, vint_runcount,
