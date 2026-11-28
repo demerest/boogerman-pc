@@ -2235,12 +2235,41 @@ verifiable much sooner.
     * => Next: s102 = correct the ~2x demo-player per-V-int pacing (A) OR prevent
       the early-exit teardown so the EU attract cycle RENDERS (not just commits);
       confirm the authentic title-tile upload.
+  - **Session 102 (2026-11-28): CORRECTS s101 — THE 0286 ENTRY TIMER RATE IS
+    IDENTICAL NATIVE/WEB; THE MISPLAY IS A 2x HORIZONTAL INTEGRATION (0027DC add +
+    0045F0 adjust) PLUS A MISSED VELOCITY RESET. RENDER BLACK IS UPSTREAM CUTSCENE
+    UPLOAD/DISPLAY (present MID-demo, pre-exit), NOT THE TEARDOWN — B+ TEARDOWN
+    NO-OP TESTED AND REVERTED. NO NET ENGINE CHANGE. US REGRESSION CLEAN.**
+    * METHOD: extended-word cosim (s102c native OBJ-TL + s102w web trace adding
+      FF1A40/44/48/4A velocity words) + disasm 000760-000860 / 0026D4-002800.
+    * CORRECTION: 0286 is ADDI #1 at 0007E6 inside the main loop, which completes
+      once per TWO V-ints (two 0516 phase waits at 000786/0007C2). Its rate matches
+      web (+1/2 V-int) everywhere; s101's "0286 +1/tick" was a t-column artifact.
+    * FINDING: 002752 loops object ctxs; 0026D4 clamps X-vel (54)=FF1A44 by
+      (58)=FF1A48 and feeds X-impulse (50)=FF1A40; 002752 ASR#8 adds to X
+      (36)=FF1A32, then 0045F0 (collision/adjust) snaps X back. During idx08
+      c286>=0x12 native nets -3/iteration vs web -1.5/iteration (2x horizontal);
+      native also misses web's X-vel reset 0600->0480 at c286=0x18. Net: persistent
+      ~7px Y offset + X path diff -> native stalls X=02a9 into the exit trigger at
+      idx40 while web passes at 0284. Root = EU demo-player physics/adjust fidelity
+      (0026D4/002752/0045F0 + object routine 008xxx), engine/recomp-side.
+    * RENDER: s102f mid-demo frame (f2150, BEFORE early-exit) is BLACK => the attract
+      scene never uploads/displays natively; black is upstream cutscene VRAM/VDP
+      display, not the 00A070 teardown. s102e tested a B+ no-op of the teardown
+      re-fade (00A0A0 MOVE #40,(0248)): ineffective, REVERTED. Backup B (cycle
+      redirect) remains the only assist; glue.c net-unchanged from s101.
+    * US REGRESSION s102us (assist OFF): flush 10411 / mode-24 10441 / exit 12707 /
+      recommit 12738 / lives 2; sewers HUD bar present (score 001730).
+    * => Next: s103 = (a) fix the 2x horizontal adjust + missed vel reset fidelity;
+      (b) probe upstream cutscene upload / VDP display-enable (native DUMP_VRAM
+      mid-demo) to make the EU attract scene render.
   Next experiments (anticipated, in order):
-  1. EU boot render fix (s102): s101 cosim proved the gap is a ~2x demo-player
-     integration rate per V-int in native-EU (moving entries), not pad/schedule
-     data. Fix engine per-V-int pacing (A) or block the early-exit 00A070 teardown
-     so the redirected attract cycle renders cutscene VRAM (B+). Confirm which
-     upload renders the authentic title (intro-scroll 015650 / title-object).
+  1. EU attract fidelity + render (s103): s102 corrected the gap to a 2x horizontal
+     integration (0027DC+0045F0) and a missed X-vel reset at c286=0x18, and showed
+     the render black is upstream cutscene upload/display (mid-demo black), not the
+     teardown. (a) Single-step the EU demo-player adjust (0045F0 / object 008xxx) to
+     fix the 2x + reset; (b) DUMP_VRAM mid-demo native vs web to locate the missing
+     cutscene tile upload / VDP display-enable so the attract scene renders.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

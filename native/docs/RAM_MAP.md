@@ -983,3 +983,28 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   cycle 34->35->..->37 (s101b), no mode-2; frames still black. US unaffected.
 - **TOOLING**: web/test/ram-trace.html; s101-web.ps1; s101-diff.ps1; s69
   -EuAttractAssist. s101a/b/us runs.
+
+## s102: CORRECTION — 0286 timer rate identical; misplay = 2x horizontal integration
+## + missed vel reset; render black is UPSTREAM cutscene upload (mid-demo black),
+## not teardown; B+ no-op reverted; no net engine change (2026-11-28).
+- **VELOCITY WORDS (A4=FF1A0E, offsets DECIMAL)**: (50)=FF1A40 X impulse accum
+  (cleared 002796); (52)=FF1A42 Y impulse; (54)=FF1A44 X velocity persistent
+  (0026FE, clamped by (58)=FF1A48); (56)=FF1A46 Y velocity (00273C, clamped by
+  (60)=FF1A4A); (26)=FF1A28 X fraction; (28)=FF1A2A int X delta; (30)=FF1A2C int Y.
+- **MAIN LOOP = 2 V-int/iteration**: 00076E-000802 with two 0516 phase waits
+  (000786/0007C2); 0286 ADDI #1 at 0007E6 once/iteration => +1/2 V-int, MATCHES web.
+  s101's "0286 +1/tick" was a t-column artifact (corrected).
+- **MISPLAY**: 002752 loops ctxs; 0026D4 feeds X-impulse=X-vel; 002752 ASR#8 adds to
+  X(36)=FF1A32 then 0045F0 adjust snaps back. idx08 c286>=0x12 native nets
+  -3/iteration vs web -1.5/iteration (2x horizontal); native misses web X-vel reset
+  0600->0480 at c286=0x18. => ~7px Y offset + X path diff -> native X=02a9 stall into
+  exit trigger idx40; web 0284 passes. Root = EU demo physics/adjust fidelity
+  (0026D4/002752/0045F0 + object 008xxx), engine/recomp-side.
+- **RENDER UPSTREAM**: s102f mid-demo f2150 (pre-exit) BLACK => attract scene never
+  uploads/displays natively; NOT the 00A070 teardown. s102e B+ no-op of 00A0A0
+  MOVE #40,(0248) ineffective => REVERTED. Backup B (cycle) only assist; glue.c
+  net-unchanged from s101.
+- **US REGRESSION** s102us: flush 10411/mode24 10441/exit 12707/recommit 12738/lives2;
+  sewers bar present.
+- **TOOLING/RUNS**: s102c (native OBJ-TL +vel words), s102w (web trace +vel words),
+  s102e/f (EU assist render probes), s102us; disasm s102a/b/d.
