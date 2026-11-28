@@ -586,3 +586,43 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - Tooling: s91a-e.input; s91d1-d7 disasm; crash_trail via debug.ini (port 4400) at ~20s wall
   of a 16000f capture run. Engine change: glue.c; diffs regen base→worktree; gitlinks stay
   9907e77f40/6f705f2. ⇒ s92: M3 Z80/SMPS ack RE for the flush window, sewers load + route.
+
+## s92: handshake EXONERATED; flush stall = mode-24 fade-wait 008238; fade-skip assist runs the load coroutine but completion takes the DEMO branch (sewers still unverified)
+- FF051A = 00A00FAC (long ptr): 098D24 waits byte [FF051A] == 0 = z80_ram[0FAC] = the sound
+  COMMAND byte; Z80 SMPS clears it on consume (101D: XOR A; LD (0FAC),A). Bus request 098A10
+  (write 1 A11100, poll bit0 clear), release 098A30 (write 0). Command writers 098A5A/098A88
+  (#02,(A6)), 098A78 (#04,(68,A0)); block send 098B38 (054C != 0).
+- Z80 SMPS RAM/loop: 0FAC cmd/ack, 0FAD init-done (FE), 0FC2 per-frame tick (16E0 consumes),
+  0FE4/0FAC assist cells. Idle loop 1009 (tick) / 1013 (174C YM write + D+E delay) / 1017
+  (cmd poll, JR Z 1009) / 1001 (0FAD==FE check, only when cmd pending). V-int handler 0038.
+  Mid-flush: iff1=1, irq_pending=0, 0038 every frame ⇒ Z80 HEALTHY, idle because no command
+  stays queued. s91 "handshake spin with assist" was a PRE-assist trail; post-assist the
+  handshake RETURNS each frame (098D52 in trail).
+- MAIN COROUTINE ctx = FF1A0E (shared with player idle): +0 flags, +2 priority, +48 resume
+  LONG = FF1A12 (hi) / FF1A14 (lo), +4C countdown FF1A1A, +0xA (10,A4) = FF1A18 load-vs-demo
+  select, +0x10 (16,A4) = FF1A1E, +0x54 (84,A4) = FF1A62 chunk counter. Boot commit: resume
+  873A→0154FC; flush commit: resume →008238 and PARKS (s92e tap + s92d RAM diff).
+- 008238 FADE-WAIT: JSR 0042F6 (#2E) != 0 → 00A32C; FF0248 != 0 → yield 008156; then
+  0042F6 (#28) → 00A024. Type-2E fade object never dies / 0248 never clears natively ⇒
+  infinite yield. LOAD-WINDOW ASSIST s92 addition (both copies, BOOT_ASSIST-gated): >120
+  frames resume==00008238 ⇒ write resume 000154FC (screen already black).
+- LOAD COROUTINE: 0154FC head (CMPI #0,(16,A4) → 015544); 015544 sets (10,A4)=1, FF0212=1,
+  child resume 015740, yield; 015560 yield loop; 01557E (10,A4)==1 → 01562E = DEMO commit
+  (mode 34, same pc as boot attract @1816); else 015588-015616 stats reset + 015606 mode 3
+  (level intro). Boot level load clears (10,A4) via chunk-loader completion; flush does NOT
+  ⇒ modes 34/35/36 (005AD6) = attract demo autoplay ⇒ SEWERS STILL UNVERIFIED ⇒ s93.
+- CHUNK LOADER 015740: (84,A4)→0x127 via 49B0 yields; 015784 = 49AA/4AF2 completion;
+  015790-01579C idle park (countdown 1 loop). Alloc-fail path 015466 JSR 003208 → BEQ
+  01573A → 0032D8 free + JMP 003450. Free-list head FF02BC (003274 scan, 0xCF slots).
+- SUPPORT: mode head dispatch 00515A = word table 006EFE [mode*2] → 0013C6 DECOMPRESSOR
+  into FF0A50 (s91 "A65 bit0 setter 001440" = decompressed config byte). 005666 plane setup:
+  gate 0A82==004A else 0624=FFFF (planes off during loads = NORMAL; gameplay 0624=6 via
+  005778). 0066F4-00695C HUD DMA-list staging only. 006D60 ReadJoypads (006DE0 pad protocol).
+  004E4A/4E78/4ECE V-int scroll + staged-list (FF3822/FF3832) DMA flush. Scheduler 4970
+  yield: (0,A4) BMI / (2,A4)<4 / (76,A4) countdown parks; JMP (72,A4); 49AA countdown=-1.
+- TOOLING: s92-probe.ps1 connect-only cmd probe (z80_state / read_z80_ram decimal addr /
+  read_memory hex-string addr / crash_trail / rdb_get_state / 4KB objtable dumps);
+  s92d.input boot pre/post-commit DUMP_RAM diff locates ctxs. crash_trail = EMITTED blocks
+  only (interp invisible); OBJ-TL long = hi+lo word writes. s92a-f runs, s92d1-d20 disasm.
+  Engine: glue.c fade-wait skip; gitlinks stay 9907e77f40/6f705f2. ⇒ s93: chunk-loader
+  completion / (10,A4) clear gate, then sewers intro + mode 10 + route map.

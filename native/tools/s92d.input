@@ -1,0 +1,17 @@
+# s92d: boot-load window RAM diff to locate the load-coroutine context.
+# ram-pre at the Start commit (0254=1), ram-post +400f (coroutine created and
+# first-ticked @~2778 in s92c). Diff the two dumps for the new ctx resume long.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s92d\ram-pre.bin
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s92d\ram-post.bin
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+EXIT

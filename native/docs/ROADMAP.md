@@ -1821,13 +1821,63 @@ verifiable much sooner.
     * => Next: s92 = M3 Z80/SMPS ack RE for the flush-load window (098D24/098D52 handshake,
       level-2 init queue) so mode 3 commits natively; verify sewers load, map sewers route;
       audio fidelity in the same pass.
+  - **Session 92 (2026-11-28): flush stall RE: the Z80/SMPS handshake is EXONERATED (with the
+    s91 assist it returns every frame; Z80 SMPS healthy and idle). Real stall = the mode-24
+    handoff parks the MAIN coroutine (ctx FF1A0E, resume long FF1A12) in the fade-wait routine
+    008238 (type-2E fade object via 0042F6 + FF0248 gate) forever; boot hands it 0154FC
+    instead. NEW fade-wait skip in the LOAD-WINDOW ASSIST (both copies): after >120 parked
+    frames, resume := 0154FC. Verified: flush coroutine spawns @10754 (01554A/0212=1) and the
+    chunk loader runs — but completion takes the (10,A4)==1 branch @01562E => modes 34/35/36
+    = ATTRACT DEMO, not level 2. Sewers load STILL UNVERIFIED; next gate = chunk-loader
+    completion / (10,A4) clear (015784/49AA/4AF2) vs the demo branch (s93).**
+    * HANDSHAKE DECODED (s92d1/d2, s92a probe): 098D24 = MOVEA (FF051A),A6 (=00A00FAC);
+      bus-request 098A10 (poll A11100 bit0) / release 098A30; wait (A6)==0 = Z80 consumed the
+      command. Z80 SMPS idle loop: 1009 LD A,(0FC2)/CALL NZ,16E0 (per-frame tick, clears
+      0FC2); 1013 CALL NZ,174C (YM write + D+E delay loop); 1017 LD A,(0FAC)/JR Z,1009;
+      101D consume+ack (XOR A; LD (0FAC),A); 1001 LD A,(0FAD)/CP FE/CALL Z,10B4 only when a
+      command is pending. Mid-stall: iff1=1, irq_pending=0, V-int 0038 every frame (14847
+      hits/15k frames), 0FAC=0 => Z80 idle because NO command ever stays queued, NOT stuck.
+    * s91 CORRECTION: the "service spins 098D24 forever" trail was PRE-assist; with the s91
+      assist the trail shows 098D24 RETURNING (098D52) each frame and the whole sound service
+      completing per frame. The stall was always upstream of the handshake.
+    * STALL LOCALIZED (s92b/c/e taps + s92d boot RAM diff): boot commit swaps main-ctx resume
+      FF1A12 873A->0154FC (load head); flush commit swaps it to 008238 (fade-wait) and it
+      never leaves: 008238 waits 0042F6(type 2E)==0 AND FF0248==0, else yields @008156.
+      0212 tap: boot 01554A @1739/2778, flush NONE pre-assist. Object count 0624=FFFF during
+      loads is NORMAL (plane setup 005666 gate 0A82==4A); free-list 02BC alloc is NOT the gate.
+    * FADE-WAIT SKIP (s92f, env-gated BOOT_ASSIST, both assist copies): >120 frames with
+      resume==00008238 => write resume 000154FC. Flush coroutine then spawns @10754, chunk
+      loader runs, parent exits its yield loop @~10830 but (10,A4)==1 => 01562E writes mode
+      34 (demo commit, same pc as boot attract @1816), then 35/36 @12731/14595 (005AD6).
+      Captures show demo autoplay (score carries 1250->4025), NOT a sewers intro card.
+      Boot level load took 015606 (mode 3) because the chunk-loader completion cleared
+      (10,A4); at flush it never clears => s93 gate.
+    * SUPPORT DECODED: mode head dispatch 00515A (word table 006EFE, index=mode*2) -> 0013C6
+      DECOMPRESSOR into FF0A50 (the s91 "A65 bit0 setter 001440" is decompressed config data);
+      0066F4-00695C = HUD DMA-list staging only (006710 gate A65 bit0 && 0246); 006D60 =
+      ReadJoypads; 004E4A/4E78/4ECE = V-int scroll + staged-list DMA flush; scheduler 4970
+      yield ((0,A4) BMI / (2,A4)<4 / (76,A4) countdown park; JMP (72,A4)), 49AA exit.
+    * TOOLING: s92-probe.ps1 = CONNECT-ONLY cmd probe (z80_state, read_z80_ram dec addr,
+      read_memory hex-string addr, crash_trail, rdb_get_state, objtable dumps) for an
+      already-running runner; s92d.input = boot pre/post-commit DUMP_RAM diff to locate ctxs.
+      crash_trail ring = EMITTED blocks only (interp bodies invisible) => absence != not
+      executed; OBJ-TL long writes = hi word then lo word (FF1A12 hi / FF1A14 lo).
+      s92a-f runs; s92d1-d20 disasm. Engine: glue.c fade-wait skip; diffs regen base->worktree;
+      gitlinks stay 9907e77f40/6f705f2. replay-best.input UNCHANGED (flush still ends in demo).
+    * => Next: s93 = chunk-loader completion gate: tap (84,A4)=FF1A62 chunk counter and
+      (10,A4)=FF1A18 through the flush window; RE 015784/49AA/4AF2 completion vs 015790 idle
+      park and the 01557E branch select; make the flush load take 015606 (mode 3) so the
+      sewers intro + mode 10 commit; verify sewers gameplay, map its route; audio fidelity
+      in the same M3 pass.
   Next experiments (anticipated, in order):
-  1. Gameplay/M3 (s92): RE the Z80/SMPS command-ack handshake (098D24/098D52, level-2 init
-     queue) so the flush-load commits mode 3 natively; verify the sewers (level 2) load and
-     map its route. s91 identified+reproduced the genuine exit (HOLD DOWN >=~30f on the first
-     toilet top; FF0258 level counter; mode 24) and fixed 2 of 3 stall links via the
-     flush-window LOAD-WINDOW ASSIST. Native port is PLAYABLE as of s78 (B=jump); user can
-     watch the best alive route via BoogermanReplay-US.bat.
+  1. Gameplay/M3 (s93): chunk-loader completion gate for the flush load — (10,A4)=FF1A18
+     never clears so the load coroutine takes the 01562E demo branch (modes 34/35/36)
+     instead of 015606 (mode 3). Tap FF1A62 chunk counter + FF1A18, RE 015784/49AA/4AF2 vs
+     the 015790 idle park, fix/assist so the sewers (level 2) intro + mode 10 commit; verify
+     sewers gameplay and map its route. s92 exonerated the Z80 handshake and added the
+     fade-wait skip (resume 8238->0154FC) that unblocks the load coroutine. Native port is
+     PLAYABLE as of s78 (B=jump); user can watch the best alive route via
+     BoogermanReplay-US.bat.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

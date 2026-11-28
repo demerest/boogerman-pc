@@ -53,7 +53,7 @@ index 2503230..4ef0ae4 100644
          handle_frame_info(id);
      } else if (strcmp(cmd, "frame_range") == 0) {
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..60ffd3b 100644
+index 4eee55c..067135c 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -139,7 +139,7 @@ index 4eee55c..60ffd3b 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1026,360 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,380 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -224,6 +224,26 @@ index 4eee55c..60ffd3b 100644
 +            g_machine.bus.z80_ram[0x0FC2] = 0x01;
 +            m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) & ~0x01u));
 +            g_machine.z80.iff1 = 1;
++            /* s92: the mode-24 handoff parks the main coroutine (ctx FF1A0E,
++             * resume long FF1A12) in the fade-wait routine 008238 until the
++             * type-2E fade object dies and FF0248 clears; natively neither
++             * happens (s92e ctx diff: boot resume 0154FC vs flush 8238).
++             * The screen is already black, so after ~120 frames of parked
++             * fade-wait hand the coroutine straight to the level-load head
++             * 0154FC. M3: RE the fade object lifecycle instead. */
++            {
++                static int fwait2 = 0;
++                if (m68k_read16(0x00FF1A12u) == 0x0000u &&
++                    m68k_read16(0x00FF1A14u) == 0x8238u) {
++                    if (++fwait2 > 120) {
++                        m68k_write16(0x00FF1A12u, 0x0001u);
++                        m68k_write16(0x00FF1A14u, 0x54FCu);
++                        fwait2 = 0;
++                    }
++                } else {
++                    fwait2 = 0;
++                }
++            }
 +        }
 +    }
 +    /* Boogerman TITLE-ASSIST (s50): the 68K sound/pad service init never
@@ -500,7 +520,7 @@ index 4eee55c..60ffd3b 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1414,6 +1801,47 @@ void glue_service_vblank(void)
+@@ -1414,6 +1821,62 @@ void glue_service_vblank(void)
      /* Handlers now fire from glue_check_vblank (contextual recompiler)
       * at the exact cycle count. No handler here — just bookkeeping. */
  
@@ -543,12 +563,27 @@ index 4eee55c..60ffd3b 100644
 +            g_machine.bus.z80_ram[0x0FAD] = 0xFE;
 +            g_machine.bus.z80_ram[0x0FC2] = 0x01;
 +            g_machine.z80.iff1 = 1;
++            /* s92 fade-wait skip: see the own_deliver_vint copy. Both paths
++             * carry it for the same reason as the s91 assist copies. */
++            {
++                static int fwait = 0;
++                if (m68k_read16(0x00FF1A12u) == 0x0000u &&
++                    m68k_read16(0x00FF1A14u) == 0x8238u) {
++                    if (++fwait > 120) {
++                        m68k_write16(0x00FF1A12u, 0x0001u);
++                        m68k_write16(0x00FF1A14u, 0x54FCu);
++                        fwait = 0;
++                    }
++                } else {
++                    fwait = 0;
++                }
++            }
 +        }
 +    }
  
      glue_reset_frame_sync();
  
-@@ -1842,16 +2270,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +2305,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -574,7 +609,7 @@ index 4eee55c..60ffd3b 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2474,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2509,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -663,7 +698,7 @@ index 4eee55c..60ffd3b 100644
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2062,6 +2568,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
+@@ -2062,6 +2603,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
          g_mem_write_trace_fn(byte_addr + 1u, (uint8_t)val,        g_audio_cycle_counter);
      }
      gbus_write16(&g_machine.bus, byte_addr, val);
@@ -671,7 +706,7 @@ index 4eee55c..60ffd3b 100644
  }
  
  void m68k_write8(uint32_t byte_addr, uint8_t val)
-@@ -2069,6 +2576,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2611,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -679,7 +714,7 @@ index 4eee55c..60ffd3b 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2082,6 +2590,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2082,6 +2625,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      if (g_mem_write_trace_fn)
          g_mem_write_trace_fn(byte_addr, val, g_audio_cycle_counter);
      gbus_write8(&g_machine.bus, byte_addr, val);
@@ -687,7 +722,7 @@ index 4eee55c..60ffd3b 100644
  }
  
  void m68k_write32(uint32_t byte_addr, uint32_t val)
-@@ -2089,6 +2598,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2633,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);
@@ -696,7 +731,7 @@ index 4eee55c..60ffd3b 100644
      z80_sync_for_68k_access(byte_addr, 4);
      /* 32-bit write = two consecutive 16-bit writes. Only matters for FM
       * bus; SMPS never uses 32-bit to write FM regs so this is defensive
-@@ -2913,3 +3424,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
+@@ -2913,3 +3459,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
  {
      return s_game_fiber ? fiber_stack_range(s_game_fiber, lo, top) : -1;
  }
