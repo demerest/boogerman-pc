@@ -1781,12 +1781,53 @@ verifiable much sooner.
     * Tooling: s90a-i.input; s90a-i captures. NO engine change; gitlinks stay 9907e77f40/6f705f2.
     * => Next: s91 continue the stop-and-flick cadence past the second toilet, identify the
       genuine level-1 exit trigger, verify level-2 load; then M3 sound/Z80 RE to retire assists.
+  - **Session 91 (2026-11-28): genuine level-1 exit trigger IDENTIFIED and REPRODUCED natively
+    (HOLD DOWN >=~30f grounded on the FIRST toilet top => flush coroutine: 00882A increments
+    FF0258 level counter, 008832 mode<-[FF0A98]=0x24, 00883C 284|=5, fade to black, mirror
+    00508E/005096 @+30f). Confirms the user's manual clear; s90i's 6f press was below the
+    hold threshold. Level-2 load STILL UNVERIFIED: clean-config stall root-caused to 3 links,
+    2 fixed+verified, 3rd = Z80/SMPS ack handshake (M3). Second toilet is NOT an exit.
+    NEW flush-window LOAD-WINDOW ASSIST (BOOT_ASSIST-gated, main-loop + V-int copies).**
+    * TRIGGER (s91a): toilet-top u1 ~10275, HOLD DOWN from ~10365, commit @10395 (0258=1,
+      0244=0x1024), mirror 0x24 @10425, loader DMA-list init 006704 @10475. 006704 is NOT a
+      countdown wait: it writes 20 words of 0180 to FF146E-FF1506 (a DMA/command list whose
+      TAIL is 1506 — the s60/s61 "1506 countdown" reading was a misread of this list).
+    * STALL CHAIN (s91b/c/e, crash_trail @~20s wall): (a) head work 001440 leaves A65 bit0
+      set and 0246=1 since f17 => 644C/6710 HUD staging gate (A65 bit0 && 0246) re-pins
+      1506=0160 every 2f, corrupting the loader list tail — FIXED by flush-window A65 bit0
+      clear (pinning gone, tap-verified). (b) 098AA0 service retry exit = 052C<2 && 054C==0
+      (s91d7 disasm); the flush queues two never-acked commands so 052C stays >=2 — FIXED by
+      forcing 052C/054C/0524/0548 idle (098AC6 left the trail, verified). (c) with the gate
+      open the service still loops the Z80 cmd/ack handshake 098D24/098D2A/098A10/098D52
+      forever; boot completes only because BOOT_ASSIST seeds Z80 $0FAD=$FE/$0FC2 while
+      g_snd_frame<4000. Extending that seeding (+FE4/FAC, iff1) into the flush window did
+      NOT ack the level-2 init queue => mode-3 commit 0155E4/015606 never fires => M3
+      Z80/SMPS driver RE (Next 2). s90i/s91 "no clear" was this stall, not a missing trigger.
+    * ASSIST PLACEMENT: the main-loop glue_service_vblank copy alone is inert while the
+      service spin occupies frames; the V-int own_deliver_vint copy alone is inert before
+      the spin; BOTH copies are needed (s91e trail proved V-int fires during the spin).
+      s69 clean config (TITLE_ASSIST off since s68) and the play bat never run the s50-s61
+      title assist, so all s88-s91 gameplay probes ran WITHOUT it. tassist post_title phase
+      model now also excludes mode 24 (inert in clean config, correct for -TitleAssist).
+    * SECOND TOILET (s91d): HOLD DOWN 90f on its top => NO 008832 / no mode 24 => decorative;
+      the first toilet is the only exit found. s90h's alive route end stands.
+    * TOOLING: s91a-e.input; s91d1-d7 disasm (0087C0/008642 flush gate, 006440 HUD gate,
+      0066F4 list init, 015740 chunk loader, 005780, 098A90 retry). crash_trail sampling:
+      debug.ini next to exe enables the cmd server (port 4400); s69 capture runs DO listen;
+      16000f capture run ~= 25-30s wall, sample ~20s for the ~10.7kf stall window.
+      replay-best.input UNCHANGED (s90h remains the best proven alive route; the flush ends
+      in the stall). Engine change: glue.c s91 assist; diffs regen base->worktree;
+      gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s92 = M3 Z80/SMPS ack RE for the flush-load window (098D24/098D52 handshake,
+      level-2 init queue) so mode 3 commits natively; verify sewers load, map sewers route;
+      audio fidelity in the same pass.
   Next experiments (anticipated, in order):
-  1. Gameplay (s91): continue the s90h stop-and-flick cadence (W30 push + stop + 2 flicks) past
-     the second toilet on the slope, identify the genuine level-1 exit trigger (neither toilet's
-     contact/DOWN/jump-on/DOWN-on-top clears), verify level-2 load natively. s90 crossed the club
-     step + canopy alive (score 1250) and named the level (FLATULENT SWAMPS LEVEL 1). Native port
-     is PLAYABLE as of s78 (B=jump); user can watch the best route via BoogermanReplay-US.bat.
+  1. Gameplay/M3 (s92): RE the Z80/SMPS command-ack handshake (098D24/098D52, level-2 init
+     queue) so the flush-load commits mode 3 natively; verify the sewers (level 2) load and
+     map its route. s91 identified+reproduced the genuine exit (HOLD DOWN >=~30f on the first
+     toilet top; FF0258 level counter; mode 24) and fixed 2 of 3 stall links via the
+     flush-window LOAD-WINDOW ASSIST. Native port is PLAYABLE as of s78 (B=jump); user can
+     watch the best alive route via BoogermanReplay-US.bat.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

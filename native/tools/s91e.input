@@ -1,0 +1,282 @@
+# s90b: s90a prefix through t1 (alive LEFT of toilet at X=116E). s90a t2 overshot:
+# drift-RIGHT W30 (~90px) flew OVER the toilet and landed right of it pressed on
+# the club-step face (jump gate). FIX: short drifts ??? W14 onto toilet TOP, then
+# W20 from the top onto the club step, then push right hunting the real exit.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\p1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\p1.png
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\p2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\p2.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\p3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\p3.png
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\p4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\p4.png
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\p5.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\p5.png
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\p6.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\p6.png
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\q1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\q1.png
+# --- walk into trunk-wall 2 (cam freezes 0E87) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\s0.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\s0.png
+# --- wall-2: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\w1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\w1.png
+# --- approach wall-3 left face (X=100B) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\w2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\w2.png
+# --- boost1 from w2 with AIR-FLICKS over the trap during descent (lunge whiffs) ---
+WAIT 60
+HOLD RIGHT
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 34
+PRESS A 6
+WAIT 6
+PRESS A 6
+WAIT 6
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\m1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\m1.png
+# --- cross trunk-4: settle 60, vertical boost + W12 ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\m2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\m2.png
+# --- flick + push to the ledge foot ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\m3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\m3.png
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\m4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\m4.png
+# --- ledge climb: unpress LEFT W6, settle 60, boost drift-from-jump+10 W40 ---
+HOLD LEFT
+WAIT 6
+RELEASE
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\n2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\n2.png
+# --- hop left of toilet (s90a t1): unpress RIGHT W6, boost drift-LEFT W24 ---
+HOLD RIGHT
+WAIT 6
+RELEASE
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD LEFT
+WAIT 24
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\t1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\t1.png
+# --- SHORT drift-RIGHT W14 (~42px) onto the toilet TOP (top spans ~11A0-11C4,
+# s90a Y=81 window); W10 fell short left, W30 rode off the right edge ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 14
+RELEASE
+WAIT 60
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\u1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\u1.png
+# --- s91b: s91a PROVED trigger: HOLD DOWN on toilet top => 008832 sets 0244=24
+# --- @10395, fade to black, load chain starts @10425/10475. s91a EXIT cut the
+# --- load short. Here: wait through load + intro card + mode 10, play sewers.
+HOLD DOWN
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\b1.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\b1.png
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\b2.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\b2.png
+WAIT 30
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\b3.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\b3.png
+RELEASE
+WAIT 500
+DUMP_RAM S:\home\dev\boogerman-pc\native\captures-us\s91e\b4.bin
+SCREENSHOT S:\home\dev\boogerman-pc\native\captures-us\s91e\b4.png
+# --- s91e: stall window open for crash_trail sampling (no mode waits).
+WAIT 4000
+EXIT

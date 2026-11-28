@@ -554,3 +554,35 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   with live keyboard (main.c:991-1010) ⇒ user can take over mid/after replay; no EXIT ⇒ stays open.
 - Tooling: s90a-i.input; s90a-i captures. No engine change; gitlinks stay 9907e77f40/6f705f2.
   ⇒ s91: stop-and-flick past the second toilet, genuine exit trigger + level-2 load; then M3.
+
+## s91: genuine exit = HOLD DOWN >=~30f on FIRST toilet top (mode 24 flush); level-2 load stall = Z80 ack (M3) (2026-11-28, US)
+- EXIT TRIGGER (s91a, confirms user manual clear): grounded on first toilet top + HOLD DOWN
+  >=~30f (6f press in s90i was below threshold) ⇒ flush coroutine: 00882A ADDI #1,(FF0258)
+  (LEVEL COUNTER), 008832 MOVE.W (FF0A98),(FF0244) (next-mode source; word 0x1024 pre-mirror),
+  00883C ORI.W #5,(FF0284) (sound cmd + warm-up tick). Fade to black; mirror 00508E/005096
+  @+30f (0244=0x24, 0254=0x24); loader DMA-list init 006704 @+80f.
+- FF146E-FF1506 = LOADER DMA/COMMAND LIST: 006704 writes 20 words of 0180 (tail = 1506).
+  The s60/s61 "1506 service countdown" reading was a misread of this list. 0064B2 (inside
+  HUD staging 00644C) re-pins 1506=0160 every 2f when gate A65 bit0 && 0246 != 0 (00644C/
+  006710 BTST/TST); 0246=1 since f17; A65 bit0 set by head work 001440 at each mirror commit
+  (field entry @6086, flush @10425) and cleared by 001440/001476 at boot commits.
+- SOUND SERVICE RETRY 098AA0: exit = (052C < 2) && (054C == 0) (s91d7). 052C = pending
+  command count; flush load queues two never-acked commands ⇒ 052C >= 2 spin. 098AC6 =
+  retry-flag path; 098ACA writes 05BE + mirrors Z80 bus bit6 (A10001) into 0520/0522.
+- Z80 CMD/ACK HANDSHAKE 098D24/098D2A/098A10/098A1A/098D52: with the retry gate open the
+  service still loops here forever (s91e crash_trail). Boot completes only via BOOT_ASSIST
+  Z80 $0FAD=$FE/$0FC2 seeding while g_snd_frame < 4000; extending seeding + FE4/FAC + iff1 +
+  052C/054C/0524/0548 idle + A65 bit0 clear into the flush window (LOAD-WINDOW ASSIST,
+  BOOT_ASSIST-gated, copies in glue_service_vblank AND own_deliver_vint) fixed links (a)
+  pinning and (b) retry but NOT (c) this handshake ⇒ mode-3 commit 0155E4/015606 never
+  fires ⇒ level-2 (SEWERS) load UNVERIFIED ⇒ s92 = M3 Z80/SMPS ack RE.
+- CHUNK LOADER 015740: coroutine loop increments (84,A4) to 0x127 yielding via 49B0; idle
+  park 015790-01579C after 49AA/4AF2. Never reached in the flush window (stall upstream).
+- SECOND TOILET IS DECORATIVE (s91d): HOLD DOWN 90f on its top ⇒ no 008832 / no mode 24.
+  First toilet is the only exit found; s90h alive route end stands.
+- CLEAN CONFIG TRUTH: s69 defaults TITLE_ASSIST OFF (s68) and the play bat never sets it ⇒
+  s50-s61 title assist inert in all s88-s91 probes; flush-window assist must live in BOTH
+  the main-loop hook (spin can occupy whole frames) and the V-int path (fires during spin).
+- Tooling: s91a-e.input; s91d1-d7 disasm; crash_trail via debug.ini (port 4400) at ~20s wall
+  of a 16000f capture run. Engine change: glue.c; diffs regen base→worktree; gitlinks stay
+  9907e77f40/6f705f2. ⇒ s92: M3 Z80/SMPS ack RE for the flush window, sewers load + route.
