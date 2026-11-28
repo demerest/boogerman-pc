@@ -5,12 +5,14 @@ param(
     [string]$Start = '154C0',
     [string]$End = '15780',
     [switch]$Scan,
-    [string]$Tag = 's70d1'
+    [string]$Tag = 's70d1',
+    [string]$Rom = 'US'
 )
 $ErrorActionPreference = 'Stop'
 $chrome = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
 $url = "file:///S:/home/dev/boogerman-pc/native/tools/s70-disasm.html?start=$Start&end=$End"
 if ($Scan) { $url += '&scan=1' }
+if ($Rom -eq 'EU') { $url += '&rom=eu' }
 $tmp = "$env:TEMP\chrome-s70-$Tag"
 $out = "S:\home\dev\boogerman-pc\native\captures-us\$Tag-disasm.txt"
 $argline = "--headless=new --disable-gpu --no-first-run --user-data-dir=`"$tmp`" --virtual-time-budget=20000 --timeout=60000 --dump-dom `"$url`""

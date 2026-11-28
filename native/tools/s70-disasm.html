@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><title>s70 disasm</title></head>
 <body>
 <pre id="out">waiting</pre>
-<script src="../../web/rom/boogerman_us.gen.js"></script>
+<script>document.write('<script src="../../web/rom/' + (new URLSearchParams(location.search).get('rom') === 'eu' ? 'boogerman.gen.js' : 'boogerman_us.gen.js') + '"><\/script>');</script>
 <script src="../../web/js/util.js"></script>
 <script>
 (function () {

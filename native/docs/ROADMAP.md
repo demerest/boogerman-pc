@@ -2123,15 +2123,69 @@ verifiable much sooner.
     * => Next: s99 = EU cutscene completion (mode-34 head → 0055C6 02BA init;
       fade-object lifecycle) + sewers bar sprite-DMA mechanism detail + SPLASH
       s54/s65 probe-env retirement.
+  - **Session 99 (2026-11-28): A65 = DECOMPRESSED LEVEL-HEADER BYTE (NO LOGIC
+    SETTER); TITLE-INIT VRAM UPLOAD IS 005AE2 GATED BY A65 BIT0; TITLE-DISPATCHER
+    02BA/0284 GATE POLARITY CORRECTED (s98 BACKWARDS); EU DOES SET 02BA THEN THE
+    MODE-2 COMMIT CLEARS IT; EU BLACK = BOOT-INTRO COROUTINE 00A302 COMMITS TITLE
+    AFTER THE FIRST CUTSCENE (ATTRACT-LOOP SELECTOR DIVERGENCE) WITH HEADER BIT0=0
+    ⇒ 005AE2 SKIPS VRAM INIT; SPLASH s54/s65 RETIRED (CROSSING FRAME-IDENTICAL).**
+    * USER CONFIRMATION: sewers status bar present via BoogermanRecomp-US.bat —
+      closes the s96 retraction loop on the final binary.
+    * A65 SOURCE: FF0A65 = level-header byte 0x15 (header base FF0A50), written
+      ONLY by the decompressor copy loop 001440 (MOVE.B D1,(A1)+). No logic
+      setter exists — s98-writers "op=0001" hits were BTST #1 immediates.
+      Decompressor VERIFIED correct: native-EU mode-34 header byte-identical to
+      web-EU (0A62=0035 next-mode, 0A65=03; s99n vs s99w1).
+    * COMMIT TAIL 005062 = mode-init dispatcher: 00515A decompresses the per-mode
+      level header (table 006EFE) into FF0A50; @50AC BSR **005AE2** = load/title
+      VRAM init GATED by A65 bit0 (MOVE.B (0A65),D0; ANDI #1; BEQ 005BAA skip).
+      bit0=1 ⇒ pad setup + VRAM clear FF2322 + DMA 6C96 + tile decompress 1496 +
+      mode re-assert 5B54. @5108 BSR 0055C6 (02BA init: clears 2B4/2B6/2BA, then
+      02BA=1 iff A65 bit1).
+    * TITLE DISPATCHER 005960 POLARITY CORRECTED: proceeds iff 05D4==0F AND A65
+      bit0==1 AND **02BA==0** (TST; BNE→RTS) AND **0284&9==0** AND START edge
+      (050C&80) ⇒ JSR 6F82. s98's "02BA!=0 gate" was inverted; 02BA=0 / 0284&9=0
+      are the NORMAL interactive-title state.
+    * EU CORRECTION (s98 wrong): EU sets 02BA=1 @2024 DURING mode 34 (0055F2),
+      exactly like US @2049; mode-34 header byte=03 both. The mode-2 commit
+      @3138-3186 then CLEARS 02BA (title header bit1=0) — correct, not the bug.
+    * EU BLACK MECHANISM: boot-intro coroutine 00A2E2 yields (4970/31E0/3A14)
+      until ctx+16==1, then **00A302 MOVE.W #2,(0244)** hardcoded title commit +
+      0284|=5. Title header byte 0A65=0 ⇒ 005AE2 skips the VRAM init ⇒ black.
+    * ATTRACT-LOOP SELECTOR DIVERGENCE: web-EU AND native-US no-input cycle
+      cutscenes 34→35→36→37(→0) and never commit mode 2 without input; native-EU
+      commits mode 2 after the FIRST cutscene (premature re-fade completes @2766
+      → 00A302). Cutscene-end has two paths: 005AD6 MOVE (0A62),(0244) (next
+      attract) vs 00A302 #2 (title). native-EU takes the title path early — the
+      selector / fade-object lifecycle is the s100 fix.
+    * SPLASH s54/s65 RETIRED (glue.c): 028A timeout hold, 0FE4/0FAC ack seeds,
+      054C/0524/0548 idle force, iff1=1, sound_ack_note + both call sites deleted.
+      Post-s97 the guest Z80 acks natively. Regression s99p: crossing
+      frame-identical (flush 10411 / mode-24 10441 / exit 12707 / recommit 12738,
+      lives 2) + sewers bar present; EU s99r stall unchanged. TITLE-ASSIST is now
+      the ONLY env-gated boot accommodation (OFF by default since s68).
+    * BAR VRAM MECHANISM: load/title VRAM init = 005AE2 (bit0-gated) → 6C96 DMA /
+      1496 decompress + 0067D8 HUD staging; the assist's un-acked SFX triggered
+      the 006B02 second decompress pass that perturbed the upload (RAM list
+      identical native vs assisted; divergence downstream in VRAM).
+    * TOOLING: s69-native.ps1 -Rom US|EU; s70-disasm.ps1/.html -Rom EU
+      (web/rom/boogerman.gen.js); s99-web.ps1 (web-EU oracle dump + title flags);
+      s99-noinput.input. PITFALL: web-EU no-input cycles attract indefinitely and
+      the mode-2 title window is narrow/flaky under headless virtual time —
+      phase-match by 0244/05D4, don't blind-sweep frames.
+    * => Next: s100 = EU attract-loop selector / cutscene-end fade lifecycle (why
+      native-EU takes the 00A302 title path after the first cutscene while
+      web-EU/native-US cycle via 005AD6/0A62), then the title VRAM init.
   Next experiments (anticipated, in order):
-  1. EU boot + retirement round 3 (s99): EU mode-34 cutscene never reaches the
-     0055C6 02BA title-init (US runs it @2049 during mode 34 with A65=3; EU re-fades
-     @2766/3168 and commits mode 2 with A65=0 ⇒ 02BA=0 ⇒ title dispatcher gate
-     closed ⇒ black). RE the EU fade-object lifecycle / mode-34 head gate. Also:
-     sewers bar sprite-VRAM upload mechanism (RAM list identical native vs assisted,
-     divergence downstream); retire SPLASH s54/s65 probe-env assists. s98 retired
-     the whole LOAD-WINDOW assist (both copies) — guest flush load, crossing and
-     sewers HUD are native in bat AND probe configs (s98j/m).
+  1. EU boot fix (s100): native-EU's boot-intro coroutine commits title (00A302
+     #2) after the FIRST attract cutscene instead of cycling 34→35→36→37 like
+     web-EU/native-US (005AD6 MOVE (0A62),(0244)). RE the cutscene-end selector /
+     fade-object lifecycle (premature re-fade @2766). Title then renders black
+     because the mode-2 header byte 0A65 bit0=0 skips the 005AE2 VRAM init —
+     resolve whether authentic EU sets bit0 via a later title step or the
+     selector fix restores the proper load. s99 retired SPLASH s54/s65 (crossing
+     frame-identical, bar present); A65 = decompressed header byte (no logic
+     setter); title-dispatcher 02BA/0284 gate polarity corrected.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

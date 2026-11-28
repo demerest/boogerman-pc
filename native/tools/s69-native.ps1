@@ -9,7 +9,8 @@ param(
     [string]$Addrs = '516,244,254,1506,6d0,632,698,69a,222,224,24c,276,284,a65',
     [switch]$TitleAssist,
     [switch]$NoSplashAssist,
-    [string]$ExecCov = ''
+    [string]$ExecCov = '',
+    [string]$Rom = 'US'
 )
 $ErrorActionPreference = 'Stop'
 $env:GENESIS_BOOT_ASSIST='1'; $env:GENESIS_LOCKSTEP='1'; $env:GENESIS_Z80_FULL_SYNC='1'
@@ -18,7 +19,8 @@ if ($TitleAssist) { $env:GENESIS_TITLE_ASSIST='1' } else { Remove-Item Env:GENES
 if ($NoSplashAssist) { Remove-Item Env:GENESIS_SPLASH_ASSIST -ErrorAction SilentlyContinue } else { $env:GENESIS_SPLASH_ASSIST='1' }
 $env:GENESIS_OBJ_TL='1'; $env:GENESIS_OBJ_TL_ADDRS=$Addrs
 $root='S:\home\dev\boogerman-pc'
-$exe="$root\native\build\Release\BoogermanRecomp_us.exe"; $rom="$root\Boogerman (U) [!].gen"
+if ($Rom -eq 'EU') { $exe="$root\native\build\Release\BoogermanRecomp_eu.exe"; $rom="$root\Boogerman (E) [!].gen" }
+else { $exe="$root\native\build\Release\BoogermanRecomp_us.exe"; $rom="$root\Boogerman (U) [!].gen" }
 $out="$root\native\captures-us\$Tag"
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 $a='"'+$rom+'" --exit-at-frame '+$Frames+' --input-script "'+$root+'\native\tools\'+$InputScript+'" --capture-out "'+$out+'" --capture-from '+$CaptureFrom+' --capture-to '+$Frames+' --capture-every '+$Every

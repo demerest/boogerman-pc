@@ -887,3 +887,43 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - **TOOLING**: s98-writers.ps1 (-Addr word / -Long imm / -Rom US|EU); s98-brascan.ps1
   (-Targets). s69 -InputScript MUST include .input (bare name = silent no-input run;
   s98a/b first passes invalid). s98c-m runs; s98d1-d8 disasm.
+
+## s99: A65 = header byte; title VRAM init 005AE2 (bit0-gated); 02BA/0284 gate
+## polarity corrected; EU attract-loop selector divergence; SPLASH retired
+## (2026-11-28, US+EU). SUPERSEDES the s98 "EU STALL" bullet above.
+- **A65 (FF0A65)** = level-header byte 0x15 (header base FF0A50), written ONLY by
+  the decompressor copy loop **001440** (MOVE.B D1,(A1)+). NO logic setter (the
+  s98-writers "op=0001" hits were BTST #1 immediates, false positives). Decompressor
+  verified correct: native-EU mode-34 header byte-identical web-EU (word 0A62=0035
+  next-mode, byte 0A65=03; s99n vs s99w1). Cutscene header byte=03; title byte=00.
+- **COMMIT TAIL 005062** = mode-init dispatcher: 00515A decompresses per-mode header
+  (table 006EFE) → FF0A50; **@50AC BSR 005AE2** = load/title VRAM init GATED by A65
+  bit0 (MOVE.B (0A65),D0; ANDI #1; BEQ 005BAA skip). bit0=1 ⇒ pad setup + VRAM clear
+  FF2322 + DMA 6C96 + tile decompress 1496 + mode re-assert 5B54. **@5108 BSR 0055C6**
+  = 02BA init: clears 2B4/2B6/2BA unconditionally, BTST #1,(A65) BEQ skip, else 02BA=1
+  (US 0055EA / EU 0055F2). So 02BA=1 iff the NEW header byte has bit1.
+- **TITLE DISPATCHER 005960 POLARITY (corrects s98)**: proceeds iff 05D4==0F AND
+  A65 bit0==1 AND **02BA==0** (TST 02BA; BNE→RTS @00597E US/005986 EU) AND
+  **0284&9==0** (ANDI #9; BNE→RTS) AND START edge (050C&80) ⇒ JSR 6F82/6FB8.
+  02BA=0 and 0284&9=0 are the NORMAL interactive-title state, not a closed gate.
+- **EU CORRECTION**: EU sets 02BA=1 **@2024** DURING mode 34 (0055F2), like US @2049;
+  mode-34 byte=03 both. s98 "02BA never written / EU never reaches 0055C6" WRONG.
+  The mode-2 commit @3138-3186 then CLEARS 02BA (title byte bit1=0) — correct.
+- **EU BLACK MECHANISM**: boot-intro coroutine 00A2E2 yields (4970/31E0/3A14) until
+  ctx+16 (FF1A1E)==1, then **00A302 MOVE.W #2,(0244)** hardcoded title + 0284|=5
+  (00A30A). Title byte 0A65=0 ⇒ 005AE2 skips VRAM init ⇒ black.
+- **ATTRACT-LOOP SELECTOR DIVERGENCE (s100)**: web-EU + native-US no-input cycle
+  34→35→36→37(→0), never mode 2 without input. native-EU commits mode 2 after the
+  FIRST cutscene (re-fade completes @2766 → 00A302). Two cutscene-end paths:
+  **005AD6 MOVE (0A62),(0244)** (next attract) vs **00A302 #2** (title). native-EU
+  takes the title path early; the selector / fade-object lifecycle is the fix.
+- **SPLASH s54/s65 RETIRED** (glue.c): 028A hold, 0FE4/0FAC seeds, 054C/0524/0548
+  idle, iff1=1, sound_ack_note + 2 call sites deleted. s99p crossing frame-identical
+  (10411/10441/12707/12738, lives 2) + bar present; s99r EU unchanged. TITLE-ASSIST
+  now the only env-gated boot accommodation (OFF default).
+- **BAR VRAM**: load/title VRAM init = 005AE2 (bit0) → 6C96 DMA / 1496 decompress +
+  0067D8 HUD staging; assist's un-acked SFX triggered 006B02 second decompress that
+  perturbed upload (RAM identical; divergence in VRAM).
+- **TOOLING**: s69-native.ps1 -Rom US|EU; s70-disasm.ps1/.html -Rom EU; s99-web.ps1
+  (web-EU dump + flags); s99-noinput.input. web-EU no-input cycles attract forever;
+  mode-2 window narrow/flaky under virtual time — phase-match by 0244/05D4.

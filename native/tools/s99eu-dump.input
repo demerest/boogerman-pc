@@ -1,0 +1,3 @@
+WAIT 3170
+DUMP_RAM S:/home/dev/boogerman-pc/native/captures-us/s99g/eu-mode2.bin
+EXIT

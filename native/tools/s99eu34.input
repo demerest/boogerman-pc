@@ -1,0 +1,3 @@
+WAIT 1900
+DUMP_RAM S:/home/dev/boogerman-pc/native/captures-us/s99n/eu-mode34.bin
+EXIT
