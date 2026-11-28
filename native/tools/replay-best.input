@@ -1,11 +1,14 @@
 # replay-best.input — the latest PROVEN alive route, auto-played by
 # BoogermanReplay-US.bat in a VISIBLE, real-time window with sound.
-# Current best (s90): boot -> title -> Start -> FLATULENT SWAMPS LEVEL 1 ->
+# Current best (s93): boot -> title -> Start -> FLATULENT SWAMPS LEVEL 1 ->
 # thorn run-through -> spitter flicks -> slope/plat2 -> bridge red-walker kill ->
 # crested boost-stomps -> trunk-wall 2/3 vertical boosts -> wall-3 leech-trap
-# lunge-whiff bypass -> trunk-4 -> exit ledge -> toilet-top hop (W14/W20 drifts)
-# -> club step -> canopy-left landing + grounded flicks kill both club-walkers
-# -> stop-and-flick cadence down the slope -> alive beside the SECOND toilet.
+# lunge-whiff bypass -> trunk-4 -> exit ledge -> hop LEFT of the FIRST toilet ->
+# drift-RIGHT W14 onto its TOP -> HOLD DOWN >=30f = genuine flush (00882A) ->
+# mode 24 fade -> SEWERS (level 2) entry (s93 0248-clear assist) -> walk right
+# past the slime pool / grate / tipped bin / pipe walker.
+# NOTE: sewers HUD is absent (mode-24 config init never sets A65 bit0 natively;
+# s94/M3 item). Audio in sewers is assist-idle (M3).
 # NO EXIT op: pads release at the end and the window stays open — grab the
 # keyboard and play on (arrows D-pad, Z flick, X jump, hold X/DOWN in air = boost).
 WAIT_RAM16 0xFF0244 0x0034
@@ -208,7 +211,7 @@ HOLD RIGHT
 WAIT 40
 RELEASE
 WAIT 60
-# --- hop left of toilet: unpress RIGHT W6, boost drift-LEFT W24 ---
+# --- hop left of FIRST toilet: unpress RIGHT W6, boost drift-LEFT W24 ---
 HOLD RIGHT
 WAIT 6
 RELEASE
@@ -221,7 +224,7 @@ HOLD LEFT
 WAIT 24
 RELEASE
 WAIT 60
-# --- short drift-RIGHT W14 onto the toilet TOP ---
+# --- short drift-RIGHT W14 onto the FIRST toilet TOP ---
 WAIT 60
 PRESS B 8
 WAIT 6
@@ -231,59 +234,31 @@ HOLD RIGHT
 WAIT 14
 RELEASE
 WAIT 60
-# --- from toilet top: boost drift-RIGHT W20 onto the club step (NO flicks: save ammo) ---
-WAIT 60
+# --- s91 genuine flush: HOLD DOWN on toilet top => 00882A inc 0258, 0244=24 ---
+HOLD DOWN
+WAIT 30
+WAIT 30
+WAIT 30
+RELEASE
+WAIT 500
+# --- s93: sewers entry (fade-skip ~10754), settle, then walk right ---
+WAIT 300
+HOLD RIGHT
+WAIT 120
+RELEASE
+WAIT 30
 PRESS B 8
 WAIT 6
 PRESS DOWN 6
-WAIT 4
 HOLD RIGHT
-WAIT 20
-RELEASE
-WAIT 60
-# --- land on canopy LEFT edge (short drift W20), then GROUNDED flicks at same
-# height to kill the patrolling club-walkers as they approach (bridge recipe) ---
-WAIT 60
-HOLD RIGHT
-PRESS B 8
-WAIT 6
-PRESS DOWN 6
-WAIT 4
-HOLD RIGHT
-WAIT 20
-RELEASE
 WAIT 40
-PRESS A 6
-WAIT 14
-PRESS A 6
-WAIT 14
-PRESS A 6
-WAIT 14
+RELEASE
+WAIT 90
 PRESS A 6
 WAIT 20
-# --- STOP-AND-FLICK cadence right (bridge recipe) instead of blind push ---
-HOLD RIGHT
-WAIT 30
-RELEASE
-WAIT 10
-PRESS A 6
-WAIT 14
 PRESS A 6
 WAIT 20
 HOLD RIGHT
-WAIT 30
+WAIT 120
 RELEASE
-WAIT 10
-PRESS A 6
-WAIT 14
-PRESS A 6
-WAIT 20
-HOLD RIGHT
-WAIT 60
-RELEASE
-WAIT 10
-PRESS A 6
-WAIT 14
-PRESS A 6
-WAIT 20
 WAIT 200

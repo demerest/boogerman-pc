@@ -1869,15 +1869,51 @@ verifiable much sooner.
       park and the 01557E branch select; make the flush load take 015606 (mode 3) so the
       sewers intro + mode 10 commit; verify sewers gameplay, map its route; audio fidelity
       in the same M3 pass.
+  - **Session 93 (2026-11-28): SEWERS LOAD + GAMEPLAY VERIFIED. The s92 "demo branch" was an
+    artifact of the assist's own handoff: 0154FC with (16,A4)=FF1A1E expired falls into
+    015544, which sets the (10,A4)=FF1A18 demo flag; the genuine level-load entry is 01554A
+    (DOWN pad gate). The genuine FLUSH chain never uses 0154FC at all: mode-24 head 008016
+    (0258!=0) -> 008848 -> 00CAD0 loads the SEWERS chunks 1EF-213 NATIVELY (@10483-10600) ->
+    00AA90 idle park -> 008274 -> 00A4A8 -> 00C6B4 -> main-loop fade-wait 008238 parked on
+    FF0248!=0. The fade countdown 0248 (set 0x40, tick at 003724) is never ticked natively.
+    NEW assist: after >120 parked frames CLEAR FF0248 (both copies); the guest's own mode-24
+    head — which IS the sewers gameplay head — then runs the entry. s93g/h captures: sewers
+    bricks/pipes/slime drains, player spawns on the toilet, walks/boosts right past the
+    slime pool / grate / tipped bin / pipe walker, no death. The A65 bit0 clear + fade skip
+    are now gated to the fade/load window (0248!=0 || 0212!=0) because mode 24 doubles as
+    gameplay; the sound-idle seeds stay mode-24-wide (audio = M3).**
+    * DEMO-FLAG MECHANISM: 015544 sets (10,A4)=1 => completion 01557E -> 01562E demo;
+      01554A leaves 0 => 015588: 0254!=0 && (22,A4)>=0xC0 -> 01561A mode 2 (no stats reset)
+      else 0155AC mode 3 + 0258=0. (22,A4)=FF1A24 is a per-frame scroll field (00279C):
+      0x98 at flush / 0xB4 at boot, both <0xC0 => an EXTRA 01554A load always mode-3 and
+      replays LEVEL 1 (s93c intro card). Hence the extra load was removed in favor of the
+      0248 clear; the sewers geometry was already loaded by 00CAD0.
+    * SUPPORT DECODED: 4AF2 only marks chunk rows valid (ORI #2,(5870,row)); 49AA FALLS
+      THROUGH 49B0 (unwinds the buried return); 31E0/3A14 pop the return into (4,A4)=FF1A12
+      (the slot the assist writes) while (72,A4)=FF1A56 is the scheduler resume; 6F82 =
+      sound call with INLINE param bytes (the "garbled" 5034 = data 50 34); 00A32C =
+      demo-end/title reset (zeroes 0258), type 2E = demo controller, object type at (46,A0);
+      0013AC = ROM config table 09CBC4[D0*4]; 003208/3230/3244 = the only (78,A4) writers;
+      00A024 = transition/respawn family (re-sets 0248=0x40, resume 00C622).
+    * REMAINING (s94): sewers HUD ABSENT — the mode-24 config init never sets A65 bit0
+      natively (per-frame config copy writes 0), so the HUD DMA gate 006710 (A65 bit0 &&
+      0246) never opens; RE the mode-24 config/decompressor init or mirror the web-oracle
+      post-entry A65/0246. Map the sewers route beyond the opening. Audio fidelity M3.
+    * TOOLING: s93d1-d16 disasm; s93a/b/e/f write-taps; s93c/g/h runs; s93h.input = flush +
+      sewers gameplay probe; replay-best.input UPDATED to the flush->sewers route (window
+      stays open, no EXIT). Engine: glue.c 0248-clear + fade-window gate; diffs regen
+      base->worktree; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s94 = sewers HUD/config-init (A65 bit0 / 0246 in mode 24) + sewers route map;
+      then M3 retire assists / audio fidelity.
   Next experiments (anticipated, in order):
-  1. Gameplay/M3 (s93): chunk-loader completion gate for the flush load — (10,A4)=FF1A18
-     never clears so the load coroutine takes the 01562E demo branch (modes 34/35/36)
-     instead of 015606 (mode 3). Tap FF1A62 chunk counter + FF1A18, RE 015784/49AA/4AF2 vs
-     the 015790 idle park, fix/assist so the sewers (level 2) intro + mode 10 commit; verify
-     sewers gameplay and map its route. s92 exonerated the Z80 handshake and added the
-     fade-wait skip (resume 8238->0154FC) that unblocks the load coroutine. Native port is
-     PLAYABLE as of s78 (B=jump); user can watch the best alive route via
-     BoogermanReplay-US.bat.
+  1. Gameplay/M3 (s94): sewers HUD + route map. The mode-24 config init never sets A65 bit0
+     natively (per-frame config copy writes 0), so the HUD DMA gate 006710 (A65 bit0 &&
+     0246) never opens in sewers; RE the mode-24 config/decompressor init (0013C6/00143C
+     family) or mirror the web-oracle post-entry A65/0246, then map the sewers route (slime
+     pool / grate / tipped bin / pipe walker opening verified s93h). s93 verified the sewers
+     load + gameplay via the 0248-clear assist; replay-best.input now plays through the
+     flush into the sewers. Native port is PLAYABLE as of s78 (B=jump); user can watch the
+     best alive route via BoogermanReplay-US.bat.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

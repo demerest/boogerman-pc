@@ -626,3 +626,42 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   only (interp invisible); OBJ-TL long = hi+lo word writes. s92a-f runs, s92d1-d20 disasm.
   Engine: glue.c fade-wait skip; gitlinks stay 9907e77f40/6f705f2. ⇒ s93: chunk-loader
   completion / (10,A4) clear gate, then sewers intro + mode 10 + route map.
+
+## s93: SEWERS VERIFIED — flush chain = mode-24 head 008848 → 00CAD0 (chunks 1EF-213) → fade-wait 008238 gated on FF0248; 0248-clear assist commits the sewers (2026-11-28, US)
+- s92 CORRECTION: the resume long the assist writes (FF1A12/FF1A14) is **(4,A4)**, the
+  unwind-continuation slot popped by 31E0/3A14 (MOVE.L (A7)+,(4,A4)); the SCHEDULER resume
+  is (72,A4) = **FF1A56/FF1A58**. (10,A4)=FF1A18, (16,A4)=FF1A1E, (22,A4)=FF1A24,
+  (64,A4)=FF1A4E row base, (78,A4)=FF1A5C/5E chunk-table ptr, (84,A4)=FF1A62 chunk counter,
+  (76,A4)=FF1A5A countdown — all with A4=FF1A0E (s92 offsets +48/+4C for resume/countdown
+  were wrong; +48=FF1A56).
+- DEMO FLAG: 015544 (entered from 0154FC when (16,A4)==0) sets (10,A4)=1 ⇒ completion
+  01557E → 01562E demo (mode 34). 01554A (DOWN-pad gate 015510, or boot PRESS DOWN) leaves
+  it 0 ⇒ 015588: 0254==0 ? (22,A4)>=0x200 : (22,A4)>=0xC0 → 01561A mode 2 (NO stats reset,
+  0258 preserved) else 0155AC-015606 mode 3 + **0258=0** + 022E=2. (22,A4) is a per-frame
+  scroll field (writer 00279C): 0xB4 boot / 0x98 flush ⇒ an extra 01554A load ALWAYS mode 3
+  and replays LEVEL 1 (s93c). 01543C presets (22,A4)=0x114 only when 0252==2 (never at flush).
+- GENUINE FLUSH CHAIN (runs natively!): mode-24 head 008016 CMPI #0,(0258) BNE **008848** →
+  resume 00CAD0 = SEWERS chunk loader (84,A4)=0x1EF..0x213 (@10483-10600, taps s93c) →
+  00AA90 idle park (49AA loop) → 008274 ((8,A4)|=1, (44)=1, (46)=0x14, resume 00A4A8) →
+  00A4A8/00C6B4 chunk loaders → main loop 008156 service → 00821A yield → **008238
+  fade-wait**: 0042F6(#2E)==0 (no demo object) && **FF0248!=0** ⇒ yield forever. 0248 = fade
+  countdown (set 0x40 at 00A06A/00A07E, tick SUBI at 003724); natively never ticked at flush.
+- s93 ASSIST (both LOAD-WINDOW copies, BOOT_ASSIST-gated): >120 frames resume==00008238 ⇒
+  **write FF0248=0** (no resume swap). The guest's mode-24 head IS the sewers gameplay head
+  (008848-0089C2 pad/scroll/collision service); with 0248 clear it runs the entry: s93g/h
+  captures = sewers bricks/pipes/slime drains, player on toilet, walk/boost right past slime
+  pool / grate / tipped bin / pipe walker, lives unchanged. A65 bit0 clear + fade skip now
+  gated to (0248!=0 || 0212!=0); sound-idle seeds remain mode-24-wide.
+- OBJECT MODEL: type word at (46,A0); 0042F6 scans FF1A0E..FF220E by (0,A0)&7FFF stride;
+  type 2E = demo controller (00A32C = demo-end/title reset, zeroes 0258, mode from 0A62);
+  type 28 = transition/respawn (00A024 re-sets 0248=0x40, resume 00C622; 00A156 zeroes 0258).
+  4AF2 = mark chunk rows valid (ORI #2,(5870,row)); 4B8C = queue chunk DMA + accumulate
+  (22,A4)/(62,A4); 49AA FALLS THROUGH 49B0 (pop return into (72,A4), RTS unwinds buried ret).
+  6F82 = sound service call consuming 2 INLINE bytes after the JSR (loader head "5034" =
+  params 50 34). 0013AC = config ptr table 09CBC4[D0*4] (&00FFFFFF offset); 003208/3230/3244
+  = only (78,A4) writers (type 0xDC fixed at 01545A/007F76).
+- REMAINING: sewers HUD absent — mode-24 config init never sets A65 bit0 (per-frame config
+  copy writes 0; taps s93h), HUD gate 006710 (A65 bit0 && 0246) never opens ⇒ s94. Sewers
+  route beyond the opening unmapped ⇒ s94. Audio = M3.
+- TOOLING: s93d1-d16 disasm; s93a/b/e/f taps; s93c/g/h runs; s93h.input flush+sewers probe;
+  replay-best.input = flush→sewers route (no EXIT). gitlinks stay 9907e77f40/6f705f2.
