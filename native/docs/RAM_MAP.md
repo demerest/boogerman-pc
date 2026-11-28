@@ -746,3 +746,62 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   008848-0089C2 has no decompressor call ⇒ second pass = second dispatch call; caller
   RE = s96. Head: 00887E gameplay; 0266/0268 gates; 050C&10→00902A; 0502&4/8→
   003310/003304 (cam (54,A4)+=0280); type-28 @0089A8→00A024 when 0248==0.
+
+## s96: sewers crossing = user-recorded route promoted to replay-best; HUD bottom-bar absence = ORIGINAL design (builder intro/menu-only); clean-env fade gate fixed; dispatch call-site census (2026-11-28, US)
+
+- **CROSSING GROUND TRUTH** (user's build\play-input.log replayed verbatim, s96a):
+  flush #1 @6943 (00882A inc 0258), exit-toilet flush @9225 (0244<=[0A98]=0x10),
+  level-2 load @10110 (00A332 0258=0 / 00A370 0244=0x14), level-2 gameplay 0x11 @10980.
+  ZERO life loss. Crossing = jump/boost cadence onto the **UPPER PIPE platform**,
+  traverse right ABOVE the slime pool, drop to the exit toilet. Short DOWN presses
+  (12-25f) also flush when grounded on the toilet top (flush fires ~60-95f after the
+  press; s91's ">=30f hold" threshold was position-confounded).
+- **SPLICE**: replay-best prefix (cut before its flush) + user ops 6849..9600 rebased
+  **+3482** (s96-splice.ps1) ⇒ flush @10411, exit @12707, STOP ALIVE at level-1 second
+  toilet (s96c/s96d, lives 2). Promoted via s96-promote.ps1 ⇒ BoogermanReplay-US.bat
+  now auto-plays the full crossing and returns alive.
+- **HUD BOTTOM BAR = AUTHENTIC DESIGN, NOT A PORT BUG** (retracts s94/s95 "restore"
+  framing; user's "HUD disappears in sewers" = original behavior):
+  * Sprite attribute table = **VRAM F000** (located by RAM-list pattern match).
+    Level-1 y=013C/014C (bar rows); sewers y=**0180** (offscreen park). The DMA upload
+    is faithful — the RAM list FF146E itself holds the parked y in sewers.
+  * Park writer **00698E** (80-entry loop, D0=0180 @0069CE) is called from the commit
+    tail **0050B8** at EVERY mode change; loader init 006704 parks too.
+  * Bar builder **0071E6** (writes FF146E y / 1470 flag=05 / 1472 x / 1474 tile via
+    A2=FF0000; clamps y vs FF027C, x vs FF027A; tile table +8680) runs ONLY in intro
+    slide-in / menu loops. ROM-wide BSR/JSR census (s96-callscan.ps1): callers =
+    005B72/005B8E (level-intro slide-in 005B40), 005C1E/005C9A (menu 005BAC),
+    005D78/005DFC (options 005D08). NO gameplay-head caller; builder silent after the
+    slide-in (s96x: zero 146E writes at f=2xxx). Score tiles update elsewhere.
+  * The sewers load path (008848→00CAD0→…→commit) never calls the intro/builder
+    family ⇒ the bar stays parked in the ORIGINAL too (identical ROM in web oracle).
+- **CLEAN-ENV FADE GAP FOUND + FIXED**: clean boots (bat env, no SPLASH_ASSIST) never
+  start the entry fade: 0248 stays 0 (no 00A06A write) and the coroutine never parks
+  at resume 008238 ⇒ the s95 fade-skip (fwait>120) NEVER fires there ⇒ 0212=1 from
+  boot (01554A @969) keeps the gate open ⇒ per-frame A65 clear through sewers
+  gameplay. **s96 fix** (both glue copies): commit-detect bookkeeping — mode 24 &&
+  0248==0 && 0258!=0 && >240 frames in mode ⇒ clear 0212 + set A65 bit0 + sewers flag;
+  post-fade restore made conditional (write only when bit0 clear) ⇒ assist fully
+  hands-off post-commit. Verified s96z2: last host A65/0212 write @10651 (=flush+240);
+  next A65 write = guest 001440 @12738 (exit load); flushes 10411/12707, lives 2,
+  crossing alive.
+- **DISPATCH CENSUS (s96c)**: only BSR 00515A site = **0050A0** inside commit tail
+  **005062** (005076 0254→0252; 00508E 0244&=FF; 005096 0244→0254; 0050A0 BSR 515A;
+  0050B0 BSR 5178; 0050B8 BSR 698E). Direct BSR 0013C6 sites = 005172 (inside 515A),
+  00527C/005292/0052BE/0052E8/00533C/0055A0/005660/006004. **005062 has NO direct
+  BSR/JSR callers** — entered via indirect scheduler dispatch (menu exits BRA 005062
+  @005CBA/005E38). s95a's double mirror fire (@11081/@11620) = commit tail run TWICE ⇒
+  the +14f second decompress pass = a second 005062 invocation after the fade resume
+  (00C622→00D21C chain); the exact indirect edge = M3.
+- **MODE 0x34 SUBSTATE**: 008268 MOVE.W #0034,(FF0244) inside the mode-24 chain
+  (BRA 00A32C) — sewers substate observed in the forced-write web run.
+- **WEB ORACLE LIMITS MEASURED**: title-ready ~11900 frames (Start@11900 commits;
+  native clean ~1000) ⇒ global shift +9557 for script-route logs; gpgx timing drift
+  kills the tight script route (3 deaths → game-over mode 0x37 by 19800) ⇒ oracle
+  unusable for tight gameplay; harness `wr` byte-writes double-XOR the address
+  (ramWrite8 applies ^1 internally) ⇒ pass ODD addresses for guest low bytes;
+  s69-web.ps1 gained -Budget (virtual-time) and -Wr. Authenticity settled by the
+  code-level census instead (same ROM on both sides).
+- TOOLING: s96-splice/promote/webtimeline/webshift/dumps/callscan.ps1; s96a/b/c/d/
+  w/w2-w8/x/y/z/z2 runs; s96d1-d11 disasm; s96w/s96v.input dump scripts; s96c.input
+  splice probe. BSR.W displacement base = P+2 (not P+4) — callscan encodes this.

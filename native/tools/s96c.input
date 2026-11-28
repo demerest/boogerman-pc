@@ -1,0 +1,339 @@
+# replay-best.input ??? the latest PROVEN alive route, auto-played by
+# BoogermanReplay-US.bat in a VISIBLE, real-time window with sound.
+# Current best (s93): boot -> title -> Start -> FLATULENT SWAMPS LEVEL 1 ->
+# thorn run-through -> spitter flicks -> slope/plat2 -> bridge red-walker kill ->
+# crested boost-stomps -> trunk-wall 2/3 vertical boosts -> wall-3 leech-trap
+# lunge-whiff bypass -> trunk-4 -> exit ledge -> hop LEFT of the FIRST toilet ->
+# drift-RIGHT W14 onto its TOP -> HOLD DOWN >=30f = genuine flush (00882A) ->
+# mode 24 fade -> SEWERS (level 2) entry (s93 0248-clear assist + s94 HUD
+# mirror) -> walk/boost right onto the concrete ledge and STOP ALIVE there.
+# NOTE (s94): the slime pool right of the ledge is a DEATH hazard ??? the route
+# deliberately stops before it; crossing it is unmapped (s95). HUD icons
+# (hand/chili/blob) render in sewers via the s94 A65 bit0 mirror.
+# Audio in sewers is assist-idle (M3).
+# NO EXIT op: pads release at the end and the window stays open ??? grab the
+# keyboard and play on (arrows D-pad, Z flick, X jump, hold X/DOWN in air = boost).
+# s94: NO HOTKEY ??? auto-play runs from boot; first press ~35 s (title Start).
+# Any live keyboard/pad press >~0.3 s CANCELS auto-play (human takeover), so
+# playing manually first means the route will not run ??? relaunch to watch it.
+# Start is a bounded PRESS (s94): a HOLD+WAIT on 0254 parked forever with START
+# stuck if a human had already committed the title.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+PRESS START 40
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+# --- walk into trunk-wall 2 (cam freezes 0E87) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+# --- wall-2: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+# --- approach wall-3 left face (X=100B) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+# --- boost1 from w2 with AIR-FLICKS over the trap during descent (lunge whiffs) ---
+WAIT 60
+HOLD RIGHT
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 34
+PRESS A 6
+WAIT 6
+PRESS A 6
+WAIT 6
+RELEASE
+WAIT 60
+# --- cross trunk-4: settle 60, vertical boost + W12 ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+# --- flick + push to the ledge foot ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+# --- ledge climb: unpress LEFT W6, settle 60, boost drift-from-jump+10 W40 ---
+HOLD LEFT
+WAIT 6
+RELEASE
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+# --- hop left of FIRST toilet: unpress RIGHT W6, boost drift-LEFT W24 ---
+HOLD RIGHT
+WAIT 6
+RELEASE
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD LEFT
+WAIT 24
+RELEASE
+WAIT 60
+# --- short drift-RIGHT W14 onto the FIRST toilet TOP ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 14
+RELEASE
+WAIT 60
+10331 DOWN
+10356 -
+10361 DOWN
+10367 -
+10674 RIGHT
+10706 -
+10724 RIGHT
+10737 -
+10781 RIGHT
+10788 -
+10832 RIGHT
+10875 -
+10896 B
+10927 -
+10954 B
+10971 RIGHT+B
+10984 RIGHT
+10988 -
+11012 B
+11019 -
+11037 RIGHT
+11046 -
+11106 A
+11116 -
+11150 B
+11167 -
+11197 B
+11209 RIGHT+B
+11215 RIGHT
+11225 -
+11238 A
+11247 -
+11316 RIGHT
+11346 -
+11375 RIGHT
+11382 RIGHT+B
+11395 RIGHT
+11430 -
+11504 A
+11512 -
+11573 RIGHT
+11587 -
+11608 RIGHT+B
+11622 RIGHT
+11637 -
+11665 RIGHT
+11678 -
+11705 RIGHT
+11709 RIGHT+B
+11728 RIGHT
+11750 -
+11764 RIGHT
+11781 -
+11850 A
+11858 -
+11913 RIGHT
+11917 RIGHT+B
+11929 RIGHT
+11978 -
+12021 LEFT
+12041 -
+12047 RIGHT
+12059 RIGHT+A
+12061 A
+12069 -
+12118 RIGHT
+12127 RIGHT+B
+12139 RIGHT
+12169 -
+12205 RIGHT
+12216 RIGHT+B
+12231 RIGHT
+12259 -
+12288 RIGHT
+12322 -
+12361 RIGHT
+12385 -
+12398 LEFT
+12410 -
+12420 A
+12429 -
+12447 A
+12456 -
+12460 A
+12467 -
+12496 A
+12504 -
+12552 B
+12563 RIGHT
+12578 -
+12603 LEFT
+12611 -
+12629 DOWN
+12641 -
+12983 RIGHT
+13006 -
+RELEASE
+WAIT 300

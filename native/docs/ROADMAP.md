@@ -1999,17 +1999,56 @@ verifiable much sooner.
       bottom-bar root cause via web-oracle phase-matched sewers RAM/capture diff
       (plane/scroll vs mode-gated HUD routine); (c) RE the second dispatch caller so the
       A65 mirror can retire; then M3 audio fidelity (stuck attack SFX).
+  - **Session 96 (2026-11-28): SEWERS CROSSING SOLVED FROM THE USER'S RECORDING AND
+    PROMOTED TO replay-best; HUD BOTTOM-BAR ABSENCE = ORIGINAL DESIGN (NOT A BUG);
+    CLEAN-ENV FADE GATE FIXED (ASSIST HANDS-OFF POST-COMMIT); DISPATCH CALL-SITE CENSUS.**
+    * USER RECORDING REPLAYED VERBATIM (s96a, bat-matching env): flush #1 @6943, exit
+      toilet flush @9225 (back to level 1), level-2 load @10110; ZERO life loss. The
+      crossing = jump/boost cadence onto the UPPER PIPE platform, traverse right above
+      the slime pool, drop to the exit toilet; short DOWN presses (12-25f) flush when
+      grounded on the top (s91's >=30f threshold was position-confounded).
+    * SPLICE PROVEN + PROMOTED: replay-best prefix + user ops 6849..9600 rebased +3482
+      (s96-splice.ps1) ⇒ flush @10411, exit @12707, stop ALIVE at the level-1 second
+      toilet (s96c/s96d). s96-promote.ps1 shipped it as replay-best.input ⇒
+      BoogermanReplay-US.bat now auto-plays the whole crossing and returns alive.
+    * HUD ROOT CAUSE (retracts s94/s95 "restore" framing): sprite table = VRAM F000;
+      sewers RAM list + VRAM hold y=0180 (offscreen park) vs level-1 y=013C/014C. The
+      park (00698E, 80 entries) runs at EVERY mode commit via 0050B8; the bar builder
+      0071E6 (writes 146E/1470/1472/1474) is called ONLY by intro slide-in / menu
+      routines (ROM-wide BSR/JSR census: 005B72/5B8E/5C1E/5C9A/5D78/5DFC) and is silent
+      during gameplay. The sewers load path never calls it ⇒ the ORIGINAL game also
+      hides the bottom bar in sewers. User observation = authentic behavior.
+    * CLEAN-ENV GAP + FIX: clean boots never start the entry fade (0248 stays 0, no
+      008238 park) ⇒ s95's fade-skip never fired in the bat env and 0212=1 from boot
+      kept the assist gate open (per-frame A65 clear through sewers gameplay). s96:
+      commit-detect bookkeeping (mode 24 && 0248==0 && 0258!=0 && >240f) clears 0212 +
+      mirrors bit0 in both glue copies; restore made conditional ⇒ assist hands-off
+      post-commit (s96z2: last host write @10651; next A65 write = guest @12738;
+      flushes/lives/crossing intact).
+    * SECOND-PASS CENSUS: only BSR 00515A = 0050A0 in commit tail 005062; 005062 has NO
+      direct callers (indirect scheduler dispatch); s95a's double mirror fire = tail
+      run twice ⇒ second pass = second 005062 invocation post fade-resume; exact
+      indirect edge = M3. Direct 0013C6 sites census in RAM_MAP s96.
+    * WEB ORACLE LIMITS: title-ready ~11900 (shift +9557); gpgx drift game-overs the
+      tight script route by 19800; harness wr double-XORs addresses (pass odd for low
+      byte); s69-web.ps1 gained -Budget/-Wr. Authenticity settled by code census.
+    * TOOLING: s96-splice/promote/webtimeline/webshift/dumps/callscan.ps1; s96a-z2
+      runs; s96d1-d11 disasm; s96w/v.input dumps; s96c.input probe. Engine: glue.c
+      commit-detect + conditional restore; diffs regen base->worktree; gitlinks stay
+      9907e77f40/6f705f2.
+    * => Next: s97 = M3 audio fidelity (stuck attack SFX via trace-bat frame stamps) +
+      assist retirement (Z80 cmd/ack 098D24/098D52, fade tick 003724, second-dispatch
+      indirect edge).
   Next experiments (anticipated, in order):
-  1. Gameplay/M3 (s96): sewers crossing from human ground truth + HUD bottom-bar root
-     cause. The recorder (s95) turns the user's manual play into a replayable .input
-     (build\play-input.log / trace-input.log); replay it to map the pool crossing and
-     extend the alive route to the exit toilet (s95b pipe attempt died). The bottom
-     status bar is absent in sewers despite gate open + DMA list populated (s95): diff
-     web-oracle sewers RAM/captures phase-matched to find the plane/scroll or mode-gated
-     HUD routine difference. RE the second 00515A dispatch caller (the +14f pass that
-     zeroes FF0A65+0x15) to retire the mirror in M3. Native port is PLAYABLE and
-     level-progressible (user reached level 3 manually, s95); replay auto-play hardened
-     in s94 (takeover cancels; bounded Start; stderr logs).
+  1. M3 audio fidelity + assist retirement (s97): stuck attack SFX (user report s95) —
+     reproduce with BoogermanTrace-US.bat and use trace-err.log frame stamps to RE the
+     YM2612 key-on/off path; Z80 cmd/ack handshake 098D24/098D52 RE to retire the
+     flush-window idle seeds; fade tick 003724 RE to retire the 008238 park skip;
+     second-dispatch indirect scheduler edge (005062 has no direct callers; census in
+     RAM_MAP s96) to retire the A65 mirror. s96 settled the crossing (replay-best now
+     auto-plays the user's recorded sewers route to the exit toilet and back, alive)
+     and the HUD question (bottom bar absent in sewers = ORIGINAL design, not a port
+     bug); the assist is hands-off post-commit in both envs (s96z2).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
