@@ -2209,15 +2209,38 @@ verifiable much sooner.
     * => Next: s101 = per-V-int pad/physics cosim of the EU demo idx 0x20-0x40
       window (cosim.c infra) to find the divergent action, then engine fix (A) or
       env-gated EU attract/title assist (B); confirm the authentic title upload.
+  - **Session 101 (2026-11-28): PER-TICK COSIM LOCALIZES THE EU DEMO GAP TO A ~2x
+    PLAYER-INTEGRATION RATE PER V-INT (moving entries idx 0x20-0x40); SCHEDULE +
+    PAD DATA BYTE-IDENTICAL. ENV-GATED BACKUP B (GENESIS_EU_ATTRACT_ASSIST, OFF
+    DEFAULT) REDIRECTS THE PREMATURE 00A302 TITLE COMMIT TO NEXT-ATTRACT —
+    RESTORES THE MODE CYCLE BUT NOT THE RENDERED IMAGE (early-exit teardown
+    persists). US REGRESSION CLEAN.**
+    * METHOD: web/test/ram-trace.html (per-frame guest-word sampler) + s101-web.ps1
+      vs native OBJ-TL (s101a), aligned by stream idx (02B6) with s101-diff.ps1.
+      X = word FF1A32 (1A34 = X+24 collision edge); Y = FF1A2E.
+    * FINDING: 02B4-vs-0286 entry schedule and 02B8 pad identical native/web at
+      every idx. But during MOVING entries native 0286 advances +1/tick while web
+      +1/2 ticks (idle idx1c both +1/2) => native integrates player motion ~2x per
+      V-int, overshooting to X=02a9 and stalling into the exit trigger (web stays
+      0284/025e). Early-exit 00A070 then zeroes 0266/0240/0241 + re-fade 0248=40,
+      tearing down cutscene state => black even when the commit is redirected.
+    * BACKUP B (glue.c m68k_write16, env-gated OFF): PC==00A302 && addr==0244 &&
+      val==2 && 02BA!=0 => val=(0A62). s101b: premature commit now writes 35, cycle
+      34->35->..->37 via 005ADE; NO mode-2. But frames stay black (cutscene bit0=0
+      skips 005AE2 VRAM init after teardown) => render fix still open.
+    * US REGRESSION s101us (assist OFF): flush 10411 / mode-24 10441 / lives 2,
+      sewers HUD bar present. No change to the playable path.
+    * TOOLING: web/test/ram-trace.html; native/tools/s101-web.ps1, s101-diff.ps1;
+      s69-native.ps1 -EuAttractAssist.
+    * => Next: s102 = correct the ~2x demo-player per-V-int pacing (A) OR prevent
+      the early-exit teardown so the EU attract cycle RENDERS (not just commits);
+      confirm the authentic title-tile upload.
   Next experiments (anticipated, in order):
-  1. EU boot fix (s101): the s100 selector RE is complete; the remaining gap is a
-     per-tick EU demo-playback fidelity divergence (player misplays the recording
-     between stream idx 0x20-0x40 and walks into the exit trigger, taking the
-     early-exit title path over cutscene VRAM). Cosim the demo window vs web-EU to
-     find the divergent action; fix engine ordering (A) or add an env-gated EU
-     attract/title assist (B). Also confirm which upload renders the authentic
-     title (intro-scroll 015650 / title-object) so the fix restores a rendered
-     title, not just the cycle.
+  1. EU boot render fix (s102): s101 cosim proved the gap is a ~2x demo-player
+     integration rate per V-int in native-EU (moving entries), not pad/schedule
+     data. Fix engine per-V-int pacing (A) or block the early-exit 00A070 teardown
+     so the redirected attract cycle renders cutscene VRAM (B+). Confirm which
+     upload renders the authentic title (intro-scroll 015650 / title-object).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

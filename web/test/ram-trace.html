@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>ram trace</title></head>
+<body>
+<div id="out">waiting</div>
+<script src="../vendor/gpgx/gpgx.web.js"></script>
+<script src="../vendor/gpgx/gpgx.wasm.js"></script>
+<script>
+  /* s101: per-frame word trace for native cosim (measurement only).
+   * ?trace=286,2b6,... &from=1800&to=2800&frames=2800[&rom=us] */
+  document.write('<script src="../rom/' +
+    (new URLSearchParams(location.search).get('rom') === 'us' ? 'boogerman_us.gen.js' : 'boogerman.gen.js') +
+    '"><\/script>');
+</script>
+<script src="../js/util.js"></script>
+<script src="../js/hooks.js"></script>
+<script src="../js/patches.js"></script>
+<script src="../js/shaders.js"></script>
+<script src="../js/audio.js"></script>
+<script src="../js/input.js"></script>
+<script src="../js/video.js"></script>
+<script src="../js/cheats.js"></script>
+<script src="../js/states.js"></script>
+<script src="../js/mods.js"></script>
+<script src="../js/core.js"></script>
+<script>
+(async function () {
+  try {
+    await BP.core.init({ silent: true });
+    BP.core.loadGame(BP.util.b64ToBytes(window.BP_ROM_B64), 'boogerman.gen');
+    const q = new URLSearchParams(location.search);
+    const target = parseInt(q.get('frames') || '2800', 10);
+    const from = parseInt(q.get('from') || '0', 10);
+    const to = parseInt(q.get('to') || String(target), 10);
+    const addrs = (q.get('trace') || '284,286,2b4,2b6,2b8,500,502,50c,1a2e,1a30,1a32,1a34,244,248,22e')
+      .split(',').filter(Boolean).map(s => parseInt(s, 16));
+    const lines = [];
+    let n = 0;
+    function step() {
+      BP.core.run();
+      if (n >= from && n <= to) {
+        /* ram() buffer is little-endian per word: guest byte g lives at g^1. */
+        const r = BP.core.ram();
+        const gw = a => (r[(a + 1) & 0xFFFF] << 8) | r[a & 0xFFFF];
+        let line = String(n);
+        for (const a of addrs) line += ' ' + a.toString(16) + '=' + gw(a).toString(16).padStart(4, '0');
+        lines.push(line);
+      }
+      if (++n >= target) {
+        const b64 = BP.util.bytesToB64(new TextEncoder().encode(lines.join('\n')));
+        document.getElementById('out').textContent =
+          'TRACEDUMP ' + b64 + ' LINES ' + lines.length;
+        document.title = 'TRACEDUMP DONE';
+        return;
+      }
+      setTimeout(step, 0);
+    }
+    setTimeout(step, 0);
+  } catch (e) {
+    document.getElementById('out').textContent = 'ERR ' + e.message;
+  }
+})();
+</script>
+</body>
+</html>

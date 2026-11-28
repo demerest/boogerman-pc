@@ -53,7 +53,7 @@ index 2503230..4ef0ae4 100644
          handle_frame_info(id);
      } else if (strcmp(cmd, "frame_range") == 0) {
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..a8e97e0 100644
+index 4eee55c..b34de39 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -492,7 +492,7 @@ index 4eee55c..a8e97e0 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2392,66 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2392,84 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -553,13 +553,31 @@ index 4eee55c..a8e97e0 100644
  void m68k_write16(uint32_t byte_addr, uint16_t val)
  {
      byte_addr &= 0xFFFFFFu;
++    /* s101 backup B (env-gated, OFF by default): native-EU integrates the
++     * attract demo player ~2x per V-int vs the web oracle during the moving
++     * entries (stream idx 0x20-0x40), overshooting into the exit trigger and
++     * taking the early-exit title path (00A302 MOVE #2,(0244)) over cutscene
++     * VRAM => black. Redirect ONLY that premature commit (PC-gated, attract
++     * active) to the normal next-attract mode (0A62), restoring the web
++     * 34->35->36->37 cycle. Never touches pad/physics, US, or the interactive
++     * title (Start commits mode 1, not 2). */
++    {
++        static int eu_attract_assist = -1;
++        if (eu_attract_assist < 0)
++            eu_attract_assist = getenv("GENESIS_EU_ATTRACT_ASSIST") != NULL;
++        if (eu_attract_assist && (byte_addr & 0xFFFFu) == 0x0244u && val == 2 &&
++            (g_cpu.PC & 0xFFFFFFu) == 0x00A302u &&
++            gbus_read16(&g_machine.bus, 0x00FF02BAu) != 0) {
++            val = gbus_read16(&g_machine.bus, 0x00FF0A62u);
++        }
++    }
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 4);
 +    obj_tl_note(byte_addr, val, 2);
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2069,6 +2471,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2489,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -567,7 +585,7 @@ index 4eee55c..a8e97e0 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2089,6 +2492,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2510,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);
@@ -576,7 +594,7 @@ index 4eee55c..a8e97e0 100644
      z80_sync_for_68k_access(byte_addr, 4);
      /* 32-bit write = two consecutive 16-bit writes. Only matters for FM
       * bus; SMPS never uses 32-bit to write FM regs so this is defensive
-@@ -2913,3 +3318,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
+@@ -2913,3 +3336,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
  {
      return s_game_fiber ? fiber_stack_range(s_game_fiber, lo, top) : -1;
  }

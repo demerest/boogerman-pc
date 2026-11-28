@@ -12,6 +12,7 @@ param(
     [switch]$NoLockstep,
     [switch]$NoZ80Sync,
     [switch]$NoBootAssist,
+    [switch]$EuAttractAssist,
     [string]$ExecCov = '',
     [string]$Rom = 'US'
 )
@@ -20,6 +21,7 @@ $env:GENESIS_BOOT_ASSIST=if ($NoBootAssist) { '0' } else { '1' }; $env:GENESIS_L
 $env:GENESIS_Z80_NO_BUS_HALT='1'; $env:GENESIS_WATCHDOG_INSN='400000000'; $env:GENESIS_WATCHDOG_BUS='100000000'
 if ($TitleAssist) { $env:GENESIS_TITLE_ASSIST='1' } else { Remove-Item Env:GENESIS_TITLE_ASSIST -ErrorAction SilentlyContinue }
 if ($NoSplashAssist) { Remove-Item Env:GENESIS_SPLASH_ASSIST -ErrorAction SilentlyContinue } else { $env:GENESIS_SPLASH_ASSIST='1' }
+if ($EuAttractAssist) { $env:GENESIS_EU_ATTRACT_ASSIST='1' } else { Remove-Item Env:GENESIS_EU_ATTRACT_ASSIST -ErrorAction SilentlyContinue }
 $env:GENESIS_OBJ_TL='1'; $env:GENESIS_OBJ_TL_ADDRS=$Addrs
 $root='S:\home\dev\boogerman-pc'
 if ($Rom -eq 'EU') { $exe="$root\native\build\Release\BoogermanRecomp_eu.exe"; $rom="$root\Boogerman (E) [!].gen" }

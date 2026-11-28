@@ -965,3 +965,21 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   00A302 commit over cutscene VRAM. s101 to confirm which upload renders web title.
 - **TOOLING**: s98-brascan.ps1 / s96-callscan.ps1 -Rom US|EU; s69-native.ps1
   -NoLockstep / -NoZ80Sync / -NoBootAssist bisect switches. s100a-x runs/disasm.
+
+## s101: per-tick cosim — EU demo gap = ~2x player integration per V-int (moving
+## entries); schedule+pad identical; backup B restores cycle, not render (2026-11-28).
+- **CTX POSITION WORDS**: X = FF1A32 (word); FF1A34 = X+24 (right collision edge).
+  Y = FF1A2E; FF1A30 = Y+16. (0027DC/0027E0 write X/X+24; 0045F0/0045F8 adjust.)
+- **COSIM** (web/test/ram-trace.html + s101-web.ps1 vs native OBJ-TL s101a, aligned
+  by 02B6 via s101-diff.ps1): 02B4-vs-0286 schedule and 02B8 pad byte-identical at
+  every idx. During MOVING entries (0x20-0x40) native 0286 +1/tick vs web +1/2tick
+  (idle idx1c both +1/2) => native integrates player ~2x per V-int, overshoots to
+  X=02a9 into the exit trigger; web stays 0284/025e and plays to stream-end.
+- **EARLY-EXIT TEARDOWN**: 00A070 zeroes 0266/0240/0241 + 0248=0x40 re-fade, so even
+  a redirected next-attract commit leaves cutscene VRAM uninitialized (bit0=0 skips
+  005AE2) => black. Render fix requires pacing (A) or blocking the teardown.
+- **BACKUP B**: glue.c m68k_write16 env GENESIS_EU_ATTRACT_ASSIST (OFF default):
+  PC==00A302 && (addr&FFFF)==0244 && val==2 && 02BA!=0 => val=(0A62). Restores mode
+  cycle 34->35->..->37 (s101b), no mode-2; frames still black. US unaffected.
+- **TOOLING**: web/test/ram-trace.html; s101-web.ps1; s101-diff.ps1; s69
+  -EuAttractAssist. s101a/b/us runs.
