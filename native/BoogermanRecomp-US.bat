@@ -14,4 +14,9 @@ set GENESIS_BOOT_ASSIST=1
 rem s94: keep a stderr log so boot/script problems are diagnosable after the
 rem detached window closes (build\play-err.log).
 set GENESIS_STDERR_LOG=%~dp0build\play-err.log
+rem s95: record your inputs as frame-stamped pad masks (build\play-input.log).
+rem The log is itself a replayable .input script. For bug reports (HUD gone,
+rem stuck audio) send play-input.log + play-err.log, or use BoogermanTrace-US.bat
+rem which adds RAM-write taps on top.
+set GENESIS_INPUT_RECORD=%~dp0build\play-input.log
 start "" "%~dp0build\Release\BoogermanRecomp_us.exe" "%~dp0..\Boogerman (U) [!].gen"

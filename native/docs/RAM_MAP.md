@@ -705,3 +705,44 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   (stop-alive + crossing attempts), s94r0/rt/a/b/c runs; s94d1-d4 disasm
   (0013C6-0014B0, 0015A0-001620, 000C60-000CA0, 0048C0-0048F0). replay-best.input stops
   alive at the ledge. gitlinks stay 9907e77f40/6f705f2.
+
+## s95: FF0212 = per-load fade flag never cleared natively (HUD gate stuck open) + s94 "HUD icons" RETRACTED (world objects) + bottom bar absent with gate open & list populated + death-in-sewers = level-1 replay + play-input recorder (2026-11-28, US)
+
+- **FF0212**: set **1** by **01554A** at every level load (s95a taps f=1739 boot load,
+  f=2744 level-1 load; s=2 word write) and NEVER cleared natively (no other writes in a
+  13000f run). The genuine flush chain bypasses 01554A, so 0212=1 carries into mode 24.
+  Consequence: the LOAD-WINDOW assist fade gate `(0248!=0 || 0212!=0)` never closes in
+  sewers ⇒ its per-frame A65 bit0 CLEAR ran through all sewers gameplay (s95a: per-frame
+  zeros between mirror fires @11081/@11620). **s95 fix**: at the fade-skip (fwait>120)
+  clear **0212=0 alongside 0248=0** (both glue copies), and restore A65 bit0 after any
+  later fade once a sewers-committed flag is set (flag resets when mode != 24).
+  Verified s95a2: bit0 stable 1 post-entry, per-frame clears gone.
+- **FF0246** = 1 since boot (f=17), never cleared ⇒ the 006710 HUD DMA gate's 0246 side
+  is always open; post-s95 the bit0 side is open too.
+- **s94 "HUD icons (hand/chili/blob) restored" RETRACTED**: those top-screen objects are
+  WORLD scenery — pipe-end hand, the pipe walker's THROWN CHILI projectile (seen in
+  flight separate from the walker), wall slime splat. Pixel-identical pre/post gate fix
+  (s95a vs s95a2 @11500). The REAL HUD = bottom status bar (lives face+count / score /
+  plunger+count, cf. level-1 capture): **ABSENT in sewers** even with gate open.
+- **HUD DMA list FF146E-1506** (s95b DUMP_RAM): fully populated in sewers — entries
+  0001-0013, same shape as level 1 (level1 w0 flags 004C/0048 vs sewers 0080/0084;
+  entries 000E-0013 = 00B2/00BE/00B6/00C2/00D3/00CB families in both). ⇒ bar absence is
+  DOWNSTREAM of gate+list: plane/scroll setup or a mode-gated HUD routine. Root cause
+  open ⇒ s96 web-oracle phase-matched sewers diff.
+- **DEATH IN SEWERS = LEVEL-1 REPLAY** (not sewers respawn): s95a pool death @~11800 →
+  respawn transition → level 1 swamp @12500, lives 022E 2→1, guest level-1 config write
+  A65=1 @11972 pc=001440. (s94b's "respawn" intro card was this same level replay.)
+- **RECORDER**: GENESIS_INPUT_RECORD=<path> (main.c record_input_line, called after
+  collect_sim_input in the main loop) writes the sealed P1 pad mask on change as
+  "<frame> UP+DOWN+...|-" lines = the parser's frame-indexed replace-at-frame form ⇒
+  the log is directly replayable via --input-script. Frame stamp = frame_num at collect
+  (= the sim step the replayed OP_AT line targets). Round-trip verified s95rec→s95rt
+  (flush @10361 identical, @11400 pixel-identical). BoogermanRecomp-US.bat records
+  build\play-input.log; BoogermanTrace-US.bat adds OBJ_TL taps → trace-err.log.
+- CROSSING: s95b pipe attempt (boost up-right 30 + flicks + walk right 140) died (intro
+  card @12000). Ground truth = user's recorded manual run ⇒ s96. USER reached level 3
+  manually (sewers exit toilet → level 1 second toilet → level end → 2 → 3).
+- SECOND PASS: 00515A dispatch = single BSR 0013C6 (table 006EFE[0244*2]); mode-24 head
+  008848-0089C2 has no decompressor call ⇒ second pass = second dispatch call; caller
+  RE = s96. Head: 00887E gameplay; 0266/0268 gates; 050C&10→00902A; 0502&4/8→
+  003310/003304 (cam (54,A4)+=0280); type-28 @0089A8→00A024 when 0248==0.

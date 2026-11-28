@@ -1947,16 +1947,69 @@ verifiable much sooner.
     * => Next: s95 = sewers pool-crossing map (pipe above / bin platform / longer boost
       from the ledge edge) + RE the second config decompress pass (A65 zero root cause)
       for M3 mirror retirement; then M3 audio fidelity.
+  - **Session 95 (2026-11-28): PLAY-INPUT RECORDER + TRACE BAT SHIPPED; SEWERS HUD GATE
+    ROOT CAUSE = 0212 NEVER CLEARS; s94 "HUD ICONS" CLAIM RETRACTED; DEATH IN SEWERS =
+    LEVEL-1 REPLAY; USER REACHED LEVELS 2-3 MANUALLY.**
+    * USER MILESTONE: manual play via BoogermanRecomp-US.bat cleared level 1 -> first
+      toilet -> sewers -> exit toilet at the end -> back to level 1 (second toilet) ->
+      level 1 end -> LEVEL 2 -> LEVEL 3. The whole progression chain works natively.
+      User observations: HUD disappears in sewers; some attack audio effects stick (M3).
+    * CAPTURE TOOLING (user: "can I capture my inputs/logs while playing?"): YES —
+      GENESIS_INPUT_RECORD=<path> (main.c record_input_line) logs the sealed P1 pad mask
+      on every change as frame-indexed script lines ("<frame> BUTTONS"), the parser's
+      replace-at-frame form, so a manual session records a DIRECTLY REPLAYABLE .input.
+      BoogermanRecomp-US.bat now writes build\play-input.log; NEW BoogermanTrace-US.bat
+      adds GENESIS_OBJ_TL taps (244,248,212,258,22e,a65,246) -> build\trace-err.log +
+      trace-input.log for bug reports. ROUND-TRIP VERIFIED: recorded replay-best run
+      (150 change events) replayed verbatim as a script -> flush @10361 identical and
+      @11400 capture pixel-identical (s95rec vs s95rt).
+    * HUD GATE ROOT CAUSE (corrects s94): FF0212 is set 1 by 01554A at EVERY level load
+      (f=1739, 2744) and never cleared natively; the flush chain bypasses 01554A, so
+      0212=1 carries into the sewers and the fade gate (0248!=0 || 0212!=0) NEVER closes
+      => the assist's per-frame A65 bit0 clear ran through ALL sewers gameplay (s95a
+      taps: per-frame zeros between the mirror fires @11081/@11620). s95 FIX: clear 0212
+      together with 0248 at the fade-skip (both glue copies) + restore bit0 after any
+      later fade once committed (sewers flag, reset on mode exit). Verified: bit0 stable
+      1 post-entry, per-frame clears gone (s95a2).
+    * s94 "HUD ICONS RESTORED" RETRACTED: the top hand / chili / slime blob are WORLD
+      objects (pipe-end hand, the walker's thrown chili projectile, wall slime splat) —
+      pixel-identical pre/post fix, and the chili flies independently of the walker. The
+      REAL HUD = the bottom status bar (lives / score / plunger), ABSENT in sewers even
+      with the gate open (0246=1 since boot f=17) and the HUD DMA list FF146E-1506 fully
+      populated (s95b DUMP_RAM level1 vs sewers: same 0001-0013 entry shape). => bar
+      absence is downstream of gate+list: plane/scroll setup or a mode-gated HUD routine;
+      needs a web-oracle phase-matched sewers comparison (s96).
+    * DEATH IN SEWERS = LEVEL-1 REPLAY, not a sewers respawn: s95a pool death @~11800 ->
+      respawn transition -> level 1 swamp @12500 with lives 2->1 and the guest's own
+      level-1 config write A65=1 @11972 (pc=001440).
+    * CROSSING: s95b pipe attempt (boost up-right 30 from the ledge + 3 flicks + walk
+      right 140) DIED (intro card @12000). Crossing still unmapped; ground truth = the
+      user's recorded manual sewers run now that the recorder ships (s96).
+    * SECOND-PASS RE (partial): mode dispatch 00515A = ONE BSR 0013C6 per call (table
+      006EFE[0244*2], buffer FF0A50); the mode-24 head 008848-0089C2 contains NO
+      decompressor call => the +14f second pass is a SECOND dispatch call; caller
+      identification = s96. Head decode: 00887E gameplay head; 0266/0268 gates; pad
+      050C&10 -> 00902A, 0502&4/8 -> 003310/003304 with cam (54,A4)+=0280; type-28 check
+      @0089A8 -> 00A024 when 0248==0.
+    * TOOLING: s95a/s95a2/s95b/s95rec/s95rt runs; s95d1/d2 disasm; s95a.input /
+      s95b.input (DUMP_RAM idioms). Engine: main.c recorder, glue.c 0212 clear +
+      post-fade restore; diffs regen base->worktree; gitlinks stay 9907e77f40/6f705f2.
+    * => Next: s96 = (a) map the sewers crossing from the user's recorded play-input.log
+      (replay it, extend the alive route past the pool to the exit toilet); (b) HUD
+      bottom-bar root cause via web-oracle phase-matched sewers RAM/capture diff
+      (plane/scroll vs mode-gated HUD routine); (c) RE the second dispatch caller so the
+      A65 mirror can retire; then M3 audio fidelity (stuck attack SFX).
   Next experiments (anticipated, in order):
-  1. Gameplay/M3 (s95): sewers crossing + HUD root cause. The slime pool right of the
-     concrete ledge kills (s94b respawn 00A304 @11840); map a crossing (pipe above with
-     the pipe walker, tipped bin, longer boost from the ledge edge) and extend the alive
-     route. RE the second config-decompress pass that overwrites FF0A65 +0x15 with 0
-     (@mode-24 mirror +14f) so the s94 HUD mirror can retire in M3. s94 restored the HUD
-     icons via the mirror and hardened replay auto-play (human takeover cancels; bounded
-     Start; stderr logs in both bats). Native port is PLAYABLE as of s78 (B=jump); user
-     can watch the best alive route via BoogermanReplay-US.bat (first press ~35 s in;
-     touching keys cancels auto-play).
+  1. Gameplay/M3 (s96): sewers crossing from human ground truth + HUD bottom-bar root
+     cause. The recorder (s95) turns the user's manual play into a replayable .input
+     (build\play-input.log / trace-input.log); replay it to map the pool crossing and
+     extend the alive route to the exit toilet (s95b pipe attempt died). The bottom
+     status bar is absent in sewers despite gate open + DMA list populated (s95): diff
+     web-oracle sewers RAM/captures phase-matched to find the plane/scroll or mode-gated
+     HUD routine difference. RE the second 00515A dispatch caller (the +14f pass that
+     zeroes FF0A65+0x15) to retire the mirror in M3. Native port is PLAYABLE and
+     level-progressible (user reached level 3 manually, s95); replay auto-play hardened
+     in s94 (takeover cancels; bounded Start; stderr logs).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
