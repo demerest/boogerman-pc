@@ -851,3 +851,39 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - TOOLING: s97-summarize.ps1 (-Path -From -To); s97a.input (user trace verbatim +
   WAIT 900 + EXIT); s97a/c/d/e + s97eu2-eu5 runs; WRITEDUMP streams in
   captures-us/s97a|s97c/fmwrites.txt.
+
+## s98: LOAD-WINDOW assist RETIRED (guest flush load native post-s97); sewers HUD bar = assist artifact (s96 retracted); fade tick 000980; second commit-tail edge 006B02; EU mode-34 head never runs 0055C6 02BA init (2026-11-28, US+EU)
+
+- **USER**: burp fix + logo/menu noise fix confirmed. One-off <=1 s noise at
+  START/PASS menu load, never reproduced — documented only (user: not worth hunting).
+- **FADE TICK**: SUBI.W #1,(FF0248) @ **000980** (US+EU identical); fade service
+  000964 (TST 0248 / tick / BTST 0249 → palette FF2324/26 = 00FE/00BE or 000E/000A);
+  single caller V-int BSR @0007F6. 0248 setters 00A06A/00A07E (=0x40), ANDI @00A086;
+  clears 00583A. s93 "tick 003724" WRONG: 003724/003770 = TST gates in object-kill
+  routines 0036F4/003744 (kill unless main-ctx FF1A0E during fade).
+- **SECOND DISPATCH**: 005062 long-immediate 00005062 absent ROM-wide ⇒ entries only
+  BRA 005CBA/005E38 (menu) + **006B02** = sound-service completion: 006A82 CMPI.B #1,
+  (05D4); MOVE (0284),D0; ANDI #1; BNE 006B02. Second decompress pass (A65 bit0 zero)
+  fires only if flush SFX bit0 still pending at countdown end ⇒ assist-seed artifact.
+- **RETIREMENT EVIDENCE**: GENESIS_LOAD_ASSIST_OFF (s98c) ⇒ flush 10411 / 24 @10441 /
+  exit 12707 / recommit 12738, lives 2, sewers bar VISIBLE — frame-identical to
+  assisted. Both glue LOAD-WINDOW copies deleted (seeds 0FE4/0FAC/054C/0524/0548/
+  052C/0FAD/0FC2/iff1, A65 clear+mirror, 0248/0212 clears, fwait>120 park skip,
+  m24f>240 commit-detect). s98j (SPLASH on) + s98m (-NoSplashAssist, bat env) regress
+  clean; s98k burp once-through. A65 single write @10441 (=1, 001440) in BOTH configs
+  now; 0212 stays 1 natively (harmless: only reader 014C62 = START→title gate).
+- **HUD BAR (retracts s96)**: native = bar + world sprites present; assisted = hidden.
+  RAM list identical (146E: park 0180 @10441 0069CE; 006704 @10491; **0067D8=013C**
+  @10491; 1470=0A/1472=86DF/1474=90 @10491; 1506 re-pin 0160/2f 0064B2 in both).
+  Divergence = sprite VRAM upload downstream (mechanism = s99). s96 builder census
+  (0071E6 intro/menu-only) stands; the bar stages via 0067D8 in the load itself.
+- **EU STALL (s98eu6)**: mode 0→34 @1803 (015664) → **2 @3138 (00A302)** → black.
+  05D4=0F @89 (service healthy); 0284=5 @3138 (00A30A); 05D4 E→1 @3140-3166; 6B02
+  pass @3168 writes A65=**0** (001440 @3169); **02BA never written**. 02BA setter
+  routine 0055C6: clears 2B4/2B6/2BA, BTST #1,(A65) BEQ skip, =1 @0055EA (EU 0055F6);
+  US runs it @2049 DURING mode 34 (A65=3 since 1846) ⇒ 02BA=1 ⇒ title alive. EU
+  mode-34 head never reaches 0055C6 (re-fades @2766/3168); title dispatcher 005960
+  gate 02BA (00597A/EU 005982) closed ⇒ black. EU fade-object lifecycle = s99.
+- **TOOLING**: s98-writers.ps1 (-Addr word / -Long imm / -Rom US|EU); s98-brascan.ps1
+  (-Targets). s69 -InputScript MUST include .input (bare name = silent no-input run;
+  s98a/b first passes invalid). s98c-m runs; s98d1-d8 disasm.

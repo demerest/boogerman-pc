@@ -2079,15 +2079,59 @@ verifiable much sooner.
     * => Next: s98 = assist retirement round 2 (fade tick 003724 RE for the 008238 park
       skip; second-dispatch indirect edge for the A65 mirror; Z80 cmd/ack 098D24/098D52
       RE for the flush-window idle seeds) + EU clean mode-34 cutscene stall.
+  - **Session 98 (2026-11-28): LOAD-WINDOW ASSIST FULLY RETIRED — THE GUEST COMPLETES
+    THE FLUSH LOAD NATIVELY POST-S97; SEWERS HUD-BAR ABSENCE WAS AN ASSIST ARTIFACT
+    (s96 "ORIGINAL DESIGN" RETRACTED); FADE TICK = 000980 (NOT 003724); SECOND
+    COMMIT-TAIL EDGE = 006B02 (SOUND-SERVICE COMPLETION); EU STALL LOCALIZED TO THE
+    MODE-34 HEAD NEVER REACHING THE 02BA TITLE-INIT.**
+    * USER CONFIRMATION: burp stuck-SFX gone; SEGA-logo/menu noise gone. One-off
+      <=1 s noise when the START/PASS menu loaded, never reproduced on later
+      attempts — documented per user instruction, NOT hunted.
+    * FADE TICK CORRECTED: true tick = SUBI.W #1,(FF0248) @ **000980** (identical in
+      US+EU), single caller = V-int BSR @0007F6 (fade service 000964, palette writes
+      FF2324/26). s93's "003724" was a TST gate inside object-kill routines
+      0036F4/003744 (block-granular pc misattribution).
+    * SECOND-DISPATCH EDGE: commit tail 005062 has NO long-immediate users anywhere
+      in the ROM (s98-writers -Long); entries = BRA 005CBA/005E38 (menu) + **006B02**
+      (s98-brascan) = sound-service completion, gate **05D4==1 && 0284&1** (006A82).
+      The second decompress pass (A65 bit0 zero, s94) fires only while the flush SFX
+      stays un-acked — the assist's own idle seeds caused that pre-s98.
+    * RETIREMENT: GENESIS_LOAD_ASSIST_OFF bisect (s98c) ⇒ guest completes the sewers
+      load with ZERO mode-24 assist: crossing frame-identical to assisted runs
+      (flush 10411 / mode-24 10441 / exit 12707 / recommit 12738, lives 2). Both
+      LOAD-WINDOW copies (V-int + main loop) DELETED: sound seeds, A65 bit0
+      clear/mirror, 0248/0212 fade bookkeeping, 008238 park skip, commit-detect.
+      Post-s97 the healthy guest Z80 driver acks the flush SFX ⇒ 098AA0 retry and
+      098D24 handshake complete natively ⇒ the s91-s96 "stall" was assist-era.
+    * HUD BAR RETRACTION (s96): native runs show the sewers BOTTOM BAR (lives/score/
+      plunger) + all world sprites; assisted runs hid them. RAM list identical in
+      both (146E=013C @10491 via 0067D8); divergence downstream in sprite VRAM
+      upload, perturbed by the assist's per-frame seeds (mechanism detail = s99).
+      User's s95 "HUD disappears in sewers" = assist artifact, not original behavior.
+    * VERIFIED on final binary: s98j (probe env) + s98m (bat env, -NoSplashAssist)
+      crossing + bar + lives 2; s98k burp plays once (DAC evolves f1716-1732, ends).
+    * EU STALL LOCALIZED (s98eu6): EU exits mode 34 @3138 → mode 2 (00A302) then
+      BLACK; **02BA never set**. 02BA=1 setter (US 0055EA / EU 0055F6, routine
+      0055C6) is gated by **A65 bit1** and runs in US DURING mode 34 (@2049, A65=3);
+      EU's mode-34 head never reaches it (cutscene re-fades @2766/3168 instead of
+      completing); EU mode-2 commit decompress writes A65=0. EU fade-object
+      lifecycle / mode-34 head gate = s99. Sound service itself healthy (05D4=0F @89).
+    * TOOLING: s98-writers.ps1 (absolute-word writer / long-immediate ROM scan,
+      US+EU), s98-brascan.ps1 (BRA.W/S + JMP.L census). PITFALL: s69 -InputScript
+      needs the .input extension — a bare name logs "cannot open" and silently runs
+      NO-INPUT (s98a/b first passes were attract-demo observations, invalidated).
+    * => Next: s99 = EU cutscene completion (mode-34 head → 0055C6 02BA init;
+      fade-object lifecycle) + sewers bar sprite-DMA mechanism detail + SPLASH
+      s54/s65 probe-env retirement.
   Next experiments (anticipated, in order):
-  1. Assist retirement round 2 + EU boot (s98): fade tick 003724 RE to retire the
-     008238 park skip; second-dispatch indirect scheduler edge (005062 has no direct
-     callers; census in RAM_MAP s96) to retire the A65 mirror; Z80 cmd/ack handshake
-     098D24/098D52 RE to retire the flush-window idle seeds (054C/0524/0548/052C/
-     0FE4/0FAC); EU clean-config mode-0x34 cutscene stall (pre-existing, bisect
-     s97eu4/eu5). s97 retired the boot DAC/vblank seeds (g_sound_guest_alive) and
-     window-gated the mode-24 seeds: the stuck burp SFX is fixed and music DAC
-     fidelity restored; crossing and alive-stop regression-clean (s97d).
+  1. EU boot + retirement round 3 (s99): EU mode-34 cutscene never reaches the
+     0055C6 02BA title-init (US runs it @2049 during mode 34 with A65=3; EU re-fades
+     @2766/3168 and commits mode 2 with A65=0 ⇒ 02BA=0 ⇒ title dispatcher gate
+     closed ⇒ black). RE the EU fade-object lifecycle / mode-34 head gate. Also:
+     sewers bar sprite-VRAM upload mechanism (RAM list identical native vs assisted,
+     divergence downstream); retire SPLASH s54/s65 probe-env assists. s98 retired
+     the whole LOAD-WINDOW assist (both copies) — guest flush load, crossing and
+     sewers HUD are native in bat AND probe configs (s98j/m).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

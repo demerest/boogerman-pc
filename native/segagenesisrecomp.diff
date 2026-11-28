@@ -53,7 +53,7 @@ index 2503230..4ef0ae4 100644
          handle_frame_info(id);
      } else if (strcmp(cmd, "frame_range") == 0) {
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..f487e68 100644
+index 4eee55c..c348737 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -139,7 +139,7 @@ index 4eee55c..f487e68 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1026,440 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,356 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -210,102 +210,18 @@ index 4eee55c..f487e68 100644
 +            }
 +        }
 +    }
-+    /* s91: flush-window copy of the LOAD-WINDOW ASSIST (see
-+     * glue_service_vblank). The guest's level-2 music retry spin can occupy
-+     * whole frames, so the main-loop copy may never get a turn; the V-int
-+     * path is where the s54 splash assist breaks the same spin at boot. */
-+    {
-+        static int lassist2 = -1;
-+        static int sewers2 = 0;
-+        static int m24f2 = 0;
-+        if (lassist2 < 0) lassist2 = getenv("GENESIS_BOOT_ASSIST") != NULL;
-+        if (lassist2 && (m68k_read16(0x00FF0244u) & 0x00FFu) == 0x0024u) {
-+            extern GenesisMachine g_machine;
-+            /* s93: mode 24 is ALSO the sewers gameplay head (008848 family),
-+             * so the seeds, the A65 bit0 clear (HUD DMA-list re-pin guard)
-+             * and the fade skip must stop once the entry fade/load window
-+             * ends (0248==0 && 0212==0), else the HUD never stages in
-+             * sewers. s97: the per-V-int $0FC2 (DAC request) re-seed out
-+             * here also restarted any playing DAC sample each tick,
-+             * looping PCM SFX; keep every seed inside the window. */
-+            if (m68k_read16(0x00FF0248u) != 0 ||
-+                m68k_read16(0x00FF0212u) != 0) {
-+                g_machine.bus.z80_ram[0x0FE4] = 0x00;
-+                g_machine.bus.z80_ram[0x0FAC] = 0x00;
-+                m68k_write8(0x00FF054Cu, 0x00);
-+                m68k_write16(0x00FF0524u, 0x0000u);
-+                m68k_write8(0x00FF0548u, 0x00);
-+                m68k_write16(0x00FF052Cu, 0x0000u);
-+                g_machine.bus.z80_ram[0x0FAD] = 0xFE;
-+                g_machine.bus.z80_ram[0x0FC2] = 0x01;
-+                g_machine.z80.iff1 = 1;
-+                m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) & ~0x01u));
-+                /* s92: the mode-24 handoff parks the main coroutine (ctx
-+                 * FF1A0E, resume long FF1A12) in the fade-wait routine 008238
-+                 * until FF0248 clears; natively the flush fade never ticks it
-+                 * (countdown set 0x40, tick at 003724). s93: after ~120 parked
-+                 * frames clear 0248 and let the guest's own mode-24 head run
-+                 * the sewers entry (00CAD0 already loaded chunks 1EF-213).
-+                 * M3: RE the fade tick instead. */
-+                {
-+                    static int fwait2 = 0;
-+                    if (m68k_read16(0x00FF1A12u) == 0x0000u &&
-+                        m68k_read16(0x00FF1A14u) == 0x8238u) {
-+                        if (++fwait2 > 120) {
-+                            m68k_write16(0x00FF0248u, 0x0000u);
-+                            /* s95: 0212 is set 1 by 01554A at every level
-+                             * load and never cleared natively (the flush
-+                             * chain bypasses 01554A, so it carries into the
-+                             * sewers). Left set, it keeps the fade gate open
-+                             * through gameplay and the per-frame A65 clear
-+                             * below wipes the HUD. Complete the fade
-+                             * bookkeeping here so the gate closes. */
-+                            m68k_write16(0x00FF0212u, 0x0000u);
-+                            /* s94: the sewers config decompress (0013E8
-+                             * family) writes FF0A65 bit0=1 on its first pass
-+                             * (@mode-24 mirror) then a second pass +14f
-+                             * overwrites it with 0, and nothing writes it
-+                             * again — so the HUD DMA gate 006710 (bit0 &&
-+                             * 0246) never opens in sewers. Restore the bit
-+                             * the guest's own first pass set, once the load
-+                             * is committed (fade-wait park). M3: RE the
-+                             * second pass source instead. */
-+                            m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x01u));
-+                            sewers2 = 1;
-+                            fwait2 = 0;
-+                        }
-+                    } else {
-+                        fwait2 = 0;
-+                    }
-+                }
-+                /* s96: clean-config boots never start the entry fade (0248
-+                 * stays 0, the coroutine never parks at 008238), so the park
-+                 * skip above never fires and 0212=1 from boot keeps this gate
-+                 * open through sewers gameplay. Once the entry is committed
-+                 * (level counter set, no fade pending, >240 frames in mode
-+                 * 24) complete the same fade bookkeeping. */
-+                if (m68k_read16(0x00FF0248u) == 0x0000u &&
-+                    m68k_read16(0x00FF0258u) != 0x0000u &&
-+                    ++m24f2 > 240) {
-+                    m68k_write16(0x00FF0212u, 0x0000u);
-+                    m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x01u));
-+                    sewers2 = 1;
-+                    m24f2 = 0;
-+                }
-+            } else if (sewers2 &&
-+                       !(m68k_read8(0x00FF0A65u) & 0x01u)) {
-+                /* s95: a later fade (death/respawn re-sets 0248=0x40 at
-+                 * 00A024 with resume 00C622, so the entry park above never
-+                 * re-fires) left bit0 cleared and the HUD gone for the rest
-+                 * of the sewers visit. Restore it once the fade completes.
-+                 * s96: only write when actually clear — hands-off otherwise. */
-+                m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x01u));
-+            }
-+        } else {
-+            sewers2 = 0;
-+            m24f2 = 0;
-+        }
-+    }
++    /* s98: the s91-s96 LOAD-WINDOW ASSIST (flush-window sound seeds, A65
++     * bit0 clear/mirror, 0248/0212 fade bookkeeping, 008238 park skip) is
++     * RETIRED. Post-s97 (boot seeds self-retire, guest Z80 driver healthy)
++     * the guest completes the flush load natively: GENESIS_LOAD_ASSIST_OFF
++     * bisect (s98c) replayed the whole crossing frame-identical to the
++     * assisted run (flush 10411 / mode-24 10441 / exit 12707 / recommit
++     * 12738, lives 2) AND kept the sewers HUD bar, which the assist's
++     * per-frame sound seeds had been hiding (s96 "bar absence = original"
++     * retracted). The fade tick is 000980 (V-int BSR 0007F6), not 003724;
++     * the second commit-tail pass enters via 006B02 (sound-service
++     * completion, gated 05D4==1 && 0284&1) and only fires when the flush
++     * SFX stays un-acked — the assist's own seeds caused that. */
 +    /* Boogerman TITLE-ASSIST (s50): the 68K sound/pad service init never
 +     * completes natively, leaving the dispatcher init flags 0. Hold the gates
 +     * open with the web-oracle interactive-title values (f2400 snapshot):
@@ -580,103 +496,17 @@ index 4eee55c..f487e68 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1414,6 +1881,95 @@ void glue_service_vblank(void)
+@@ -1414,6 +1797,9 @@ void glue_service_vblank(void)
      /* Handlers now fire from glue_check_vblank (contextual recompiler)
       * at the exact cycle count. No handler here — just bookkeeping. */
  
-+    /* Boogerman LOAD-WINDOW ASSIST (s91): the toilet-flush clear commits
-+     * mode 24 (008832) and the next-level head work leaves A65 bit0 set
-+     * (001440). With TITLE_ASSIST off (clean config, s68+) nothing clears
-+     * it, so the 644C/6710 HUD staging gate (A65 bit0 && 0246) re-pins
-+     * FF1506=0160 every 2f — corrupting the tail of the loader DMA list
-+     * (006704 init FF146E-1506) so the level-2 load never commits
-+     * (s91b/c stall @10475+). Web keeps A65 bit0 clear through committed
-+     * loads (s60); mirror that for the flush window only. Lives HERE, not
-+     * in own_deliver_vint: the guest masks IRQs across the fade/load
-+     * transition, so V-int delivery (and any assist inside it) is latched
-+     * and never runs while the load needs this. */
-+    {
-+        static int lassist = -1;
-+        static int sewers = 0;
-+        static int m24f = 0;
-+        if (lassist < 0) lassist = getenv("GENESIS_BOOT_ASSIST") != NULL;
-+        if (lassist && (m68k_read16(0x00FF0244u) & 0x00FFu) == 0x0024u) {
-+            extern GenesisMachine g_machine;
-+            /* s93: A65 bit0 clear + fade skip only during the entry fade/load
-+             * window; mode 24 doubles as the sewers gameplay head, see the
-+             * own_deliver_vint copy. s97: the sound seeds move inside the
-+             * window too (per-V-int $0FC2 re-seeding looped DAC SFX). */
-+            if (m68k_read16(0x00FF0248u) != 0 ||
-+                m68k_read16(0x00FF0212u) != 0) {
-+                /* s54 family: the level-2 music queue is never acked by
-+                 * superzazu (054C stays -1, main fiber spins in the 98AA0
-+                 * retry loop); the splash assist forces the service idle
-+                 * only while g_snd_frame < 4000, which covers the boot load
-+                 * but not this one. Force idle for the flush window too. */
-+                g_machine.bus.z80_ram[0x0FE4] = 0x00;
-+                g_machine.bus.z80_ram[0x0FAC] = 0x00;
-+                m68k_write8(0x00FF054Cu, 0x00);
-+                m68k_write16(0x00FF0524u, 0x0000u);
-+                m68k_write8(0x00FF0548u, 0x00);
-+                /* 098AA0 retry exit = 052C < 2 && 054C == 0 (s91d7): the flush
-+                 * load queues two never-acked commands, so 052C stays >= 2
-+                 * and the service spins forever. Emulate the Z80 draining
-+                 * them. */
-+                m68k_write16(0x00FF052Cu, 0x0000u);
-+                /* s91 trail: with the retry gate open the service still loops
-+                 * in the Z80 command/ack handshake (098D24/098D52). The boot
-+                 * load completes because BOOT_ASSIST seeds $0FAD=$FE/$0FC2
-+                 * each V-int, but only while g_snd_frame < 4000. Seed the
-+                 * flush window too so the level-2 init queue acks. */
-+                g_machine.bus.z80_ram[0x0FAD] = 0xFE;
-+                g_machine.bus.z80_ram[0x0FC2] = 0x01;
-+                g_machine.z80.iff1 = 1;
-+                m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) & ~0x01u));
-+                /* s92 fade-wait skip / s93 FF0248 clear: see the
-+                 * own_deliver_vint copy. Both paths carry it for the same
-+                 * reason as the s91 assist copies. */
-+                {
-+                    static int fwait = 0;
-+                    if (m68k_read16(0x00FF1A12u) == 0x0000u &&
-+                        m68k_read16(0x00FF1A14u) == 0x8238u) {
-+                        if (++fwait > 120) {
-+                            m68k_write16(0x00FF0248u, 0x0000u);
-+                            /* s95 0212 fade-bookkeeping clear: see the
-+                             * own_deliver_vint copy. */
-+                            m68k_write16(0x00FF0212u, 0x0000u);
-+                            /* s94 HUD mirror: see the own_deliver_vint copy. */
-+                            m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x01u));
-+                            sewers = 1;
-+                            fwait = 0;
-+                        }
-+                    } else {
-+                        fwait = 0;
-+                    }
-+                }
-+                /* s96 clean-config commit bookkeeping: see the
-+                 * own_deliver_vint copy. */
-+                if (m68k_read16(0x00FF0248u) == 0x0000u &&
-+                    m68k_read16(0x00FF0258u) != 0x0000u &&
-+                    ++m24f > 240) {
-+                    m68k_write16(0x00FF0212u, 0x0000u);
-+                    m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x01u));
-+                    sewers = 1;
-+                    m24f = 0;
-+                }
-+            } else if (sewers &&
-+                       !(m68k_read8(0x00FF0A65u) & 0x01u)) {
-+                /* s95 post-fade HUD restore: see the own_deliver_vint copy. */
-+                m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x01u));
-+            }
-+        } else {
-+            sewers = 0;
-+            m24f = 0;
-+        }
-+    }
++    /* s98: LOAD-WINDOW ASSIST retired — see the own_deliver_vint copy.
++     * The guest's flush load completes natively post-s97; the assist's
++     * sound seeds were the stall (pre-s97) and the sewers HUD-bar hide. */
  
      glue_reset_frame_sync();
  
-@@ -1842,16 +2398,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +2228,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -702,7 +532,7 @@ index 4eee55c..f487e68 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2602,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2432,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -791,7 +621,7 @@ index 4eee55c..f487e68 100644
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2062,6 +2696,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
+@@ -2062,6 +2526,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
          g_mem_write_trace_fn(byte_addr + 1u, (uint8_t)val,        g_audio_cycle_counter);
      }
      gbus_write16(&g_machine.bus, byte_addr, val);
@@ -799,7 +629,7 @@ index 4eee55c..f487e68 100644
  }
  
  void m68k_write8(uint32_t byte_addr, uint8_t val)
-@@ -2069,6 +2704,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2534,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -807,7 +637,7 @@ index 4eee55c..f487e68 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2082,6 +2718,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2082,6 +2548,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      if (g_mem_write_trace_fn)
          g_mem_write_trace_fn(byte_addr, val, g_audio_cycle_counter);
      gbus_write8(&g_machine.bus, byte_addr, val);
@@ -815,7 +645,7 @@ index 4eee55c..f487e68 100644
  }
  
  void m68k_write32(uint32_t byte_addr, uint32_t val)
-@@ -2089,6 +2726,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2556,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);
@@ -824,7 +654,7 @@ index 4eee55c..f487e68 100644
      z80_sync_for_68k_access(byte_addr, 4);
      /* 32-bit write = two consecutive 16-bit writes. Only matters for FM
       * bus; SMPS never uses 32-bit to write FM regs so this is defensive
-@@ -2913,3 +3552,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
+@@ -2913,3 +3382,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
  {
      return s_game_fiber ? fiber_stack_range(s_game_fiber, lo, top) : -1;
  }
