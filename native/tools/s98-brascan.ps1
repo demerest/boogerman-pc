@@ -1,9 +1,14 @@
 ﻿# s98: scan the whole ROM for BRA.W/BRA.S/JMP.L sites of given targets
 # (callscan covers BSR/JSR; the commit tail 005062 has no long-immediate
 # users, so its entries must be relative branches or fallthrough).
-param([string]$Targets = '5062')
+param(
+    [string]$Targets = '5062',
+    [ValidateSet('US', 'EU')]
+    [string]$Rom = 'US'
+)
 $ErrorActionPreference = 'Stop'
-$r = [IO.File]::ReadAllBytes('S:\home\dev\boogerman-pc\Boogerman (U) [!].gen')
+$path = if ($Rom -eq 'US') { 'S:\home\dev\boogerman-pc\Boogerman (U) [!].gen' } else { 'S:\home\dev\boogerman-pc\Boogerman (E) [!].gen' }
+$r = [IO.File]::ReadAllBytes($path)
 $t = @($Targets.Split(',') | ForEach-Object { [Convert]::ToInt32($_, 16) })
 for ($p = 0; $p -lt $r.Length - 6; $p += 2) {
     if ($r[$p] -eq 0x60 -and $r[$p + 1] -eq 0x00) {

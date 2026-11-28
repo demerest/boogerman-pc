@@ -927,3 +927,41 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - **TOOLING**: s69-native.ps1 -Rom US|EU; s70-disasm.ps1/.html -Rom EU; s99-web.ps1
   (web-EU dump + flags); s99-noinput.input. web-EU no-input cycles attract forever;
   mode-2 window narrow/flaky under virtual time — phase-match by 0244/05D4.
+
+## s100: EU attract selector FULLY RE'd; early-exit = demo-player collision;
+## normal end = stream exhaustion 005AC0; EU demo misplays (per-tick fidelity gap)
+## (2026-11-28, US+EU). Refines the s99 "selector divergence" bullet.
+- **DEMO PAD FEED 005A3E** (per-frame, gated 02BA!=0): START edge (0502&80) →
+  005A9E (commit mode 1). **005A56 CMPI #FFFF,(02B4); BEQ 005AC0** = stream-end →
+  next-attract. Else D0=(0286) V-int counter; **CMP (02B4),D0; BLT skip** — 02B4 =
+  absolute schedule time of next entry; on cross, read FFFE00[02B6]: word0→02B8
+  (pad), word1→02B4 (next time), 02B6+=4; **005A92 MOVE (02B8),(0502)**. So the
+  attract demo is a (time,pad) recording played against the 0286 counter.
+- **NEXT-ATTRACT 005AC0**: gate 0284&4==0; sets 02BA=FFFF, 0284|=5,
+  **005ADE MOVE (0A62),(0244)**. This is the NORMAL cutscene end (stream exhausts).
+  native-US commits 35 @3842 via 005AD6 (US twin); web-EU cycles likewise.
+- **EARLY-EXIT (title) PATH**: cutscene object loop 009F54/009FF2 waits fade
+  (0248==0) then **0042F6(D0=0x28/0x32)** = collision check of main ctx FF1A0E
+  (player, type at (46,A0)) vs caller trigger (X (36/38), Y (32/34)). On overlap →
+  00A05A (dec (48,A4)) / **00A070 end-phase**: 0266=0,0240=0,0241=0, 0248=0x40
+  re-fade, 024A=(48,A4)<2, → **00A0C4 resume=C658** → 00A1C8 wait → 00A23E
+  resume=C69A → **00A26A CMPI #0,(022E) lives**: !=0 → 00A316 (commit (0256)=next
+  attract); ==0 → fallthrough **00A280** title-coroutine spawn (16,A4)=0x96=150 →
+  00A2E2 countdown → ==1 → **00A302 #2** + 0284|=5.
+- **ROOT CAUSE (native-EU black)**: the demo player MISPLAYS the recording — at
+  stream idx 0x20 (f2319) X=0x331 matches, but by idx 0x40 native-EU X=0x2A6
+  (f2415) vs web-EU X=0x284 (f2440, same idx & same 0286≈0xC6). The grounded native
+  player walks into the exit trigger → early-exit collision @2440 → end-phase →
+  lives==0 → title coroutine → 00A302 @3138 with cutscene VRAM (header bit0=0 skips
+  005AE2) → BLACK. web-EU/native-US play the full recording → stream-end 005AC0.
+- **REJECTED hypotheses**: lives branch (022E=0 in web-EU AND native-US too);
+  lockstep ordering (-NoLockstep s100u identical); Z80 full-sync (-NoZ80Sync s100v
+  identical); missed pad edge (050C forms B-edges @2329/2364/2415, s100x). The
+  ~25f web-vs-native offset is boot-phase jitter; 0286 phase-matches at equal idx.
+  Residual = genuine per-tick demo-playback fidelity gap (s101 cosim).
+- **TITLE-VRAM question**: authentic EU mode-2 header bit0=0 as well, so 005AE2 skip
+  is authentic; the rendered title must come from a path that uploads title tiles
+  (intro-scroll title commit 015650 / title-object upload), NOT the post-cutscene
+  00A302 commit over cutscene VRAM. s101 to confirm which upload renders web title.
+- **TOOLING**: s98-brascan.ps1 / s96-callscan.ps1 -Rom US|EU; s69-native.ps1
+  -NoLockstep / -NoZ80Sync / -NoBootAssist bisect switches. s100a-x runs/disasm.

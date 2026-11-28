@@ -1,7 +1,12 @@
 ﻿# s96: scan the whole ROM for BSR.W/JSR.L call sites of given targets.
-param([string]$Targets = '71E6,720E,7214,515A,13C6')
+param(
+    [string]$Targets = '71E6,720E,7214,515A,13C6',
+    [ValidateSet('US', 'EU')]
+    [string]$Rom = 'US'
+)
 $ErrorActionPreference = 'Stop'
-$r = [IO.File]::ReadAllBytes('S:\home\dev\boogerman-pc\Boogerman (U) [!].gen')
+$path = if ($Rom -eq 'US') { 'S:\home\dev\boogerman-pc\Boogerman (U) [!].gen' } else { 'S:\home\dev\boogerman-pc\Boogerman (E) [!].gen' }
+$r = [IO.File]::ReadAllBytes($path)
 $t = @($Targets.Split(',') | ForEach-Object { [Convert]::ToInt32($_, 16) })
 for ($p = 0; $p -lt $r.Length - 6; $p += 2) {
     if ($r[$p] -eq 0x61 -and $r[$p + 1] -eq 0x00) {

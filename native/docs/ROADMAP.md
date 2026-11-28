@@ -2176,16 +2176,48 @@ verifiable much sooner.
     * => Next: s100 = EU attract-loop selector / cutscene-end fade lifecycle (why
       native-EU takes the 00A302 title path after the first cutscene while
       web-EU/native-US cycle via 005AD6/0A62), then the title VRAM init.
+  - **Session 100 (2026-11-28): EU ATTRACT SELECTOR FULLY RE'd — EARLY-EXIT =
+    DEMO-PLAYER EXIT-TRIGGER COLLISION (0042F6) → 00A070 END-PHASE → C658/C69A
+    HANDLER → LIVES==0 FALLTHROUGH 00A280 TITLE COROUTINE → 00A302; NORMAL END =
+    DEMO STREAM EXHAUSTION (02B4==FFFF) → 005AC0/005ADE NEXT-ATTRACT. NATIVE-EU
+    BLACK = DEMO MISPLAYS THE RECORDING (per-tick fidelity gap, idx 0x20-0x40) AND
+    WALKS INTO THE TRIGGER; NOT lockstep/Z80-sync/edge/lives. NO ENGINE CHANGE.**
+    * SELECTOR: demo feed 005A3E plays a (time,pad) recording from FFFE00[02B6]
+      against the 0286 V-int counter (02B4 = next-entry schedule; 02B8 = pad →
+      0502 @005A92). Stream end 02B4==FFFF → 005AC0 (02BA=FFFF, 0284|=5, 0244=
+      (0A62)) = next attract (native-US 35 @3842 via 005AD6; web-EU cycles).
+      Early-exit: fade-idle + 0042F6 collision (player type 0x28 overlaps trigger)
+      → 00A070 (0248=0x40 re-fade, 024A) → 00A0C4 C658 → 00A1C8 → 00A23E C69A →
+      00A26A lives(022E): !=0 → 00A316 commit (0256); ==0 → 00A280 spawn (150f
+      countdown) → 00A302 #2 + 0284|=5 @3138.
+    * ROOT CAUSE: native-EU demo player deviates from web-EU between idx 0x20
+      (X=0x331 @2319, equal) and idx 0x40 (native X=0x2A6 @2415 vs web X=0x284
+      @2440 at the SAME idx and SAME 0286≈0xC6) → grounded player collides with
+      the exit trigger @2440 → premature title over cutscene VRAM (header bit0=0
+      skips 005AE2) → black. web-EU/native-US play the full recording → 005AC0.
+    * REJECTED: lives branch (022E=0 in web-EU and native-US too); -NoLockstep
+      (s100u) and -NoZ80Sync (s100v) reproduce the identical premature title;
+      missed pad edge (050C forms B-edges @2329/2364/2415, s100x). The ~25f
+      web-vs-native offset is boot-phase jitter; counters phase-match at equal
+      idx. Residual = genuine per-tick demo-playback fidelity gap.
+    * TITLE-VRAM: authentic EU mode-2 header bit0=0 too ⇒ 005AE2 skip is authentic;
+      the rendered title comes from a title-tile upload path (intro-scroll commit
+      015650 / title-object upload), not the post-cutscene 00A302 over cutscene
+      VRAM. s101 to confirm which upload renders the web title and restore it.
+    * TOOLING: s98-brascan.ps1 / s96-callscan.ps1 -Rom US|EU; s69-native.ps1
+      -NoLockstep / -NoZ80Sync / -NoBootAssist bisect switches. s100a-x taps/disasm.
+    * => Next: s101 = per-V-int pad/physics cosim of the EU demo idx 0x20-0x40
+      window (cosim.c infra) to find the divergent action, then engine fix (A) or
+      env-gated EU attract/title assist (B); confirm the authentic title upload.
   Next experiments (anticipated, in order):
-  1. EU boot fix (s100): native-EU's boot-intro coroutine commits title (00A302
-     #2) after the FIRST attract cutscene instead of cycling 34→35→36→37 like
-     web-EU/native-US (005AD6 MOVE (0A62),(0244)). RE the cutscene-end selector /
-     fade-object lifecycle (premature re-fade @2766). Title then renders black
-     because the mode-2 header byte 0A65 bit0=0 skips the 005AE2 VRAM init —
-     resolve whether authentic EU sets bit0 via a later title step or the
-     selector fix restores the proper load. s99 retired SPLASH s54/s65 (crossing
-     frame-identical, bar present); A65 = decompressed header byte (no logic
-     setter); title-dispatcher 02BA/0284 gate polarity corrected.
+  1. EU boot fix (s101): the s100 selector RE is complete; the remaining gap is a
+     per-tick EU demo-playback fidelity divergence (player misplays the recording
+     between stream idx 0x20-0x40 and walks into the exit trigger, taking the
+     early-exit title path over cutscene VRAM). Cosim the demo window vs web-EU to
+     find the divergent action; fix engine ordering (A) or add an env-gated EU
+     attract/title assist (B). Also confirm which upload renders the authentic
+     title (intro-scroll 015650 / title-object) so the fix restores a rendered
+     title, not just the cycle.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
