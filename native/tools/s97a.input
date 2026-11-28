@@ -1,0 +1,12 @@
+# s97a: user's trace-bat burp repro verbatim (C @1703), idle 900f after
+0 -
+977 DOWN
+985 -
+1259 START
+1265 -
+1667 RIGHT
+1675 -
+1703 C
+1713 -
+WAIT 900
+EXIT

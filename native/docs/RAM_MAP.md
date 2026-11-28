@@ -805,3 +805,49 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - TOOLING: s96-splice/promote/webtimeline/webshift/dumps/callscan.ps1; s96a/b/c/d/
   w/w2-w8/x/y/z/z2 runs; s96d1-d11 disasm; s96w/s96v.input dump scripts; s96c.input
   splice probe. BSR.W displacement base = P+2 (not P+4) — callscan encodes this.
+
+## s97: stuck attack SFX = BOOT_ASSIST DAC-request re-seed loop; seeds self-retire (g_sound_guest_alive); mode-24 seeds window-gated; EU clean mode-34 stall pre-existing (2026-11-28, US+EU)
+
+- **SYMPTOM → MEASUREMENT**: user's Trace-bat repro = one burp (C) @1703-1713 after
+  START@1259 (build\trace-input.log). GENESIS_AUDIO_WRITEDUMP=<path> dumps EVERY
+  FM/PSG write for the whole run: `f=<frame> sl=<scanline> FM p<port> $<val>
+  mc=<cycles> wf=<frame> pcz=$<Z80 PC or FFFF=68K>`. Ports 0/2 = YM address latch
+  (part I/II), 1/3 = data; the bus re-logs the latch at data-write time (duplicate
+  p0 line = same mc as the p1 line). s97-summarize.ps1 reduces it to per-frame
+  $28 key-on/off data, non-$80 DAC bytes ($2A/$2B data), PSG writes.
+  **[AUDIO-Q] psg_count/fm_count = per-frame RENDER sample counts, not write totals.**
+- **ROOT CAUSE**: BOOT_ASSIST forced `z80_ram[$0FAD]=$FE` (vblank flag) +
+  `z80_ram[$0FC2]=$01` (**DAC request**) every V-int frames 16-4000 (glue
+  own_deliver_vint copy) AND on every Z80 `$0FAC=0` command-ack (genesis_bus
+  gbus_z80_write path b). Re-asserting the DAC request each tick made the DAC
+  player loop (**Z80 PC $1755 address / $175B data**) restart the playing sample
+  every frame: burp onset @1716 (13f after the press), then an identical ~113-byte
+  window looped forever (s97a f=1716-2612). FM music key-on/off ($28 data @pcz
+  $1528) kept running normally — only DAC PCM stuck. The music DAC track was
+  likewise truncated (~42 fragment bytes/frame pre-fix vs ~265 continuous post-fix).
+- **FIX (engine, submodule)**: `g_sound_guest_alive` (genesis_bus.c) = 1 once the
+  guest writes its own handshake cells: Z80-origin write to $0FAD ($0038 V-int
+  handler ran) or 68K-origin write to $0FAD/$0FC2 (sound service issuing stimuli).
+  Both boot seed paths gate on `!g_sound_guest_alive` ⇒ permanent retirement.
+  Mode-24 glue copies (V-int + main loop): ALL sound seeds (0FE4/0FAC/054C/0524/
+  0548/052C/0FAD/0FC2/iff1) moved inside the fade/load window
+  (0248!=0 || 0212!=0) ⇒ sewers gameplay head no longer re-seeds.
+  `GENESIS_SOUND_SEED_LEGACY=1` = bisect knob restoring the pre-s97 window.
+- **VERIFIED**: s97c burp plays through once (DAC bytes evolve f=1716-1732, idle,
+  music resumes; tail clean). s97d replay-best: flush→24 @10441, exit flush 008832
+  @12707, recommit @12738, alive stop second toilet + HUD, lives 02. s97e final
+  binary sanity: commit @1260, no game-over.
+- **EU CLEAN-CONFIG GAP (PRE-EXISTING)**: EU exe had been stale since Nov 26 (no
+  --exit-at-frame ⇒ real-time windowed run to timeout; rebuilt). EU clean boot:
+  mode 0x34 @1803 (015664), fade 0248=40 @2440 ticks at **000980** (EU fade tick PC)
+  to 0 @2569, further fades @2766/3168, then BLACK forever at mode 34 (no title
+  mode 3/10) — IDENTICAL with legacy seeds (s97eu5) and retired seeds (s97eu4) ⇒
+  not a s97 regression; EU cutscene-completion stall queued for s98. US clean
+  (0→3→10) remains the validated boot path.
+- **RUNNER FACTS**: capture mode (--capture-out/--capture-from/--capture-to) implies
+  turbo + no launcher + no audio device (main.c ~2811); without it the exe runs
+  real-time windowed. PS 5.1 `2>` file redirection writes UTF-16LE — read with
+  Get-Content -Encoding Unicode. GENESIS_STDERR_LOG writes UTF-8.
+- TOOLING: s97-summarize.ps1 (-Path -From -To); s97a.input (user trace verbatim +
+  WAIT 900 + EXIT); s97a/c/d/e + s97eu2-eu5 runs; WRITEDUMP streams in
+  captures-us/s97a|s97c/fmwrites.txt.

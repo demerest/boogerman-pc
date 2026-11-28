@@ -2039,16 +2039,55 @@ verifiable much sooner.
     * => Next: s97 = M3 audio fidelity (stuck attack SFX via trace-bat frame stamps) +
       assist retirement (Z80 cmd/ack 098D24/098D52, fade tick 003724, second-dispatch
       indirect edge).
+  - **Session 97 (2026-11-28): STUCK ATTACK SFX ROOT-CAUSED AND FIXED — THE BOOT_ASSIST
+    DAC-REQUEST RE-SEED RESTARTED PLAYING PCM SAMPLES EVERY TICK; SEEDS NOW SELF-RETIRE
+    (g_sound_guest_alive); MODE-24 SEEDS WINDOW-GATED; EU CLEAN MODE-34 STALL PROVEN
+    PRE-EXISTING BY BISECT.**
+    * USER REPRO (BoogermanTrace-US.bat): one burp C @1703-1713 after START@1259;
+      trace-input.log replayed verbatim (s97a.input). Measurement chain =
+      GENESIS_AUDIO_WRITEDUMP (full-run FM/PSG stream, frame + scanline + Z80 pcz) +
+      s97-summarize.ps1 (per-frame $28 key events, non-$80 DAC bytes, PSG writes).
+      [AUDIO-Q] psg_count/fm_count are PER-FAME render sample counts, NOT write totals.
+    * ROOT CAUSE: BOOT_ASSIST forced z80_ram $0FAD=$FE + $0FC2=$01 (DAC request) every
+      V-int frames 16-4000 (glue V-int copy) AND on every Z80 $0FAC=0 ack (genesis_bus
+      gbus_z80_write path b). Re-setting the DAC request each tick made the DAC player
+      (Z80 PC $1755/$175B) restart the playing sample every frame: burp onset @1716,
+      identical ~113-byte window looped forever (s97a f=1716-2612). The music DAC track
+      was likewise truncated to ~42 fragment bytes/frame instead of continuous PCM.
+    * FIX (engine): g_sound_guest_alive (genesis_bus.c) set when the guest writes its
+      own handshake cells (Z80 $0038 handler writes $0FAD; 68K service writes
+      $0FAD/$0FC2); both boot seed paths gate on !alive ⇒ permanent retirement once the
+      guest driver runs. Mode-24 glue copies (V-int + main loop): all sound seeds +
+      iff1 moved inside the fade/load window (0248!=0 || 0212!=0) ⇒ sewers gameplay no
+      longer re-seeds either. GENESIS_SOUND_SEED_LEGACY=1 bisect knob keeps the old
+      window for attribution.
+    * VERIFIED: s97c burp plays through ONCE (DAC bytes evolve f=1716-1732, then idle,
+      music resumes; tail f=2560-2612 continuous varied music PCM, no loop); music DAC
+      baseline restored (~265 nz bytes/frame). s97d replay-best crossing intact:
+      flush→mode 24 @10441, exit flush via 008832 @12707, recommit @12738, alive stop
+      at the second toilet with HUD, lives 02. s97e sanity on final binary: commit
+      @1260, no game-over.
+    * EU BISECT: EU exe was stale (Nov 26, pre --exit-at-frame ⇒ first probe ran
+      real-time to timeout); rebuilt. EU clean boot stalls black at mode 0x34
+      (cutscene) after fade completes @2569 in BOTH arms (s97eu4 retired vs s97eu5
+      legacy window) ⇒ PRE-EXISTING EU clean-config gap, NOT a s97 regression; US
+      remains the validated boot path. EU gap queued for s98.
+    * TOOLING: s97-summarize.ps1; s97a.input; capture mode (--capture-*) implies
+      turbo + no launcher + no audio device (main.c ~2811) — direct exe runs without
+      it are real-time windowed; PS 5.1 `2>` redirection writes UTF-16 (read with
+      Get-Content -Encoding Unicode).
+    * => Next: s98 = assist retirement round 2 (fade tick 003724 RE for the 008238 park
+      skip; second-dispatch indirect edge for the A65 mirror; Z80 cmd/ack 098D24/098D52
+      RE for the flush-window idle seeds) + EU clean mode-34 cutscene stall.
   Next experiments (anticipated, in order):
-  1. M3 audio fidelity + assist retirement (s97): stuck attack SFX (user report s95) —
-     reproduce with BoogermanTrace-US.bat and use trace-err.log frame stamps to RE the
-     YM2612 key-on/off path; Z80 cmd/ack handshake 098D24/098D52 RE to retire the
-     flush-window idle seeds; fade tick 003724 RE to retire the 008238 park skip;
-     second-dispatch indirect scheduler edge (005062 has no direct callers; census in
-     RAM_MAP s96) to retire the A65 mirror. s96 settled the crossing (replay-best now
-     auto-plays the user's recorded sewers route to the exit toilet and back, alive)
-     and the HUD question (bottom bar absent in sewers = ORIGINAL design, not a port
-     bug); the assist is hands-off post-commit in both envs (s96z2).
+  1. Assist retirement round 2 + EU boot (s98): fade tick 003724 RE to retire the
+     008238 park skip; second-dispatch indirect scheduler edge (005062 has no direct
+     callers; census in RAM_MAP s96) to retire the A65 mirror; Z80 cmd/ack handshake
+     098D24/098D52 RE to retire the flush-window idle seeds (054C/0524/0548/052C/
+     0FE4/0FAC); EU clean-config mode-0x34 cutscene stall (pre-existing, bisect
+     s97eu4/eu5). s97 retired the boot DAC/vblank seeds (g_sound_guest_alive) and
+     window-gated the mode-24 seeds: the stuck burp SFX is fixed and music DAC
+     fidelity restored; crossing and alive-stop regression-clean (s97d).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

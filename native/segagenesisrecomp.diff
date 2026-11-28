@@ -53,7 +53,7 @@ index 2503230..4ef0ae4 100644
          handle_frame_info(id);
      } else if (strcmp(cmd, "frame_range") == 0) {
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..37ee366 100644
+index 4eee55c..f487e68 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -139,18 +139,23 @@ index 4eee55c..37ee366 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1026,432 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,440 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
 +    /* Boogerman BOOT-ASSIST: the Z80 music/DAC tick needs the vblank flag
 +     * $0FAD=$FE (and DAC request $0FC2), which the stalled 68K never issues.
-+     * Supply them each V-int during boot to break the circular handshake. */
++     * Supply them each V-int during boot to break the circular handshake.
++     * s97: retire permanently once the guest driver/service writes those
++     * cells itself (g_sound_guest_alive): re-seeding the DAC request each
++     * V-int restarted the playing sample every tick, looping PCM SFX. */
 +    {
 +        static int assist = -1;
 +        if (assist < 0) assist = getenv("GENESIS_BOOT_ASSIST") != NULL;
 +        extern unsigned long g_snd_frame;
-+        if (assist && g_snd_frame >= 16 && g_snd_frame < 4000) {
++        extern int g_sound_guest_alive;
++        if (assist && !g_sound_guest_alive &&
++            g_snd_frame >= 16 && g_snd_frame < 4000) {
 +            extern GenesisMachine g_machine;
 +            g_machine.bus.z80_ram[0x0FAD] = 0xFE;
 +            g_machine.bus.z80_ram[0x0FC2] = 0x01;
@@ -216,21 +221,24 @@ index 4eee55c..37ee366 100644
 +        if (lassist2 < 0) lassist2 = getenv("GENESIS_BOOT_ASSIST") != NULL;
 +        if (lassist2 && (m68k_read16(0x00FF0244u) & 0x00FFu) == 0x0024u) {
 +            extern GenesisMachine g_machine;
-+            g_machine.bus.z80_ram[0x0FE4] = 0x00;
-+            g_machine.bus.z80_ram[0x0FAC] = 0x00;
-+            m68k_write8(0x00FF054Cu, 0x00);
-+            m68k_write16(0x00FF0524u, 0x0000u);
-+            m68k_write8(0x00FF0548u, 0x00);
-+            m68k_write16(0x00FF052Cu, 0x0000u);
-+            g_machine.bus.z80_ram[0x0FAD] = 0xFE;
-+            g_machine.bus.z80_ram[0x0FC2] = 0x01;
-+            g_machine.z80.iff1 = 1;
 +            /* s93: mode 24 is ALSO the sewers gameplay head (008848 family),
-+             * so the A65 bit0 clear (HUD DMA-list re-pin guard) and the fade
-+             * skip must stop once the entry fade/load window ends
-+             * (0248==0 && 0212==0), else the HUD never stages in sewers. */
++             * so the seeds, the A65 bit0 clear (HUD DMA-list re-pin guard)
++             * and the fade skip must stop once the entry fade/load window
++             * ends (0248==0 && 0212==0), else the HUD never stages in
++             * sewers. s97: the per-V-int $0FC2 (DAC request) re-seed out
++             * here also restarted any playing DAC sample each tick,
++             * looping PCM SFX; keep every seed inside the window. */
 +            if (m68k_read16(0x00FF0248u) != 0 ||
 +                m68k_read16(0x00FF0212u) != 0) {
++                g_machine.bus.z80_ram[0x0FE4] = 0x00;
++                g_machine.bus.z80_ram[0x0FAC] = 0x00;
++                m68k_write8(0x00FF054Cu, 0x00);
++                m68k_write16(0x00FF0524u, 0x0000u);
++                m68k_write8(0x00FF0548u, 0x00);
++                m68k_write16(0x00FF052Cu, 0x0000u);
++                g_machine.bus.z80_ram[0x0FAD] = 0xFE;
++                g_machine.bus.z80_ram[0x0FC2] = 0x01;
++                g_machine.z80.iff1 = 1;
 +                m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) & ~0x01u));
 +                /* s92: the mode-24 handoff parks the main coroutine (ctx
 +                 * FF1A0E, resume long FF1A12) in the fade-wait routine 008238
@@ -572,7 +580,7 @@ index 4eee55c..37ee366 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1414,6 +1873,93 @@ void glue_service_vblank(void)
+@@ -1414,6 +1881,95 @@ void glue_service_vblank(void)
      /* Handlers now fire from glue_check_vblank (contextual recompiler)
       * at the exact cycle count. No handler here — just bookkeeping. */
  
@@ -593,34 +601,36 @@ index 4eee55c..37ee366 100644
 +        static int m24f = 0;
 +        if (lassist < 0) lassist = getenv("GENESIS_BOOT_ASSIST") != NULL;
 +        if (lassist && (m68k_read16(0x00FF0244u) & 0x00FFu) == 0x0024u) {
-+            /* s54 family: the level-2 music queue is never acked by
-+             * superzazu (054C stays -1, main fiber spins in the 98AA0 retry
-+             * loop); the splash assist forces the service idle only while
-+             * g_snd_frame < 4000, which covers the boot load but not this
-+             * one. Force idle for the flush window too (audio = M3). */
 +            extern GenesisMachine g_machine;
-+            g_machine.bus.z80_ram[0x0FE4] = 0x00;
-+            g_machine.bus.z80_ram[0x0FAC] = 0x00;
-+            m68k_write8(0x00FF054Cu, 0x00);
-+            m68k_write16(0x00FF0524u, 0x0000u);
-+            m68k_write8(0x00FF0548u, 0x00);
-+            /* 098AA0 retry exit = 052C < 2 && 054C == 0 (s91d7): the flush
-+             * load queues two never-acked commands, so 052C stays >= 2 and
-+             * the service spins forever. Emulate the Z80 draining them. */
-+            m68k_write16(0x00FF052Cu, 0x0000u);
-+            /* s91 trail: with the retry gate open the service still loops
-+             * in the Z80 command/ack handshake (098D24/098D52). The boot
-+             * load completes because BOOT_ASSIST seeds $0FAD=$FE/$0FC2 each
-+             * V-int, but only while g_snd_frame < 4000. Seed the flush
-+             * window too so the level-2 init queue acks. */
-+            g_machine.bus.z80_ram[0x0FAD] = 0xFE;
-+            g_machine.bus.z80_ram[0x0FC2] = 0x01;
-+            g_machine.z80.iff1 = 1;
 +            /* s93: A65 bit0 clear + fade skip only during the entry fade/load
 +             * window; mode 24 doubles as the sewers gameplay head, see the
-+             * own_deliver_vint copy. */
++             * own_deliver_vint copy. s97: the sound seeds move inside the
++             * window too (per-V-int $0FC2 re-seeding looped DAC SFX). */
 +            if (m68k_read16(0x00FF0248u) != 0 ||
 +                m68k_read16(0x00FF0212u) != 0) {
++                /* s54 family: the level-2 music queue is never acked by
++                 * superzazu (054C stays -1, main fiber spins in the 98AA0
++                 * retry loop); the splash assist forces the service idle
++                 * only while g_snd_frame < 4000, which covers the boot load
++                 * but not this one. Force idle for the flush window too. */
++                g_machine.bus.z80_ram[0x0FE4] = 0x00;
++                g_machine.bus.z80_ram[0x0FAC] = 0x00;
++                m68k_write8(0x00FF054Cu, 0x00);
++                m68k_write16(0x00FF0524u, 0x0000u);
++                m68k_write8(0x00FF0548u, 0x00);
++                /* 098AA0 retry exit = 052C < 2 && 054C == 0 (s91d7): the flush
++                 * load queues two never-acked commands, so 052C stays >= 2
++                 * and the service spins forever. Emulate the Z80 draining
++                 * them. */
++                m68k_write16(0x00FF052Cu, 0x0000u);
++                /* s91 trail: with the retry gate open the service still loops
++                 * in the Z80 command/ack handshake (098D24/098D52). The boot
++                 * load completes because BOOT_ASSIST seeds $0FAD=$FE/$0FC2
++                 * each V-int, but only while g_snd_frame < 4000. Seed the
++                 * flush window too so the level-2 init queue acks. */
++                g_machine.bus.z80_ram[0x0FAD] = 0xFE;
++                g_machine.bus.z80_ram[0x0FC2] = 0x01;
++                g_machine.z80.iff1 = 1;
 +                m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) & ~0x01u));
 +                /* s92 fade-wait skip / s93 FF0248 clear: see the
 +                 * own_deliver_vint copy. Both paths carry it for the same
@@ -666,7 +676,7 @@ index 4eee55c..37ee366 100644
  
      glue_reset_frame_sync();
  
-@@ -1842,16 +2388,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +2398,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -692,7 +702,7 @@ index 4eee55c..37ee366 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2592,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2602,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -781,7 +791,7 @@ index 4eee55c..37ee366 100644
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2062,6 +2686,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
+@@ -2062,6 +2696,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
          g_mem_write_trace_fn(byte_addr + 1u, (uint8_t)val,        g_audio_cycle_counter);
      }
      gbus_write16(&g_machine.bus, byte_addr, val);
@@ -789,7 +799,7 @@ index 4eee55c..37ee366 100644
  }
  
  void m68k_write8(uint32_t byte_addr, uint8_t val)
-@@ -2069,6 +2694,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2704,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -797,7 +807,7 @@ index 4eee55c..37ee366 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2082,6 +2708,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2082,6 +2718,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      if (g_mem_write_trace_fn)
          g_mem_write_trace_fn(byte_addr, val, g_audio_cycle_counter);
      gbus_write8(&g_machine.bus, byte_addr, val);
@@ -805,7 +815,7 @@ index 4eee55c..37ee366 100644
  }
  
  void m68k_write32(uint32_t byte_addr, uint32_t val)
-@@ -2089,6 +2716,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2726,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);
@@ -814,7 +824,7 @@ index 4eee55c..37ee366 100644
      z80_sync_for_68k_access(byte_addr, 4);
      /* 32-bit write = two consecutive 16-bit writes. Only matters for FM
       * bus; SMPS never uses 32-bit to write FM regs so this is defensive
-@@ -2913,3 +3542,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
+@@ -2913,3 +3552,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
  {
      return s_game_fiber ? fiber_stack_range(s_game_fiber, lo, top) : -1;
  }
@@ -1394,7 +1404,7 @@ index 2deb32c..e00d9fb 100644
  
  /* Per-instruction breakpoint table (separate from block breaks). */
 diff --git a/runner/video/genesis_bus.c b/runner/video/genesis_bus.c
-index bd712d9..21296d1 100644
+index bd712d9..9b5d6af 100644
 --- a/runner/video/genesis_bus.c
 +++ b/runner/video/genesis_bus.c
 @@ -8,7 +8,10 @@
@@ -1455,7 +1465,32 @@ index bd712d9..21296d1 100644
  /* [SND-TRACE] sound-command lifecycle trace (defined in genesis_machine.c). */
  extern uint8_t g_sndwatch[0x2000];
  extern unsigned long g_snd_frame;
-@@ -314,7 +357,11 @@ static uint8_t pad_read(const GenesisBus *b, int port)
+@@ -78,6 +121,24 @@ extern unsigned g_snd_pcz;
+ extern uint32_t machine_z80_pc(void);
+ /* glue.c: charge 68K->VDP DMA freeze cycles to the recompiled CPU. */
+ extern void glue_charge_68k_stall(uint32_t cycles);
++/* s97: set once the guest sound driver/service writes its own handshake
++ * cells (Z80 $0038 handler sets $0FAD; the 68K service issues $0FAD/$0FC2).
++ * The BOOT_ASSIST boot stimuli then retire permanently: re-seeding $0FC2
++ * (DAC request) every V-int restarted the playing DAC sample each tick, so
++ * PCM SFX (the burp) looped forever (user reports s95/s97). */
++int g_sound_guest_alive = 0;
++
++/* s97 bisect knob: keep the pre-s97 seed window (flag never set) so EU/US
++ * boot regressions can be attributed to the retirement itself. */
++static int s_seed_legacy = -1;
++static int seed_legacy(void) {
++    if (s_seed_legacy < 0) {
++        const char *e = getenv("GENESIS_SOUND_SEED_LEGACY");
++        s_seed_legacy = (e && *e && *e != '0');
++    }
++    return s_seed_legacy;
++}
++
+ #define CHIP_PC_68K() (g_snd_pcz = 0xFFFFu)
+ #define CHIP_PC_Z80() (g_snd_pcz = (unsigned)machine_z80_pc())
+ 
+@@ -314,7 +375,11 @@ static uint8_t pad_read(const GenesisBus *b, int port)
  static uint16_t io_read(const GenesisBus *b, uint32_t a)
  {
      switch (a & 0x1E) {
@@ -1468,7 +1503,7 @@ index bd712d9..21296d1 100644
          case 0x02: return pad_read(b, 0);        /* $A10002/3 P1 data          */
          case 0x04: return pad_read(b, 1);        /* $A10004/5 P2 data          */
          case 0x06: return 0xFF;                  /* $A10006/7 EXP data         */
-@@ -367,6 +414,18 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+@@ -367,6 +432,18 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
      if (extra_ram) return (uint16_t)((extra_ram[0] << 8) | extra_ram[1]);
      if (a >= 0xFF0000u) {                                            /* RAM     */
          uint16_t o = (uint16_t)(a & 0xFFFFu);
@@ -1487,7 +1522,7 @@ index bd712d9..21296d1 100644
          return (uint16_t)((g_ram[o] << 8) | g_ram[(uint16_t)(o + 1)]);
      }
      if (a >= 0xC00000u && a < 0xC00010u) {                          /* VDP      */
-@@ -385,6 +444,20 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+@@ -385,6 +462,20 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
               * driver decompression's back-reference copy (MOVE.B (A4,D4.W),
               * (A5)+) — the S2 silent-audio bug. */
              unsigned off = a & 0x1FFFu;
@@ -1508,7 +1543,7 @@ index bd712d9..21296d1 100644
              return (uint16_t)(((uint16_t)b->z80_ram[off] << 8)
                                | b->z80_ram[(off + 1u) & 0x1FFFu]);
          }
-@@ -398,7 +471,7 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
+@@ -398,7 +489,7 @@ uint16_t gbus_read16(GenesisBus *b, uint32_t a)
          return 0xFFFFu;                          /* bank/PSG region: open bus  */
      }
      if (a >= 0xA10000u && a < 0xA10020u) return io_read(b, a);      /* I/O      */
@@ -1517,7 +1552,7 @@ index bd712d9..21296d1 100644
          snd_trace_busreq("REQ-READack", ack ? 1 : 0); return ack; }  /* [SND-TRACE] */
      if (a == 0xA11200u) return (uint16_t)(b->z80_reset_off ? 0x0100 : 0x0000);
      return 0xFFFFu;
-@@ -437,7 +510,7 @@ uint16_t gbus_peek16(const GenesisBus *b, uint32_t a)
+@@ -437,7 +528,7 @@ uint16_t gbus_peek16(const GenesisBus *b, uint32_t a)
          return 0xFFFFu;
      }
      if (a >= 0xA10000u && a < 0xA10020u) return io_read(b, a);
@@ -1526,7 +1561,16 @@ index bd712d9..21296d1 100644
      if (a == 0xA11200u) return (uint16_t)(b->z80_reset_off ? 0x0100 : 0x0000);
      return 0xFFFFu;
  }
-@@ -496,7 +569,30 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+@@ -487,6 +578,8 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+         if ((a & 0xFFFFu) < 0x2000u) { unsigned off = a & 0x1FFFu;
+             snd_trace_68k_write((uint16_t)off, b->z80_ram[off], (uint8_t)(v >> 8),
+                                 b->z80_busreq, b->z80_reset_off);  /* [SND-TRACE] */
++            if (!seed_legacy() && (off == 0x0FADu || off == 0x0FC2u))
++                g_sound_guest_alive = 1;
+             b->z80_ram[off] = (uint8_t)(v >> 8); return; }
+         if (a >= 0xA04000u && a <= 0xA04003u) {
+             uint8_t port = (uint8_t)(a & 3);
+@@ -496,7 +589,30 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
          return;
      }
      if (a >= 0xA10000u && a < 0xA10020u) { io_write(b, a, (uint8_t)v); return; }
@@ -1558,7 +1602,7 @@ index bd712d9..21296d1 100644
          snd_trace_busreq("REQ", b->z80_busreq); return; }                /* [SND-TRACE] */
      if (a == 0xA11200u) { int o = b->z80_reset_off; b->z80_reset_off = (v & 0x0100) ? 1 : 0;
          /* Asserting the reset line (1->0) resets the Z80 core: it must restart
-@@ -505,6 +601,13 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
+@@ -505,6 +621,13 @@ void gbus_write16(GenesisBus *b, uint32_t a, uint16_t v)
           * a stale PC after the post-upload reset pulse and ran the driver from
           * garbage — the S2 silent-audio bad-jump. */
          if (o == 1 && b->z80_reset_off == 0) b->z80_reset_pending = 1;
@@ -1572,11 +1616,22 @@ index bd712d9..21296d1 100644
          snd_trace_busreq("RESET_OFF", b->z80_reset_off);  /* [SND-TRACE] */
          return; }
  }
-@@ -573,7 +676,23 @@ void gbus_z80_write(GenesisBus *b, uint16_t addr, uint8_t val)
+@@ -539,6 +662,8 @@ void gbus_write8(GenesisBus *b, uint32_t a, uint8_t v)
+         if ((a & 0xFFFFu) < 0x2000u) { unsigned off = a & 0x1FFFu;
+             snd_trace_68k_write((uint16_t)off, b->z80_ram[off], v,
+                                 b->z80_busreq, b->z80_reset_off);  /* [SND-TRACE] */
++            if (!seed_legacy() && (off == 0x0FADu || off == 0x0FC2u))
++                g_sound_guest_alive = 1;
+             b->z80_ram[off] = v; return; }
+         if (a >= 0xA04000u && a <= 0xA04003u) {
+             uint8_t port = (uint8_t)(a & 3);
+@@ -573,7 +698,25 @@ void gbus_z80_write(GenesisBus *b, uint16_t addr, uint8_t val)
  {
      if (addr < 0x4000u) { unsigned off = addr & 0x1FFFu;
          if (g_sndwatch[off]) snd_trace_z80((uint16_t)off, val, 1);  /* [SND-TRACE] */
 -        b->z80_ram[off] = val; return; }                           /* RAM+mirror */
++        if (!seed_legacy() && off == 0x0FADu)
++            g_sound_guest_alive = 1;   /* s97: $0038 handler ran */
 +        b->z80_ram[off] = val;                                     /* RAM+mirror */
 +        /* Boogerman BOOT-ASSIST path (b): the native 68K stalls before issuing the
 +         * post-init DAC-start / vblank stimuli, so the driver never acks (s26).
@@ -1587,7 +1642,7 @@ index bd712d9..21296d1 100644
 +            static int assist = -1;
 +            if (assist < 0) assist = getenv("GENESIS_BOOT_ASSIST") != NULL;
 +            extern unsigned long g_snd_frame;
-+            if (assist && off == 0x0FACu && val == 0 &&
++            if (assist && !g_sound_guest_alive && off == 0x0FACu && val == 0 &&
 +                g_snd_frame >= 16 && g_snd_frame < 4000) {
 +                b->z80_ram[0x0FC2] = 0x01;
 +                b->z80_ram[0x0FAD] = 0xFE;
