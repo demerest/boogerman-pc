@@ -1058,7 +1058,7 @@ index 3e146ce..2306f92 100644
  
  /* ---- sections ---------------------------------------------------------------- */
 diff --git a/runner/reverse_debug.c b/runner/reverse_debug.c
-index ccb0f9c..f40a566 100644
+index ccb0f9c..476cde0 100644
 --- a/runner/reverse_debug.c
 +++ b/runner/reverse_debug.c
 @@ -20,6 +20,7 @@
@@ -1105,7 +1105,7 @@ index ccb0f9c..f40a566 100644
  static struct {
      int      step_mode;
      /* For STEP_OVER: snapshot of the 68K call-stack depth at the moment
-@@ -386,6 +416,104 @@ static void rdb_insn_refresh_pending(void)
+@@ -386,6 +416,107 @@ static void rdb_insn_refresh_pending(void)
      g_rdb_insn_pending = s_tier4.step_insn || s_tier4.break_count > 0;
  }
  
@@ -1151,6 +1151,9 @@ index ccb0f9c..f40a566 100644
 +    case 0x0007DAu: case 0x0007DEu: case 0x0007E6u: case 0x0007EEu:
 +    case 0x0007F2u: case 0x0007F6u: case 0x0007FAu: case 0x0007FEu:
 +    case 0x000802u: case 0x005968u: case 0x005970u: case 0x005974u:
++    /* s104: player coroutine drivers / dispatch-resume + physics halves. */
++    case 0x0031B2u: case 0x0039ECu: case 0x0031D8u: case 0x003A12u:
++    case 0x0027FEu: case 0x00285Au:
 +    case 0x005980u: case 0x00598Au: case 0x005996u: case 0x0059A0u:
 +    case 0x0059A2u: case 0x0059AAu: case 0x0059D2u:
 +        break;

@@ -1033,3 +1033,49 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   sewers bar present.
 - **TOOLING/RUNS**: s103-ledger.ps1; s103a (countdown/resume OBJ-TL); s103b/c disasm;
   s103e/u (VRAM+VDP mid-demo); s103us.
+
+## s104: two coroutine layers mapped; misplay = accel-loop underrun → wall-probe
+## wait-loop spin; palette DMA mode-init-only, downstream of misplay (2026-11-28).
+- **MAIN LAYER**: player ctx FF1A0E resumed via (4,A4)=FF1A12/14 by drivers
+  0031B2/0039EC (main loop 000776/00077E, 2/iter first half; TST (0,A4) BMI gate;
+  state (20,A4)=FF1A22 idx into word table FF225A → A6). Yield trampolines
+  0031E0/003A14 = MOVE.L (A7)+,(4,A4). Physics halves 0027FE/00285A walk object
+  chain via (0,A4)&7FFF stride (NOT drivers).
+- **SUB LAYER**: 004970 gate (0,A4) BMI + CMPI #4,(2,A4)=FF1A10 BLT; resume
+  (72)=FF1A56/58; countdown (76)=FF1A5A; SUBI store pc=00498A; yield 0049B0;
+  wait-set 0049AA (#FFFF). Ticked by JSR 4970 INSIDE main-layer loops (8250/8C14).
+  All direct 4970 refs are coroutine-START sites (8086..1DDBA, 99A04..9CB72); no
+  periodic walker exists — periodicity comes from the main-layer drivers.
+- **ACCEL LOOP 8BFC-8C76**: 8BFE reset (54)=0380; 8C04 ADDI #01A0,(54); 8C0A
+  D0=0180; 8C0E JSR 33EA (decay); 8C14 JSR 4970 (sub tick); 8C1A yield→8C20;
+  8C24 3A2E(D0=4) BEQ 8C54; 8C58 3ABE(D0=6); 8C64 453E BEQ 9198 (exit); 8C70
+  yield→8C76. Native ~1.33 passes/iter vs web 2/iter (v44 +0x40/iter ramp, cap
+  0600, brake 9340→33EA −0140 at c1a). Native misses brake → overrun.
+- **WAIT LOOP 8250-829A**: 8250 JSR 4970; 8256 yield→825C; 825C JSR 453E, BEQ
+  9198; 8268 yield→826E; 8272 42F6(type 2E) BNE A362; 0248 gate; 828E 42F6(type
+  28) BNE A05A; BRA 818C. Native spins here 60+ iters (453E≠0, X pinned 02c0).
+- **453E WALL PROBE**: inputs (22,A4)=FF1A24, (38,A4)=FF1A34, FF06C4 (row width),
+  FF0A7A, FF0A38 (map ptr), tile-attr mask 4000; adjusts (38,A4) at 45E8/45F0s.
+- **33EA DECAY**: TST/CMP (54)/(56); SUB stores 3410 (X vel FF1A44) / 343C (Y vel
+  FF1A46). Callers: 895A/8C0E/8FE6/9340/9580/9630/976C/9BC4 (coroutine steps).
+- **V-INT 4DF0**: MOVEA.W (0516),A1; JSR table[20002+A1]; 0516=0; BSR 6D96; JSR
+  98000; 0288++. Phase4=4E40: 4B4C queue drain (FF045E head/FF045A tail; cmds
+  4F8E/4FD8 via FF3852) + 1606 scroll + 4E80/4E74 flush FF3832/FF3822. Phase8=4E52:
+  16A4 (0684 bits→1DA2/1E26/25C6/264A) + 1606 + 4E80 + 4ED6 per-object VRAM DMA
+  walker (count FF0624; (1606/1638,A5) src/len).
+- **4FD8 ISSUER**: Z80 bus arb A11100/A11200 + BTST poll; ST A00004; cmd words
+  (A0)+0/+6/+10 → C00004; (14,A0) via JSR (FF0202); polls DMA-busy (AND #2,(C00004)
+  BNE); releases bus. VDP DMA engine verified working (US palette completes).
+- **PALETTE CHAIN**: 000C66 copy FF2322→FF23A2 (0x20 longs) gated 05D4>1 (main
+  0007EE; also 5CE2). 000D60 enqueue CRAM DMA (D0=4, D1=64, src FF23A2, queue
+  FF3822) ONLY from 0006E2 inside mode-init 0006DA (also C00004=8164 display-on,
+  0250/025A/025C/0246=1). EU attract never reaches a mode commit ⇒ CRAM zero.
+- **0502 DUAL-SOURCE**: demo feed 005A92 sets (02B8); V-int chain clears to 0 each
+  iter (OBJ-TL pc=000786 attribution = interrupted wait block). Normal half-phase
+  behavior, NOT the root. 0684 setter 169C called from 1856 chain (18F0/192A/196C/
+  19A2/19E8/1A1C) = scroll/camera requests, not player ticks.
+- **INSN_TL BLIND during attract** (interp-executed blocks); OBJ-TL is truth.
+  Watch extended += 31B2/39EC/31D8/3A12/27FE/285A (env-gated, in diff).
+- **TOOLING/RUNS**: s104-cadence.ps1 (resume-step cadence native vs web); s104m/n
+  (EU/US drivers+resume), s104s/x (gate+sub words), s104u (pad phase), s104v (0684);
+  disasm s104a–t. US s104n demo completes (1541C/1548A/154B8/154FC post-demo).

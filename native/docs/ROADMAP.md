@@ -2290,14 +2290,61 @@ verifiable much sooner.
       recommit 12738 / lives 2; sewers HUD bar present. Additive op, no behavior change.
     * => Next: s104 = (a) match web's object-resume cadence (extra V-int tick) to fix
       the EU demo misplay; (b) fix the CRAM palette DMA so the attract scene renders.
+  - **Session 104 (2026-11-28): COROUTINE ARCHITECTURE FULLY MAPPED; MISPLAY =
+    NATIVE ACCEL-LOOP UNDERRUN (1.33 vs web 2 passes/iter) → WALL-PROBE WAIT-LOOP
+    SPIN (8250, 453E≠0, X pinned 02c0); RENDER BLACK = PALETTE DMA IS MODE-INIT-ONLY
+    (0006DA→D60) AND DOWNSTREAM OF THE MISPLAY. US NATIVE PASSES BOTH LOOPS (engine
+    conventions correct). PAD/0684 HYPOTHESES TESTED+REJECTED.**
+    * METHOD: callscan/imm-scans (4970/33EA/169C/D60/C66, yield trampolines,
+      FF0AAA/FF1A0E loads); disasm s104a–t (main loop, V-int 4DF0+table 20002,
+      drivers, accel/wait loops, 453E, 33EA, palette chain, 4FD8 issuer);
+      s104-cadence.ps1 (native OBJ-TL resume-steps vs web per-frame samples);
+      runs s104m/n/s/u/v (EU+US) + web s104w/x.
+    * ARCHITECTURE: TWO coroutine layers. Main player ctx FF1A0E resumed via
+      (4,A4)=FF1A12/14 by drivers 0031B2/0039EC (main loop 000776/00077E, 2/iter,
+      first half; state (20,A4) idx into FF225A); yields 0031E0/003A14 save return
+      PC. Sub-actions via 004970 gate ((0,A4) BMI, (2,A4)=FF1A10>=4) resuming
+      (72)=FF1A56/58, countdown (76)=FF1A5A (SUBI store pc=00498A), yield 0049B0,
+      wait-set 0049AA; ticked by JSR 4970 INSIDE loops (8250/8C14). V-int 4DF0
+      dispatches table[0516] @20002: phase4=4E40 (queue drain 4B4C FF045E/045A +
+      scroll 1606 + flushes 4E80/4E74), phase8=4E52 (16A4 flag routines + 4ED6
+      per-object VRAM DMA walker). INSN_TL is BLIND during attract (interp-executed
+      blocks); OBJ-TL store truth is the measurement path.
+    * MISPLAY: accel loop 8BFC(reset 0380)/8C04(+01A0)/8C0E→33EA(−0180) per pass;
+      native ~1.33 passes/iter vs web 2/iter (web v44 ramp +0x40/iter to 0600 cap,
+      brake step 9340→33EA −0140 at c1a = the s103 c18 extra decay). Native misses
+      the brake, overruns into wait loop 8250 (453E wall probe ≠0 forever, X pinned
+      02c0) and spins 60+ iters; web exits both loops in 1-2 iters (9198 path).
+      US native (s104n) traverses the same loops cleanly ⇒ EU-specific data/timing,
+      not a general codegen bug. Sub-action walk script A6F4–A896 cycles ~13 iters
+      longer natively before reaching A9xx/brake.
+    * RENDER: CRAM palette DMA enqueued ONLY at mode-init 0006DA→000D60 (D0=4,
+      len 64, src FF23A2 staged by 000C66 copy FF2322→FF23A2 gated 05D4>1). EU last
+      DMA = VRAM copy (reg23=80, len FFFF) ⇒ palette DMA never issued during attract
+      because the stalled demo never reaches the mode commit ⇒ (b) downstream of
+      (a). VDP DMA engine itself fine (tiles identical US; US palette DMA completes;
+      4FD8 issues cmds + polls DMA-busy status).
+    * REJECTED: 0502 dual-source (demo feed 005A92 sets / V-int chain clears each
+      iter) is normal half-phase behavior; 0684 request bits = scroll/camera
+      (1DA2/1E26/25C6/264A; setter 169C called from 1856 chain), not player ticks.
+    * TOOLING: s104-cadence.ps1; INSN watch += 31B2/39EC/31D8/3A12/27FE/285A
+      (env-gated measurement only; carried in segagenesisrecomp.diff).
+    * US REGRESSION: s104n US attract demo completes (post-demo 1541C/1548A/154B8/
+      154FC); engine change is measurement-only.
+    * => Next: s105 = (a) single-step the sub-action walk→brake branch (A8xx→A9xx/
+      9340) and its inputs at c14–c20; measure 4970 tick rate (1A5A pc=00498A
+      stores/iter) native vs web 1a5a transitions; find why native accel pass rate
+      is 1.33 vs 2/iter; (b) after the cadence fix re-run s103e to confirm CRAM
+      fills (palette DMA downstream).
   Next experiments (anticipated, in order):
-  1. EU attract fidelity + render (s104): s103 localized the misplay to the
-     object-coroutine resume cadence (first divergence c286=0x18, web extra V-int
-     tick) and the render black to an all-zero CRAM (palette DMA uncompleted), with
-     VRAM/display/planes/fade all confirmed correct. (a) Trace the V-int object
-     scheduler tick (caller of 004970) native vs web and match the extra-tick cadence;
-     (b) single-step the EU CRAM DMA (reg19-23) to find why it never completes and
-     restore the palette upload so the attract renders.
+  1. EU attract fidelity + render (s105): s104 mapped both coroutine layers and
+     localized the misplay to the native accel-loop underrun (1.33 vs web 2
+     passes/iter) → missed brake step (c18) → wall-probe wait-loop spin (8250/453E,
+     X pinned 02c0); the all-zero CRAM is downstream (palette DMA only at mode-init
+     0006DA→D60, never reached). (a) Single-step the sub-action walk→brake branch
+     and its inputs at c14–c20, measure the 4970 tick-rate gap (1A5A pc=00498A
+     stores/iter vs web 1a5a), and fix the pass-rate root; (b) re-run s103e after
+     the fix to confirm the palette DMA completes and the attract renders.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
