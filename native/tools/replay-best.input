@@ -5,18 +5,23 @@
 # crested boost-stomps -> trunk-wall 2/3 vertical boosts -> wall-3 leech-trap
 # lunge-whiff bypass -> trunk-4 -> exit ledge -> hop LEFT of the FIRST toilet ->
 # drift-RIGHT W14 onto its TOP -> HOLD DOWN >=30f = genuine flush (00882A) ->
-# mode 24 fade -> SEWERS (level 2) entry (s93 0248-clear assist) -> walk right
-# past the slime pool / grate / tipped bin / pipe walker.
-# NOTE: sewers HUD is absent (mode-24 config init never sets A65 bit0 natively;
-# s94/M3 item). Audio in sewers is assist-idle (M3).
+# mode 24 fade -> SEWERS (level 2) entry (s93 0248-clear assist + s94 HUD
+# mirror) -> walk/boost right onto the concrete ledge and STOP ALIVE there.
+# NOTE (s94): the slime pool right of the ledge is a DEATH hazard — the route
+# deliberately stops before it; crossing it is unmapped (s95). HUD icons
+# (hand/chili/blob) render in sewers via the s94 A65 bit0 mirror.
+# Audio in sewers is assist-idle (M3).
 # NO EXIT op: pads release at the end and the window stays open — grab the
 # keyboard and play on (arrows D-pad, Z flick, X jump, hold X/DOWN in air = boost).
+# s94: NO HOTKEY — auto-play runs from boot; first press ~35 s (title Start).
+# Any live keyboard/pad press >~0.3 s CANCELS auto-play (human takeover), so
+# playing manually first means the route will not run — relaunch to watch it.
+# Start is a bounded PRESS (s94): a HOLD+WAIT on 0254 parked forever with START
+# stuck if a human had already committed the title.
 WAIT_RAM16 0xFF0244 0x0034
 WAIT_RAM16 0xFF1506 0x0160
 WAIT 300
-HOLD START
-WAIT_RAM16 0xFF0254 0x0001
-RELEASE
+PRESS START 40
 WAIT 400
 PRESS DOWN 4
 WAIT_RAM16 0xFF0244 0x0003
@@ -258,7 +263,4 @@ PRESS A 6
 WAIT 20
 PRESS A 6
 WAIT 20
-HOLD RIGHT
-WAIT 120
-RELEASE
 WAIT 200

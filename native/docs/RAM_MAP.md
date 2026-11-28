@@ -665,3 +665,43 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   route beyond the opening unmapped ⇒ s94. Audio = M3.
 - TOOLING: s93d1-d16 disasm; s93a/b/e/f taps; s93c/g/h runs; s93h.input flush+sewers probe;
   replay-best.input = flush→sewers route (no EXIT). gitlinks stay 9907e77f40/6f705f2.
+
+## s94: SEWERS HUD RESTORED (A65 bit0 mirror at fade-skip) + ROUTE CORRECTED (slime pool = death hazard; alive stop = concrete ledge) + replay human-takeover (2026-11-28, US)
+
+- HUD ROOT CAUSE (CORRECTS s93 "config init never sets bit0"): the mode-24 config
+  decompressor (0013E8 family; literal store 001440, back-copy store 001476) writes
+  FF0A65 bit0=**1** on its first pass (@10425, mode-24 mirror frame), then a SECOND pass
+  +14f (@10439/10440) overwrites buffer offset +0x15 with **0**; NOTHING writes A65 again
+  during sewers gameplay (s93h taps: zero A65 writes after 10440). The per-frame zeros
+  seen during the fade window were the ASSIST's own clears, logged at ambient guest PCs
+  (OBJ-TL pc is block-granular for interp stores — 000C8A/0048D6/0015CE are not store
+  insns). HUD DMA gate 006710 (A65 bit0 && 0246) therefore never opened post-entry.
+- s94 ASSIST (both LOAD-WINDOW copies, inside the fwait>120 fade-skip branch): together
+  with FF0248=0 also **set FF0A65 bit0=1** — restoring the bit the guest's own first pass
+  wrote, once the load is committed (fade-wait park ⇒ loaders done, so the 644C/6710
+  re-pin hazard of s91 is past). s94a captures: HUD icons (hand / chili / slime blob)
+  render screen-fixed in sewers. M3: RE the second decompress pass source (suspect
+  zero-filled DMA source) and retire the mirror.
+- ROUTE CORRECTED — s93 "walks right past the slime pool, no death" RETRACTED: the pool
+  right of the concrete ledge is a DEATH hazard. s94a @11700 = player sinking (absent
+  from screen); s94b boost-jump-right-60 crossing attempt ends in respawn transition
+  **00A304 @11840** (0244=0x10) + level intro card @11900 (s87 death-replay pattern).
+  PROVEN ALIVE STOP = concrete ledge with garbage pile: s94c final capture player idle
+  there, HUD on, lives 022E=2, no 0244 write after the flush. Opening layout: spawn
+  toilet between two slime drains → right walk ~120f → boost-jump ~40f onto ledge
+  (garbage pile) → slime pool (grate arch background, tipped skull bin, pipe walker on
+  the pipe above). Crossing unmapped ⇒ s95.
+- REPLAY AUTO-PLAY (user report: no automatic inputs in BoogermanReplay-US.bat): NO
+  hotkey; script runs from boot, first press ~35 s (title Start), later ops
+  condition-gated. Real-time paced probe s94rt (--measure-runtime, turbo=0, audio on)
+  auto-plays identically to turbo (0244=1 @2345, 3 @2854, 0x10 @6056) ⇒ bat invocation
+  fine; manual play FIRST desyncs waits (HOLD START + WAIT 0254=1 parks with START stuck
+  once a human committed the title). HARDENING: input_script_abort() (clears holds) +
+  main-loop takeover (input_current_mask(0)!=0 for >20f ⇒ abort, log line); replay-best
+  Start = PRESS START 40 (bounded); both bats set GENESIS_STDERR_LOG
+  (build\replay-err.log / play-err.log, freopen at main start); headers document timing
+  + takeover. Unattended probes see mask 0 ⇒ deterministic.
+- TOOLING: s94rt.ps1 (real-time paced probe, -SplashAssist switch), s94b.input
+  (stop-alive + crossing attempts), s94r0/rt/a/b/c runs; s94d1-d4 disasm
+  (0013C6-0014B0, 0015A0-001620, 000C60-000CA0, 0048C0-0048F0). replay-best.input stops
+  alive at the ledge. gitlinks stay 9907e77f40/6f705f2.

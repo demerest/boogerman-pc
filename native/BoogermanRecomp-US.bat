@@ -11,4 +11,7 @@ rem together these let the boot reach the interactive title (M2/M3).
 set GENESIS_LOCKSTEP=1
 set GENESIS_Z80_FULL_SYNC=1
 set GENESIS_BOOT_ASSIST=1
+rem s94: keep a stderr log so boot/script problems are diagnosable after the
+rem detached window closes (build\play-err.log).
+set GENESIS_STDERR_LOG=%~dp0build\play-err.log
 start "" "%~dp0build\Release\BoogermanRecomp_us.exe" "%~dp0..\Boogerman (U) [!].gen"

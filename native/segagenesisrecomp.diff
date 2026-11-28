@@ -53,7 +53,7 @@ index 2503230..4ef0ae4 100644
          handle_frame_info(id);
      } else if (strcmp(cmd, "frame_range") == 0) {
 diff --git a/runner/glue.c b/runner/glue.c
-index 4eee55c..a39f09f 100644
+index 4eee55c..5441b74 100644
 --- a/runner/glue.c
 +++ b/runner/glue.c
 @@ -214,6 +214,7 @@ static uint32_t g_rdb_current_func = 0;
@@ -139,7 +139,7 @@ index 4eee55c..a39f09f 100644
      if (genesis_force_interp()) {
          /* Interpret the V-int handler body from the level-6 autovector; delivery
           * (A7/stack save-restore, stamp rebase, cycle charging) is identical. */
-@@ -993,6 +1026,386 @@ static void own_deliver_vint(GVDP *vdp)
+@@ -993,6 +1026,396 @@ static void own_deliver_vint(GVDP *vdp)
      s_irq_cycle_debt += g_audio_cycle_counter - cyc_before;
      if (s_irq_cycle_debt)
          s_irq_cycle_debt_level = 6;
@@ -243,6 +243,16 @@ index 4eee55c..a39f09f 100644
 +                        m68k_read16(0x00FF1A14u) == 0x8238u) {
 +                        if (++fwait2 > 120) {
 +                            m68k_write16(0x00FF0248u, 0x0000u);
++                            /* s94: the sewers config decompress (0013E8
++                             * family) writes FF0A65 bit0=1 on its first pass
++                             * (@mode-24 mirror) then a second pass +14f
++                             * overwrites it with 0, and nothing writes it
++                             * again — so the HUD DMA gate 006710 (bit0 &&
++                             * 0246) never opens in sewers. Restore the bit
++                             * the guest's own first pass set, once the load
++                             * is committed (fade-wait park). M3: RE the
++                             * second pass source instead. */
++                            m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x01u));
 +                            fwait2 = 0;
 +                        }
 +                    } else {
@@ -526,7 +536,7 @@ index 4eee55c..a39f09f 100644
  #ifdef GEN_DEV_TRACE
      /* [IRQ-DEBT] a V-int handler owing more than one full frame of raster
       * debt freezes the main loop for multiple wall frames (and with it the
-@@ -1414,6 +1827,68 @@ void glue_service_vblank(void)
+@@ -1414,6 +1837,70 @@ void glue_service_vblank(void)
      /* Handlers now fire from glue_check_vblank (contextual recompiler)
       * at the exact cycle count. No handler here — just bookkeeping. */
  
@@ -583,6 +593,8 @@ index 4eee55c..a39f09f 100644
 +                        m68k_read16(0x00FF1A14u) == 0x8238u) {
 +                        if (++fwait > 120) {
 +                            m68k_write16(0x00FF0248u, 0x0000u);
++                            /* s94 HUD mirror: see the own_deliver_vint copy. */
++                            m68k_write8(0x00FF0A65u, (uint8_t)(m68k_read8(0x00FF0A65u) | 0x01u));
 +                            fwait = 0;
 +                        }
 +                    } else {
@@ -595,7 +607,7 @@ index 4eee55c..a39f09f 100644
  
      glue_reset_frame_sync();
  
-@@ -1842,16 +2317,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
+@@ -1842,16 +2329,17 @@ static inline void spin_check(uint32_t byte_addr, int is_write)
   * machine_z80_sync_to. Z80 domain = Z80 address space $A00000-$A0FFFF (RAM,
   * YM2612, bank register), BUSREQ $A11100 and RESET $A11200. One choke point
   * for all six 68K accessors, so no access shape can bypass it. */
@@ -621,7 +633,7 @@ index 4eee55c..a39f09f 100644
  }
  
  /* Bounded no-progress fallback for Z80 RAM polls the scheduler cannot
-@@ -2045,11 +2521,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
+@@ -2045,11 +2533,88 @@ uint32_t m68k_read32(uint32_t byte_addr)
      return ((uint32_t)hi << 16) | (uint32_t)lo;
  }
  
@@ -710,7 +722,7 @@ index 4eee55c..a39f09f 100644
      z80_sync_for_68k_access(byte_addr, 2);
      /* 16-bit FM writes land one byte per port per cycle on hardware. The
       * YM2612 only takes 8-bit data; SMPS always uses 8-bit writes. Be
-@@ -2062,6 +2615,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
+@@ -2062,6 +2627,7 @@ void m68k_write16(uint32_t byte_addr, uint16_t val)
          g_mem_write_trace_fn(byte_addr + 1u, (uint8_t)val,        g_audio_cycle_counter);
      }
      gbus_write16(&g_machine.bus, byte_addr, val);
@@ -718,7 +730,7 @@ index 4eee55c..a39f09f 100644
  }
  
  void m68k_write8(uint32_t byte_addr, uint8_t val)
-@@ -2069,6 +2623,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2069,6 +2635,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, val);
      bus_ring_push(byte_addr, 3);
@@ -726,7 +738,7 @@ index 4eee55c..a39f09f 100644
      z80_sync_for_68k_access(byte_addr, 1);
      audio_detour_write(byte_addr, val);
      if (s_io_log_enabled && byte_addr >= 0xA10000u && byte_addr <= 0xA1001Fu) {
-@@ -2082,6 +2637,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
+@@ -2082,6 +2649,7 @@ void m68k_write8(uint32_t byte_addr, uint8_t val)
      if (g_mem_write_trace_fn)
          g_mem_write_trace_fn(byte_addr, val, g_audio_cycle_counter);
      gbus_write8(&g_machine.bus, byte_addr, val);
@@ -734,7 +746,7 @@ index 4eee55c..a39f09f 100644
  }
  
  void m68k_write32(uint32_t byte_addr, uint32_t val)
-@@ -2089,6 +2645,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
+@@ -2089,6 +2657,8 @@ void m68k_write32(uint32_t byte_addr, uint32_t val)
      byte_addr &= 0xFFFFFFu;
      watchdog_check(byte_addr, 1, (uint32_t)(val >> 16));
      bus_ring_push(byte_addr, 5);
@@ -743,7 +755,7 @@ index 4eee55c..a39f09f 100644
      z80_sync_for_68k_access(byte_addr, 4);
      /* 32-bit write = two consecutive 16-bit writes. Only matters for FM
       * bus; SMPS never uses 32-bit to write FM regs so this is defensive
-@@ -2913,3 +3471,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
+@@ -2913,3 +3483,29 @@ int glue_rb_fiber_stack_range(uintptr_t *lo, uintptr_t *top)
  {
      return s_game_fiber ? fiber_stack_range(s_game_fiber, lo, top) : -1;
  }
@@ -789,7 +801,7 @@ index 78f00b8..761c41e 100644
  void glue_shutdown(void);
  
 diff --git a/runner/input_script.c b/runner/input_script.c
-index 19d82bf..4a28959 100644
+index 19d82bf..d754440 100644
 --- a/runner/input_script.c
 +++ b/runner/input_script.c
 @@ -38,6 +38,7 @@ typedef enum {
@@ -825,6 +837,32 @@ index 19d82bf..4a28959 100644
              case OP_WRITE_RAM8:
                  if (w8) w8(o->arg32, (uint8_t)o->arg32b);
                  fprintf(stderr, "[input_script] WRITE_RAM8 at frame %llu ($%06X=$%02X)\n",
+@@ -491,6 +503,14 @@ bool    input_script_should_exit(void){ return s_exit_pending != 0; }
+ int     input_script_exit_code  (void){ return s_exit_code;    }
+ bool    input_script_active     (void){ return s_active != 0;  }
+ 
++/* s94: cancel auto-play (human takeover). Clears held masks so no button
++ * stays stuck after the script stops feeding pads. */
++void input_script_abort(void) {
++    s_active = 0;
++    s_pc = s_op_count;
++    for (unsigned p = 0; p < SCRIPT_PLAYERS; ++p) s_held_mask[p] = 0;
++}
++
+ static bool take_pending_path(char *pending, char *out, size_t out_cap)
+ {
+     if (!pending[0])
+diff --git a/runner/input_script.h b/runner/input_script.h
+index b1dc3fe..33ebfb8 100644
+--- a/runner/input_script.h
++++ b/runner/input_script.h
+@@ -99,3 +99,6 @@ bool    input_script_take_vram_dump(char *out, size_t out_cap);
+ /* True iff a script is currently loaded and active. Lets callers
+  * branch (e.g. ignore SDL input when scripted). */
+ bool    input_script_active(void);
++
++/* Cancel auto-play and release all scripted holds (human takeover). */
++void    input_script_abort(void);
 diff --git a/runner/m68k_interp.c b/runner/m68k_interp.c
 index 1290d52..31f8824 100644
 --- a/runner/m68k_interp.c
@@ -899,7 +937,7 @@ index 1290d52..31f8824 100644
       * servicing so a floor run keeps the 68K clock advancing and lets the VBla
       * handler fire / the game fiber yield between interpreted instructions,
 diff --git a/runner/main.c b/runner/main.c
-index 771b446..facb2c6 100644
+index 771b446..eaf99c4 100644
 --- a/runner/main.c
 +++ b/runner/main.c
 @@ -1018,8 +1018,9 @@ static cc_bool input_requested_cb(void *user_data,
@@ -914,7 +952,18 @@ index 771b446..facb2c6 100644
                  return cc_true;
          }
          if (button_id == GB_RIGHT) {
-@@ -3078,6 +3079,20 @@ int main(int argc, char *argv[])
+@@ -2512,6 +2513,10 @@ static void replay_view(GenesisReplayView *v,int apply)
+ 
+ int main(int argc, char *argv[])
+ {
++    /* s94: double-click bat launches detach stderr, so script/boot evidence
++     * was invisible. Opt-in log file for windowed runs. */
++    { const char *slog = getenv("GENESIS_STDERR_LOG");
++      if (slog && *slog) { FILE *lf = freopen(slog, "w", stderr); (void)lf; } }
+     cmd_server_owner_review_init(getenv("GENESIS_OWNER_REVIEW"));
+     init_exe_dir(argv[0]);
+     const char *user_dir=getenv("GENESIS_USER_DIR");
+@@ -3078,6 +3083,20 @@ int main(int argc, char *argv[])
          }
      }
  
@@ -935,7 +984,7 @@ index 771b446..facb2c6 100644
      if(replay_path) {
  #if RECOMP_LAUNCHER
          const RecompLauncherCModProvider *p=app_config_video_mods(g_game_spec.video,settings_ini);
-@@ -3418,10 +3433,11 @@ int main(int argc, char *argv[])
+@@ -3418,10 +3437,11 @@ int main(int argc, char *argv[])
          fprintf(stderr, "[display] interlace_display=%s\n",
                  s_interlace_display_mode == INTERLACE_DISPLAY_RAW ? "raw" : "tv");
      }
@@ -949,7 +998,31 @@ index 771b446..facb2c6 100644
      fprintf(stderr, "[pacer] target frame rate: %.4f fps\n", target_fps);
      int debug_port = debug_port_cli ? debug_port_cli :
                       (debug_port_from_ini ? debug_port_from_ini :
-@@ -4237,6 +4253,19 @@ session_begin:;
+@@ -4189,6 +4209,23 @@ session_begin:;
+ 
+         if (g_game_spec.state_size) host_state_tick();
+ 
++        /* s94: a live human press (keyboard or pad, >~0.3 s) cancels auto-play
++         * instead of fighting it: condition-waits desync once a human moves
++         * the player, and a parked HOLD would keep a button stuck. Unattended
++         * probe runs see mask 0 and stay deterministic. */
++        if (input_script_active()) {
++            static unsigned s_live_run = 0;
++            if (input_current_mask(0) != 0) {
++                if (++s_live_run > 20) {
++                    input_script_abort();
++                    fprintf(stderr, "[input_script] human takeover at frame %u - auto-play cancelled\n",
++                            frame_num);
++                }
++            } else {
++                s_live_run = 0;
++            }
++        }
++
+         /* Tick the input script (if loaded). RAM read helpers route
+          * through clownmdemu's main RAM via emu_read8/16 â€” same
+          * accessors the cmd_server uses. Auto-exit if the script
+@@ -4237,6 +4274,19 @@ session_begin:;
                  if(!genesis_host_stream_flush_all())fprintf(stderr,"[capture] final write failed\n");
                  genesis_replay_shutdown();
                  report_z80_sync();

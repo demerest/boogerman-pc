@@ -1,0 +1,268 @@
+# s94b: s93h route through the flush, then sewers opening with a STOP-ALIVE at
+# the concrete ledge (s94a proved the final HOLD RIGHT 120 walks into the slime
+# pool = death hazard), then a boost-jump crossing attempt over the pool.
+# Taps 22e/23e (lives/health) settle alive-vs-death; captures map the crossing.
+WAIT_RAM16 0xFF0244 0x0034
+WAIT_RAM16 0xFF1506 0x0160
+WAIT 300
+HOLD START
+WAIT_RAM16 0xFF0254 0x0001
+RELEASE
+WAIT 400
+PRESS DOWN 4
+WAIT_RAM16 0xFF0244 0x0003
+WAIT_RAM16 0xFF0244 0x0010
+WAIT 800
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0480
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04A0
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04C8
+PRESS A 6
+WAIT_RAM16_GE 0xFF0698 0x04E0
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 70
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 24
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 25
+RELEASE
+WAIT 4
+PRESS A 6
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+WAIT 90
+HOLD RIGHT
+WAIT 60
+WAIT 60
+RELEASE
+WAIT 6
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 100
+HOLD RIGHT
+WAIT 100
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 60
+HOLD RIGHT
+WAIT 100
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 50
+RELEASE
+WAIT 60
+RELEASE
+WAIT 6
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 60
+# --- STOP ALIVE BEFORE THE BRIDGE WALK (cam-locked, evaluated while cam still rising) ---
+HOLD RIGHT
+WAIT_RAM16_GE 0xFF0698 0x0C00
+RELEASE
+WAIT 10
+# --- flick-kill the red walker from range ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+# --- inch right, flick again ---
+HOLD RIGHT
+WAIT 30
+RELEASE
+WAIT 10
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 10
+# --- boost-stomp the crested walkers on the grass (s85: crested IS stomp-able) ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+WAIT 40
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+# --- walk into trunk-wall 2 (cam freezes 0E87) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+# --- wall-2: settle 60, vertical boost + W12, land right ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+# --- approach wall-3 left face (X=100B) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+# --- boost1 from w2 with AIR-FLICKS over the trap during descent (lunge whiffs) ---
+WAIT 60
+HOLD RIGHT
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 34
+PRESS A 6
+WAIT 6
+PRESS A 6
+WAIT 6
+RELEASE
+WAIT 60
+# --- cross trunk-4: settle 60, vertical boost + W12 ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 20
+HOLD RIGHT
+WAIT 12
+RELEASE
+WAIT 60
+# --- flick + push to the ledge foot ---
+PRESS A 6
+WAIT 14
+PRESS A 6
+WAIT 20
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 10
+# --- ledge climb: unpress LEFT W6, settle 60, boost drift-from-jump+10 W40 ---
+HOLD LEFT
+WAIT 6
+RELEASE
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 60
+# --- hop left of toilet: unpress RIGHT W6, boost drift-LEFT W24 ---
+HOLD RIGHT
+WAIT 6
+RELEASE
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD LEFT
+WAIT 24
+RELEASE
+WAIT 60
+# --- SHORT drift-RIGHT W14 onto the toilet TOP ---
+WAIT 60
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+WAIT 4
+HOLD RIGHT
+WAIT 14
+RELEASE
+WAIT 60
+# --- s91: HOLD DOWN on toilet top => flush commit 0244=24 @10395 ---
+HOLD DOWN
+WAIT 30
+WAIT 30
+WAIT 30
+RELEASE
+WAIT 500
+# --- sewers entry settle (fade-skip ~10754, s94 HUD mirror fires with it) ---
+WAIT 300
+HOLD RIGHT
+WAIT 120
+RELEASE
+WAIT 30
+# --- boost-jump right onto the concrete ledge ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 40
+RELEASE
+WAIT 90
+# --- flicks, then STOP ALIVE at the ledge (slime pool starts right of it) ---
+PRESS A 6
+WAIT 20
+PRESS A 6
+WAIT 20
+WAIT 60
+# --- crossing attempt 1: boost-jump right over the slime pool ---
+PRESS B 8
+WAIT 6
+PRESS DOWN 6
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 120
+# --- crossing attempt 2: push right (bin / right bank?) ---
+HOLD RIGHT
+WAIT 60
+RELEASE
+WAIT 120
+EXIT

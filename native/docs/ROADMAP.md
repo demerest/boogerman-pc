@@ -1905,15 +1905,58 @@ verifiable much sooner.
       base->worktree; gitlinks stay 9907e77f40/6f705f2.
     * => Next: s94 = sewers HUD/config-init (A65 bit0 / 0246 in mode 24) + sewers route map;
       then M3 retire assists / audio fidelity.
+  - **Session 94 (2026-11-28): SEWERS HUD RESTORED + ROUTE MAP CORRECTED + REPLAY AUTO-PLAY
+    HARDENED.
+    * HUD ROOT CAUSE CORRECTED (s93 premise wrong): the mode-24 config decompressor (0013E8
+      family, stores 001440/001476) DOES write FF0A65 bit0=1 on its first pass (@10425,
+      mode-24 mirror), then a SECOND pass +14f (@10439/10440) overwrites +0x15 with 0, and
+      nothing writes A65 again during sewers gameplay (s93h taps: zero A65 writes after
+      10440; the per-frame zeros during the fade were the assist's own clears logged at
+      ambient guest PCs — OBJ-TL pc is block-granular for interp stores). Hence the HUD DMA
+      gate 006710 (bit0 && 0246) never opened. s94 ASSIST: at the fade-skip moment
+      (fwait>120, both glue copies) also SET A65 bit0=1 — restoring the bit the guest's own
+      first pass wrote, once the load is committed. s94a captures: HUD icons (hand / chili
+      / slime blob) render screen-fixed in sewers. M3: RE the second decompress pass source
+      (suspect zero-filled DMA source) and retire the mirror.
+    * ROUTE MAP CORRECTED — s93 "walks right past the slime pool, no death" RETRACTED: the
+      pool right of the concrete ledge is a DEATH hazard. s94a @11700 = player sinking (no
+      player on screen); s94b crossing attempt (boost-jump right 60 from the ledge) ends in
+      the respawn transition 00A304 @11840 + level intro card @11900 (s87 pattern). PROVEN
+      ALIVE STOP = the concrete ledge with the garbage pile (s94c final capture: player
+      idle there, HUD on, lives 022E=2, no mode write after the flush). Opening layout:
+      spawn toilet between two slime drains -> right walk ~120f -> boost-jump ~40f onto the
+      ledge (garbage pile) -> slime pool with grate arch + tipped skull bin + pipe walker
+      on the pipe above. Crossing unmapped (s95).
+    * REPLAY AUTO-PLAY DIAGNOSIS (user: "no automatic inputs in BoogermanReplay-US.bat"):
+      NO hotkey exists; the script runs from boot but the first press is ~35 s in (title
+      Start) and every later op is condition-gated. A real-time paced probe (s94rt,
+      --measure-runtime) auto-plays identically to turbo (title commit @2345, mode 3 @2854,
+      mode 0x10 @6056) => the bat invocation is fine; playing manually FIRST desyncs the
+      waits (HOLD START + WAIT 0254=1 parks forever with START stuck once a human committed
+      the title). HARDENING: input_script_abort() + main-loop human-takeover (live
+      keyboard/pad mask >20f cancels auto-play and releases holds); replay-best Start =
+      bounded PRESS START 40; both bats set GENESIS_STDERR_LOG (build\replay-err.log /
+      play-err.log) so detached launches leave evidence; bat/input headers document the
+      timing + takeover.
+    * TOOLING: s94rt.ps1 (real-time paced probe), s94b.input (stop-alive + crossing
+      attempts), s94r0/rt/a/b/c runs; s94d1-d4 disasm (0013C6-0014B0 decompressor,
+      0015A0-001620, 000C60-000CA0, 0048C0-0048F0). replay-best.input UPDATED: stops alive
+      at the ledge, HUD + takeover notes. Engine: glue.c HUD mirror, main.c takeover +
+      stderr log, input_script.c/h abort; diffs regen base->worktree; gitlinks stay
+      9907e77f40/6f705f2.
+    * => Next: s95 = sewers pool-crossing map (pipe above / bin platform / longer boost
+      from the ledge edge) + RE the second config decompress pass (A65 zero root cause)
+      for M3 mirror retirement; then M3 audio fidelity.
   Next experiments (anticipated, in order):
-  1. Gameplay/M3 (s94): sewers HUD + route map. The mode-24 config init never sets A65 bit0
-     natively (per-frame config copy writes 0), so the HUD DMA gate 006710 (A65 bit0 &&
-     0246) never opens in sewers; RE the mode-24 config/decompressor init (0013C6/00143C
-     family) or mirror the web-oracle post-entry A65/0246, then map the sewers route (slime
-     pool / grate / tipped bin / pipe walker opening verified s93h). s93 verified the sewers
-     load + gameplay via the 0248-clear assist; replay-best.input now plays through the
-     flush into the sewers. Native port is PLAYABLE as of s78 (B=jump); user can watch the
-     best alive route via BoogermanReplay-US.bat.
+  1. Gameplay/M3 (s95): sewers crossing + HUD root cause. The slime pool right of the
+     concrete ledge kills (s94b respawn 00A304 @11840); map a crossing (pipe above with
+     the pipe walker, tipped bin, longer boost from the ledge edge) and extend the alive
+     route. RE the second config-decompress pass that overwrites FF0A65 +0x15 with 0
+     (@mode-24 mirror +14f) so the s94 HUD mirror can retire in M3. s94 restored the HUD
+     icons via the mirror and hardened replay auto-play (human takeover cancels; bounded
+     Start; stderr logs in both bats). Native port is PLAYABLE as of s78 (B=jump); user
+     can watch the best alive route via BoogermanReplay-US.bat (first press ~35 s in;
+     touching keys cancels auto-play).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
