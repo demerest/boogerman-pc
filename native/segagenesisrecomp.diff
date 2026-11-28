@@ -640,7 +640,7 @@ index 78f00b8..761c41e 100644
  void glue_shutdown(void);
  
 diff --git a/runner/input_script.c b/runner/input_script.c
-index 19d82bf..d754440 100644
+index 19d82bf..0b3f987 100644
 --- a/runner/input_script.c
 +++ b/runner/input_script.c
 @@ -38,6 +38,7 @@ typedef enum {
@@ -651,7 +651,23 @@ index 19d82bf..d754440 100644
      OP_WRITE_RAM8,
      OP_WRITE_RAM16,
      OP_WRITE_RAM32,
-@@ -205,6 +206,10 @@ static int parse_line(char *line, int line_no) {
+@@ -48,6 +49,7 @@ typedef enum {
+     OP_LOAD_STATE,
+     OP_DUMP_RAM,
+     OP_DUMP_VRAM,
++    OP_DUMP_VDP,
+     OP_EXIT,
+ } OpCode;
+ 
+@@ -80,6 +82,7 @@ static char     s_pending_load_state[260];
+ static uint32_t s_pending_restart_game;
+ static char     s_pending_ram_dump[260];
+ static char     s_pending_vram_dump[260];
++static char     s_pending_vdp_dump[260];
+ 
+ /* One deadline per button/player: presses cannot exhaust a small timer pool. */
+ static uint64_t s_press_until[SCRIPT_PLAYERS][8];
+@@ -205,6 +208,10 @@ static int parse_line(char *line, int line_no) {
          o->op     = !_stricmp(tok, "ASSERT_RAM16") ? OP_ASSERT_RAM16 : OP_WAIT_RAM16;
          o->arg32  = (uint32_t)strtoul(a1, NULL, 16);
          o->arg32b = (uint32_t)strtoul(a2, NULL, 16);
@@ -662,7 +678,25 @@ index 19d82bf..d754440 100644
      } else if (!_stricmp(tok, "WRITE_RAM8") && n >= 3) {
          o->op     = OP_WRITE_RAM8;
          o->arg32  = (uint32_t)strtoul(a1, NULL, 16);
-@@ -398,6 +403,13 @@ void input_script_tick(uint64_t frame,
+@@ -239,6 +246,9 @@ static int parse_line(char *line, int line_no) {
+     } else if (!_stricmp(tok, "DUMP_VRAM") && n >= 2) {
+         o->op = OP_DUMP_VRAM;
+         snprintf(o->str, sizeof(o->str), "%s", a1);
++    } else if (!_stricmp(tok, "DUMP_VDP") && n >= 2) {
++        o->op = OP_DUMP_VDP;
++        snprintf(o->str, sizeof(o->str), "%s", a1);
+     } else if (!_stricmp(tok, "EXIT")) {
+         o->op    = OP_EXIT;
+         o->arg32 = (n >= 2) ? (uint32_t)strtoul(a1, NULL, 0) : 0u;
+@@ -268,6 +278,7 @@ int input_script_load(const char *path) {
+     s_pending_restart_game = 0;
+     s_pending_ram_dump[0] = '\0';
+     s_pending_vram_dump[0] = '\0';
++    s_pending_vdp_dump[0] = '\0';
+     memset(s_press_until, 0, sizeof s_press_until);
+     if (!path) return 0;
+ 
+@@ -398,6 +409,13 @@ void input_script_tick(uint64_t frame,
                  break;
              }
  
@@ -676,7 +710,21 @@ index 19d82bf..d754440 100644
              case OP_WRITE_RAM8:
                  if (w8) w8(o->arg32, (uint8_t)o->arg32b);
                  fprintf(stderr, "[input_script] WRITE_RAM8 at frame %llu ($%06X=$%02X)\n",
-@@ -491,6 +503,14 @@ bool    input_script_should_exit(void){ return s_exit_pending != 0; }
+@@ -469,6 +487,13 @@ void input_script_tick(uint64_t frame,
+                 s_pc++;
+                 break;
+ 
++            case OP_DUMP_VDP:
++                snprintf(s_pending_vdp_dump, sizeof(s_pending_vdp_dump), "%s", o->str);
++                fprintf(stderr, "[input_script] DUMP_VDP requested at frame %llu (path=%s)\n",
++                        (unsigned long long)frame, o->str);
++                s_pc++;
++                break;
++
+             case OP_EXIT:
+                 s_exit_pending = 1;
+                 s_exit_code    = (int)o->arg32;
+@@ -491,6 +516,14 @@ bool    input_script_should_exit(void){ return s_exit_pending != 0; }
  int     input_script_exit_code  (void){ return s_exit_code;    }
  bool    input_script_active     (void){ return s_active != 0;  }
  
@@ -691,11 +739,36 @@ index 19d82bf..d754440 100644
  static bool take_pending_path(char *pending, char *out, size_t out_cap)
  {
      if (!pending[0])
+@@ -536,6 +569,11 @@ bool input_script_take_vram_dump(char *out, size_t out_cap)
+     return take_pending_path(s_pending_vram_dump, out, out_cap);
+ }
+ 
++bool input_script_take_vdp_dump(char *out, size_t out_cap)
++{
++    return take_pending_path(s_pending_vdp_dump, out, out_cap);
++}
++
+ int input_script_mutates_state(void)
+ {
+     for (int i = 0; i < s_op_count; i++)
 diff --git a/runner/input_script.h b/runner/input_script.h
-index b1dc3fe..33ebfb8 100644
+index b1dc3fe..7f0f4d5 100644
 --- a/runner/input_script.h
 +++ b/runner/input_script.h
-@@ -99,3 +99,6 @@ bool    input_script_take_vram_dump(char *out, size_t out_cap);
+@@ -27,6 +27,7 @@
+  *   LOAD_STATE  <path>   load a native/interpreter state file
+  *   DUMP_RAM    <path>   dump canonical 68K byte-ordered work RAM
+  *   DUMP_VRAM   <path>   dump the VDP's raw 64KB VRAM
++ *   DUMP_VDP    <path>   dump the VDP register file + CRAM (text)
+  *   EXIT [code]          exit cleanly with optional status code
+  *
+  * BUTTON names: UP DOWN LEFT RIGHT A B C START
+@@ -95,7 +96,11 @@ bool    input_script_take_load_state(char *out, size_t out_cap);
+ bool    input_script_take_restart_game(uint32_t *pc);
+ bool    input_script_take_ram_dump(char *out, size_t out_cap);
+ bool    input_script_take_vram_dump(char *out, size_t out_cap);
++bool    input_script_take_vdp_dump(char *out, size_t out_cap);
+ 
  /* True iff a script is currently loaded and active. Lets callers
   * branch (e.g. ignore SDL input when scripted). */
  bool    input_script_active(void);
@@ -776,7 +849,7 @@ index 1290d52..31f8824 100644
       * servicing so a floor run keeps the 68K clock advancing and lets the VBla
       * handler fire / the game fiber yield between interpreted instructions,
 diff --git a/runner/main.c b/runner/main.c
-index 771b446..3aadded 100644
+index 771b446..aa660f9 100644
 --- a/runner/main.c
 +++ b/runner/main.c
 @@ -1018,8 +1018,9 @@ static cc_bool input_requested_cb(void *user_data,
@@ -831,7 +904,38 @@ index 771b446..3aadded 100644
  /*
   * Audio accumulation buffers.
   *
-@@ -2512,6 +2546,10 @@ static void replay_view(GenesisReplayView *v,int apply)
+@@ -1733,6 +1767,30 @@ static int runner_dump_vram_file(const char *path)
+     return ok;
+ }
+ 
++/* s103: measurement-only dump of the VDP register file + CRAM so the
++ * attract render gap (display-enable / palette / plane config) can be
++ * compared EU vs US at an exact frame. Mirrors DUMP_VRAM plumbing. */
++static int runner_dump_vdp_file(const char *path)
++{
++    char full_path[512];
++    const char *resolved = resolve_runner_path(path, full_path, sizeof(full_path));
++    FILE *df = fopen(resolved, "w");
++    if (!df) {
++        fprintf(stderr, "[VDPDUMP] failed to open %s\n", resolved);
++        return 0;
++    }
++    for (int i = 0; i < 24; i++)
++        fprintf(df, "reg%02d=%02X\n", i, (unsigned)g_machine.vdp.reg[i]);
++    for (int i = 0; i < 64; i++)
++        fprintf(df, "cram%02d=%03X\n", i, (unsigned)(g_machine.vdp.cram[i] & 0xEEE));
++    int ok = !ferror(df);
++    fclose(df);
++    fprintf(stderr, "[VDPDUMP] wrote %s (display=%u reg1=%02X)\n",
++            resolved, (unsigned)((g_machine.vdp.reg[1] >> 6) & 1),
++            (unsigned)g_machine.vdp.reg[1]);
++    return ok;
++}
++
+ int runner_write_screenshot_file(const char *path)
+ {
+     char full_path[512];
+@@ -2512,6 +2570,10 @@ static void replay_view(GenesisReplayView *v,int apply)
  
  int main(int argc, char *argv[])
  {
@@ -842,7 +946,7 @@ index 771b446..3aadded 100644
      cmd_server_owner_review_init(getenv("GENESIS_OWNER_REVIEW"));
      init_exe_dir(argv[0]);
      const char *user_dir=getenv("GENESIS_USER_DIR");
-@@ -3078,6 +3116,20 @@ int main(int argc, char *argv[])
+@@ -3078,6 +3140,20 @@ int main(int argc, char *argv[])
          }
      }
  
@@ -863,7 +967,7 @@ index 771b446..3aadded 100644
      if(replay_path) {
  #if RECOMP_LAUNCHER
          const RecompLauncherCModProvider *p=app_config_video_mods(g_game_spec.video,settings_ini);
-@@ -3418,10 +3470,11 @@ int main(int argc, char *argv[])
+@@ -3418,10 +3494,11 @@ int main(int argc, char *argv[])
          fprintf(stderr, "[display] interlace_display=%s\n",
                  s_interlace_display_mode == INTERLACE_DISPLAY_RAW ? "raw" : "tv");
      }
@@ -877,7 +981,7 @@ index 771b446..3aadded 100644
      fprintf(stderr, "[pacer] target frame rate: %.4f fps\n", target_fps);
      int debug_port = debug_port_cli ? debug_port_cli :
                       (debug_port_from_ini ? debug_port_from_ini :
-@@ -3976,6 +4029,7 @@ session_begin:;
+@@ -3976,6 +4053,7 @@ session_begin:;
            else
  #endif
            collect_sim_input(&sim_in);
@@ -885,7 +989,7 @@ index 771b446..3aadded 100644
            GenesisSimAudio sim_audio = {
                (int16_t *)s_fm_accum,  FM_ACCUM_FRAMES,  &s_fm_count,
                (int16_t *)s_psg_accum, PSG_ACCUM_FRAMES, &s_psg_count };
-@@ -4189,6 +4243,23 @@ session_begin:;
+@@ -4189,6 +4267,23 @@ session_begin:;
  
          if (g_game_spec.state_size) host_state_tick();
  
@@ -909,7 +1013,16 @@ index 771b446..3aadded 100644
          /* Tick the input script (if loaded). RAM read helpers route
           * through clownmdemu's main RAM via emu_read8/16 â€” same
           * accessors the cmd_server uses. Auto-exit if the script
-@@ -4237,6 +4308,19 @@ session_begin:;
+@@ -4211,6 +4306,8 @@ session_begin:;
+                     runner_dump_ram_file(state_path);
+                 if (input_script_take_vram_dump(state_path, sizeof(state_path)))
+                     runner_dump_vram_file(state_path);
++                if (input_script_take_vdp_dump(state_path, sizeof(state_path)))
++                    runner_dump_vdp_file(state_path);
+                 if (input_script_take_screenshot(state_path, sizeof(state_path)))
+                     runner_write_screenshot_file(state_path);
+             }
+@@ -4237,6 +4334,19 @@ session_begin:;
                  if(!genesis_host_stream_flush_all())fprintf(stderr,"[capture] final write failed\n");
                  genesis_replay_shutdown();
                  report_z80_sync();

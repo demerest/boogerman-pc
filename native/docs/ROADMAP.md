@@ -2263,13 +2263,41 @@ verifiable much sooner.
     * => Next: s103 = (a) fix the 2x horizontal adjust + missed vel reset fidelity;
       (b) probe upstream cutscene upload / VDP display-enable (native DUMP_VRAM
       mid-demo) to make the EU attract scene render.
+  - **Session 103 (2026-11-28): FIRST DIVERGENCE = c286=0x18 (web runs an EXTRA
+    object-coroutine tick native misses); RENDER BLACK CORRECTED AGAIN — VRAM TILES
+    ARE PRESENT, DISPLAY-ENABLE + PLANES IDENTICAL, FADE=0; THE BLACK IS AN ALL-ZERO
+    CRAM (PALETTE NEVER UPLOADED) WITH AN UNCOMPLETED EU DMA. ADDED DUMP_VDP
+    MEASUREMENT OP. US REGRESSION CLEAN.**
+    * METHOD: s103-ledger.ps1 (per-frame aligned X/Y/vel + native store-pc cadence,
+      reusing s102c/s102w) + s103a OBJ-TL of countdown/resume words FF1A5A/56 +
+      disasm 004900-004A00 / 00A6C0-00A7C0 + DUMP_VRAM/DUMP_VDP mid-demo EU vs US.
+    * FIDELITY: native/web X/Y/vel identical through c286=0x17 (idx08). At 0x18 web
+      executes an extra object tick on the ODD V-int (v44 0600->0480 = 003410 without
+      008C04); native's object resume is rigid ~1/2 V-int and misses it, then stays
+      pinned v44=0600 and stalls X=02c0 ~3 iterations early. Demo player is an
+      unrolled yield sequence 00A6F4-00A896; scheduler 004970 resumes when
+      countdown(76)==0, yield 0049B0 saves resume(72). Native step cadence ~1/2 V-int
+      with slips; web shows extra ticks / phase slips (idx0c holds). Root =
+      scheduler/V-int object-resume cadence, engine-side (not pad/timer/physics math).
+    * RENDER: CORRECTS s102. Mid-demo EU VRAM banks 00000-09000 byte-identical to US
+      (tiles uploaded); reg1=64 (display on) and planeA/B=C000/E000 identical; fade
+      0248=0. But EU CRAM ALL-ZERO vs US fully populated => black = missing palette.
+      EU DMA regs uncompleted (reg19/20=FFFF len, reg21/22/23=00/00/80) vs US
+      completed (len 0040, src 7F91D1) => CRAM palette DMA never finishes natively.
+    * TOOLING: DUMP_VDP input op (VDP reg file + CRAM text) mirroring DUMP_VRAM
+      (input_script.c/.h, main.c runner_dump_vdp_file); s103-ledger.ps1; s103e/u.input.
+    * US REGRESSION s103us (assist OFF): flush 10411 / mode-24 10441 / exit 12707 /
+      recommit 12738 / lives 2; sewers HUD bar present. Additive op, no behavior change.
+    * => Next: s104 = (a) match web's object-resume cadence (extra V-int tick) to fix
+      the EU demo misplay; (b) fix the CRAM palette DMA so the attract scene renders.
   Next experiments (anticipated, in order):
-  1. EU attract fidelity + render (s103): s102 corrected the gap to a 2x horizontal
-     integration (0027DC+0045F0) and a missed X-vel reset at c286=0x18, and showed
-     the render black is upstream cutscene upload/display (mid-demo black), not the
-     teardown. (a) Single-step the EU demo-player adjust (0045F0 / object 008xxx) to
-     fix the 2x + reset; (b) DUMP_VRAM mid-demo native vs web to locate the missing
-     cutscene tile upload / VDP display-enable so the attract scene renders.
+  1. EU attract fidelity + render (s104): s103 localized the misplay to the
+     object-coroutine resume cadence (first divergence c286=0x18, web extra V-int
+     tick) and the render black to an all-zero CRAM (palette DMA uncompleted), with
+     VRAM/display/planes/fade all confirmed correct. (a) Trace the V-int object
+     scheduler tick (caller of 004970) native vs web and match the extra-tick cadence;
+     (b) single-step the EU CRAM DMA (reg19-23) to find why it never completes and
+     restore the palette upload so the attract renders.
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.

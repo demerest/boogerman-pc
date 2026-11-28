@@ -1008,3 +1008,28 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
   sewers bar present.
 - **TOOLING/RUNS**: s102c (native OBJ-TL +vel words), s102w (web trace +vel words),
   s102e/f (EU assist render probes), s102us; disasm s102a/b/d.
+
+## s103: first divergence = c286=0x18 (web extra object tick); render black = ALL-ZERO
+## CRAM (palette DMA uncompleted), VRAM/display/planes/fade correct; DUMP_VDP added
+## (2026-11-28).
+- **COROUTINE SCHEDULER**: 004970 resumes object when countdown (76,A4)=FF1A5A==0
+  (else SUBI #1, BPL skip); resume addr (72,A4)=FF1A56; JMP (A1). Yield trampoline
+  0049B0 MOVE.L (A7)+,(72,A4) saves return-PC. Demo player = unrolled yield sequence
+  00A6F4-00A896 (each step MOVE #N,D0; JSR 004B8C action; MOVE #0,(76); JSR 49B0).
+  Step cadence = scheduler-tick cadence. Native ~1/2 V-int rigid w/ slips; web extra
+  ticks / phase slips.
+- **FIRST DIVERGENCE c286=0x18 (idx08)**: native/web X/Y/vel identical thru 0x17. Web
+  runs an EXTRA object tick on odd V-int: v44 0600->0480 (003410 -0x180 without the
+  008C04 +0x1A0). Native misses it, stays v44=0600, stalls X=02c0 ~3 iters early.
+  => misplay root = object-resume cadence (engine scheduler), not physics math/pad.
+- **RENDER = CRAM, not VRAM**: mid-demo EU VRAM banks 00000-09000 byte-identical US
+  (tiles present); reg1=64 display-on; planeA/B=C000/E000, window D000, sprites F000,
+  hscroll 0000 identical; fade 0248=0. EU CRAM ALL-ZERO vs US populated => black.
+  EU DMA regs uncompleted: reg19/20=FFFF (len), reg21/22/23=00/00/80; US completed
+  len=0040 src=7F91D1. => CRAM palette DMA never finishes natively (s104).
+- **DUMP_VDP op**: input_script.c/.h OP_DUMP_VDP + take_vdp_dump; main.c
+  runner_dump_vdp_file writes reg00-23 + cram00-63 text. Measurement-only.
+- **US REGRESSION** s103us: flush 10411/mode24 10441/exit 12707/recommit 12738/lives2;
+  sewers bar present.
+- **TOOLING/RUNS**: s103-ledger.ps1; s103a (countdown/resume OBJ-TL); s103b/c disasm;
+  s103e/u (VRAM+VDP mid-demo); s103us.
