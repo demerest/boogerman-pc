@@ -1079,3 +1079,49 @@ silently filters taps above 0x2212 — set HI≥550A to tap the 54FC span.
 - **TOOLING/RUNS**: s104-cadence.ps1 (resume-step cadence native vs web); s104m/n
   (EU/US drivers+resume), s104s/x (gate+sub words), s104u (pad phase), s104v (0684);
   disasm s104a–t. US s104n demo completes (1541C/1548A/154B8/154FC post-demo).
+
+## s105: NO pass-rate gap (s104 underrun RETRACTED); walk cycle = pure anim loop;
+## divergence = V-int-grid PHASE (native demo ~6 iters ahead, pad half-phase
+## inverted); root suspect = hybrid cycle accounting (2026-11-28).
+- **SUB-LAYER SEMANTICS (s105a, 4970-49B4)**: gate (0,A4) BMI / (2,A4)>=4;
+  (76)=FF1A5A ==0 → resume (72) immediately; N>0 → SUBI #1 (store pc=00498A),
+  BPL wait; negative → MOVE #0,(76) + resume; 49AA = MOVE #FFFF,(76) =
+  wake-NEXT-tick (not sleep); 49B0 = yield (pop return into (72)). Walk script
+  A6F4-A896 (anim ids 10-22) sets (76)=0 → steps EVERY tick; brake script
+  A8A6-A956 (ids B3-BA) sets (76)=3 → 4 ticks/step; A95A+ = BB...
+- **WALK CYCLE HAS NO EXIT BRANCH** (A8A2 BRA A6EA). walk→brake transition is
+  MAIN-driven: (72) rewrites at 9198 (→CC4C / A980 + ORI #1,(8,A4) grounded),
+  8CDC (→A8A6), 9256/9268 (→AD80/ADC6), 935C/9374 (→A9B0/AB04); all reached off
+  453E==0. 9336 SUBI #0680,(56); 933C D0=0080; 9340 JSR 33EA = the brake decay.
+- **ACCEL HEAD 8B68-8BFC (s105c)**: 050C&1000→836A; 0266→A070; CMPI #0380,(54)
+  BLT 88B0; 050C&10→9060; 023C/050C&40→8F46; 0502&4 (LEFT) + (8,A4)&0800 clear →
+  3310 + (54)=0380; 8BD8 ADDI #01A0; 0502&8 (RIGHT) + (8)&0800 set → 3304 +
+  8BFC (54)=0380 + 8C04 ADDI. Tail 8C76-8DA4 (s105b): 42F6(2E)/0248/42F6(28);
+  CMPI #0,(54) BEQ 80E4 else BRA 8B68; 8CB0 path 453E BEQ 9198 else yield 3A14 →
+  8CC2 (20)=(10) + A6 dispatch + (72)=A8A6,(76)=0; 8D4C 4970; 8D52 yield.
+- **MEASURED (s105m native vs s105w web, aligned ledger s105-pos.ps1)**: both
+  sides 1 accel pass/iter (+0020/iter: 8C04 +01A0 then 3410 −0180; cap 0600 via
+  0026FE clamp). Native 0286 reset pc=005158 @f2025; web ~2038-2050. At equal
+  frame native X(1A32)/sub-PC(1A58)/grounded(1A16) lead ~12 frames (~6 iters).
+  Pad 0502=8 at end of ODD frames native vs EVEN web (half-phase inverted);
+  050C edge likewise. Native X pin 02C0 c1C-c28 (13 iters) vs web c23-c30 (8);
+  native reaches brake scripts A970/A980/A9AC at c29 (web c2F) — NO permanent
+  stall in assisted runs. s103 "missed brake c18" = phase offset artifact.
+- **INVARANCE RUNS (native phase/entry identical in all)**: s105p PAL threshold
+  312*488 (INERT — own-backend V-int = scanline scheduler glue_own_interrupt,
+  genesis_machine.c LINES_TOTAL pal-aware 312/262, active_h=gvdp_screen_height
+  224 V28 both regions); s105q forced-fire-at-yield guard (inert: fiber mode
+  s_interleave_active=0); s105r --pacing accurate (clean run, phase unchanged);
+  s105s EU_ATTRACT_ASSIST OFF (demo still enters @2025). ⇒ NOT pacing/threshold/
+  assist. Root suspect: glue.c CYCLES_PER_BUS_ACCESS=10 hybrid estimate advances
+  the raster/V-int grid at a different rate than GPGX exact per-instruction
+  cycles → grid lands at another main-loop half-phase.
+- **MAIN LOOP (s104a re-read)**: 00076E 5A3E feed, 58A0 edge, 31B2, 2752, 39EC,
+  0AD2; wait1 000786 TST 0516; 27FE/30E2/4882/15C4; 0516=4; 3008/0806/09B8/6482/
+  0DB6/0BE6/30E2; wait2 0007C2; 1856/285A/5906/4882/15C4; 0516=8; 0286++ @0007E6;
+  C66/C90/964/6A36/5968; BRA 00076E.
+- **TOOLING/RUNS**: s105-tick.ps1 (498A stores/1A56/1A44 per 0286 vs web);
+  s105-pos.ps1 (aligned X/sub/grounded/pad; NOTE OBJ-TL addrs are 4-hex-digit,
+  web keys 3-digit — normalize both); disasm s105a-f; runs s105m/p/q/r/s (EU),
+  s105us (US replay regression: flush 10411/exit 12707/lives 2 INTACT), web
+  s105w. Engine experimental edits reverted; submodule stays 2a4017a.

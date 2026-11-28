@@ -2336,15 +2336,64 @@ verifiable much sooner.
       stores/iter) native vs web 1a5a transitions; find why native accel pass rate
       is 1.33 vs 2/iter; (b) after the cadence fix re-run s103e to confirm CRAM
       fills (palette DMA downstream).
+  - **Session 105 (2026-11-28): s104's "ACCEL UNDERRUN" RETRACTED — NO PASS-RATE
+    GAP (both sides 1 accel pass/iter, +0020/iter to 0600 cap). WALK CYCLE IS A
+    PURE ANIM LOOP (no exit branch); walk→brake is MAIN-driven via (72) rewrite
+    gated by 453E. REAL DIVERGENCE = NATIVE DEMO RUNS ~6 ITERS AHEAD OF WEB WITH
+    INVERTED PAD HALF-PHASE (entry 0286-reset f2025 vs web ~2038-2050; 0502=8
+    latched 2nd half native vs 1st half web). NATIVE DOES REACH BRAKE SCRIPTS
+    (A970/A980/A9AC at c29). SIX CONTROLLED RUNS PROVE THE PHASE IS INVARIANT TO
+    threshold / forced-fire / pacing / assist ⇒ ROOT NARROWED TO HYBRID CYCLE
+    ACCOUNTING (V-int grid phase vs GPGX exact cycles). ENGINE LEFT AT PROVEN
+    s104 STATE; US REGRESSION INTACT.**
+    * METHOD: s105-tick.ps1 (native 1A5A pc=00498A stores + 1A56/1A44 events vs
+      web per-frame transitions, per 0286); s105-pos.ps1 (aligned X/sub-PC/
+      grounded/pad ledger, native carry vs web sample); disasm s105a–f (4970
+      scheduler, accel head 8B68/tail 8C76–8DA4, exit+brake 9198–93C0, walk
+      A6F4–A8A6, brake A8A6–A960); runs s105m/p/q/r/s (EU) + s105us (US) + web
+      s105w (keys += 2b6,1a16,1a22,1a58,1a32,1a34,502,50c).
+    * SUB-LAYER SEMANTICS (s105a): 4970 gate (0,A4) BMI / (2,A4)>=4; (76)=0 →
+      resume (72) now; (76)=N>0 → SUBI #1 (store pc=00498A), wait while >=0;
+      negative → clamp 0 + resume; 49AA sets FFFF = wake-next-tick; 49B0 yield.
+      Walk script A6F4–A896 sets (76)=0 (step every tick); brake script A8A6+
+      sets (76)=3 (4 ticks/step). Walk cycle A8A2 BRA A6EA = pure anim loop;
+      exit ONLY via main rewriting (72): 9198→CC4C/A980, 8CDC→A8A6, 9256→AD80/
+      ADC6, 935C→A9B0/AB04 — all reached off 453E==0 (wall probe on (38,A4)).
+    * DIVERGENCE (s105m vs s105w): native 0286 reset pc=005158 @f2025, web
+      ~2038-2050; at equal frame native X/sub-PC/grounded lead ~12 frames;
+      pad 0502=8 end-of-odd-frame native vs end-of-even web (half-phase
+      inverted); native X pin 02C0 spans c1C–c28 (13 iters) vs web c23–c30 (8);
+      native brake scripts at c29, web c2F. s103's "missed brake c18" = the
+      phase offset, not a missing decay pass.
+    * CONTROLLED (all native-identical): PAL g_vblank_threshold 312*488 (INERT:
+      own-backend V-int comes from scanline scheduler glue_own_interrupt, not
+      the threshold); glue_yield_for_vblank forced-fire guarded by
+      !s_interleave_active (inert in fiber mode: interleave=0; accurate ran
+      clean, phase unchanged); --pacing accurate; EU_ATTRACT_ASSIST OFF.
+      ⇒ not pacing, not threshold, not the assist.
+    * ROOT NARROWED: glue.c hybrid cycle accounting (CYCLES_PER_BUS_ACCESS=10
+      per bus access) advances the raster/V-int grid at an ESTIMATED rate vs
+      GPGX exact per-instruction cycles → V-int grid lands at a different
+      main-loop half-phase → pad latch inversion + boot entry lead. US demo
+      tolerates the shift; EU brake window does not.
+    * ENGINE: both experimental edits REVERTED (submodule back at 2a4017a,
+      runner clean); diff unchanged. US REGRESSION s105us: flush 10411 /
+      exit 12707 / lives 2 — playable route intact.
+    * => Next: s106 = (a) measure native hybrid cycles per 0286 iteration
+      (g_hybrid_cycle_counter/g_cycle_accumulator) vs GPGX exact cycles/frame,
+      and/or compare native-US vs web-US pad phase to confirm the grid shift
+      is general; (b) make the interp/hybrid cycle accounting exact (per-
+      instruction cycle table) or re-phase the V-int grid to the raster line;
+      (c) after phase alignment re-run s103e to confirm CRAM fills + render.
   Next experiments (anticipated, in order):
-  1. EU attract fidelity + render (s105): s104 mapped both coroutine layers and
-     localized the misplay to the native accel-loop underrun (1.33 vs web 2
-     passes/iter) → missed brake step (c18) → wall-probe wait-loop spin (8250/453E,
-     X pinned 02c0); the all-zero CRAM is downstream (palette DMA only at mode-init
-     0006DA→D60, never reached). (a) Single-step the sub-action walk→brake branch
-     and its inputs at c14–c20, measure the 4970 tick-rate gap (1A5A pc=00498A
-     stores/iter vs web 1a5a), and fix the pass-rate root; (b) re-run s103e after
-     the fix to confirm the palette DMA completes and the attract renders.
+  1. EU attract fidelity + render (s106): s105 retracted the pass-rate gap and
+     localized the misplay to a V-int-grid PHASE offset (native demo ~6 iters
+     ahead of web, pad half-phase inverted; entry f2025 vs ~2038-2050), invariant
+     to threshold/forced-fire/pacing/assist ⇒ hybrid cycle accounting
+     (CYCLES_PER_BUS_ACCESS estimate) vs GPGX exact cycles is the root suspect.
+     (a) Measure native cycles/iteration vs oracle and native-US vs web-US pad
+     phase; (b) exact cycle accounting or raster-line V-int re-phasing; (c) then
+     re-run s103e for the palette DMA / attract render (downstream, s104).
   2. M3 sound/Z80 RE to retire assists: A65 status source block (143C copy), 284
      service tick/acks (2B6 pad history wrap), 054C/0524/0548, Z80 iff1/$0038
      handler; retire the s59/s60/s61/s62 emulations; audio fidelity.
